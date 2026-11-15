@@ -39,7 +39,7 @@ The `src/host/` and `src/client/` abbreviations in row 1 mean paths inside `plug
 
 ## Decisions
 
-The authoritative decision source is the live, gitignored `.genie/brainstorms/dsh-herdr-handoff/QUESTIONS.md`, read on 2026-11-09. Owner words below are verbatim; these decisions are closed. The source notes are not files pinned by the repository SHA.
+The authoritative decision source is the live, gitignored `<genie checkout>/.genie/brainstorms/dsh-herdr-handoff/QUESTIONS.md`, read on 2026-11-09. Owner words below are verbatim; these decisions are closed. The source notes are not files pinned by the repository SHA.
 
 R1-30, from the same checkout's `.genie/brainstorms/genie-v7-tasks/DRAFT.md:115-119`:
 
@@ -159,7 +159,7 @@ The view ships in the cutover. It refreshes only while visible, batches reads fo
 | Task age | `age_min`, now minus first-created; not coding minutes (`crates/genie-tasks/src/store.rs:684-687`). |
 | PR open/lead time | `pr_open_min` only while Opened; `pr_lead_min` for Merged/Closed, otherwise null (`crates/genie-tasks/src/store.rs:688-698`). |
 | Worker elapsed | From the verified launch timestamp, separately labelled. Unknown if no timestamp is proven; no inference from task age. |
-| Cost | “unknown” until verified M3 task attribution, never $0 or branch estimate. M3 and unknown/null semantics are defined in live `.genie/brainstorms/genie-v7-tasks/METER-DESIGN.md:64-66,80-83`. No meter daemon, price fetch or log scan on view refresh. |
+| Cost | “unknown” until verified M3 task attribution, never $0 or branch estimate. M3 and unknown/null semantics are defined in live `<genie checkout>/.genie/brainstorms/genie-v7-tasks/METER-DESIGN.md:64-66,80-83`. No meter daemon, price fetch or log scan on view refresh. |
 | Result | Worker report/evidence and PR link if present; agent turn completion alone is not delivery. |
 
 ### Trust boundaries
