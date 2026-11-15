@@ -356,6 +356,16 @@ function uploadCalls(state: FakeState): Array<{ tool: string; args: string[] }> 
   );
 }
 
+// A pipeline killed at its bound reports exitCode null, and null passes a "not 0" check (#3322). Check first that
+// it exited on its own (no signal, no timeout), so a kill fails here by name, then check its exact exit code.
+function expectExitCode(result: ReturnType<typeof run>['result'], code: number) {
+  expect(
+    { signalCode: result.signalCode ?? null, exitedDueToTimeout: result.exitedDueToTimeout ?? false },
+    'the pipeline was killed before it exited on its own',
+  ).toEqual({ signalCode: null, exitedDueToTimeout: false });
+  expect(result.exitCode).toBe(code);
+}
+
 describe('exact GitHub release asset reconciliation', () => {
   test('uploads and byte-verifies the exact dev fanout inventory into an empty draft without clobber', () => {
     const { result, state } = run({ draft: true, assets: {} });
@@ -608,12 +618,17 @@ describe('exact GitHub release asset reconciliation', () => {
     expect(mismatchedSecondPass.result.exitCode).toBe(3);
     expect(mismatchedSecondPass.result.stderr.toString()).toContain('control digest mismatch');
 
+    // release-generic-provenance.sh verify-reusable: a head_branch other than dev makes its `jq -e` expression
+    // false, which jq documents as exit 1, and `set -e` carries the 1 out of both scripts.
     const genericPolicy = run({ draft: false, assets: localAssets('published'), invalidGeneric: true });
-    expect(genericPolicy.result.exitCode).not.toBe(0);
+    expectExitCode(genericPolicy.result, 1);
     expect(uploadCalls(genericPolicy.state)).toHaveLength(0);
 
+    // release-native-predicate.sh reusable-control-sha: a source_sha that is not a sha leaves its `jq -e`
+    // `first(select(...))` with no result, which jq documents as exit 4, and `set -e` carries the 4 out of the
+    // reconcile script's `remote_control_sha=$(...)` assignment.
     const nativePolicy = run({ draft: false, assets: localAssets('published'), invalidNative: true });
-    expect(nativePolicy.result.exitCode).not.toBe(0);
+    expectExitCode(nativePolicy.result, 4);
     expect(uploadCalls(nativePolicy.state)).toHaveLength(0);
   }, 120_000);
 });
