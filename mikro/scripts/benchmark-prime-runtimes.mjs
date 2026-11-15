@@ -4,11 +4,13 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const PRIME_ROOT = join(homedir(), ".local/lib/node_modules/prime-agent");
+const PRIME_BINARY = join(homedir(), ".local/bin/prime-agent");
 const PINNED_PRIME_VERSION = "0.8.1";
 const BWS_PROJECT_ID = "09229871-62e6-4331-9ede-b4a7012ec521";
 const RUNTIMES = ["rlm", "prime", "prime-sdk"];
@@ -332,7 +334,7 @@ function bwsSecret(key) {
 }
 
 async function projectCredentials() {
-  const sdk = await import("/home/genie/.local/lib/node_modules/prime-agent/dist/index.js");
+  const sdk = await import(pathToFileURL(join(PRIME_ROOT, "dist/index.js")).href);
   const auth = await sdk.AuthStorage.create();
   process.env.OPENROUTER_API_KEY = await auth.getApiKey("openrouter")
     ?? bwsSecret("OPENROUTER_API_KEY");
@@ -415,9 +417,9 @@ async function loadRuntimeModules() {
     base,
     backends: {
       rlm: new LegacyMikroBackend(),
-      prime: new PrimeBackend({ binaryPath: "/home/genie/.local/bin/prime-agent" }),
+      prime: new PrimeBackend({ binaryPath: PRIME_BINARY }),
       "prime-sdk": new PrimeSdkBackend({
-        primeRoot: "/home/genie/.local/lib/node_modules/prime-agent",
+        primeRoot: PRIME_ROOT,
         primeAgentDir,
       }),
     },
@@ -574,7 +576,7 @@ async function preflight() {
   const manifestSha256 = sha256(stable(frozen));
   const installedPrimeVersion = primeVersion();
   await projectCredentials();
-  const sdk = await import("/home/genie/.local/lib/node_modules/prime-agent/dist/index.js");
+  const sdk = await import(pathToFileURL(join(PRIME_ROOT, "dist/index.js")).href);
   const checkRoot = await mkdtemp(join(process.env.TMPDIR ?? tmpdir(), "mikro-prime-preflight-"));
   const checkAgentDir = await configurePrimeAgentDir(checkRoot);
   const registry = sdk.ModelRegistry.create(
