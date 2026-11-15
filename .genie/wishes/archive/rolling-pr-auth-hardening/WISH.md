@@ -8,7 +8,7 @@
 | **Author** | Felipe (dogfooding the revamped v5 lifecycle) |
 | **Appetite** | small |
 | **Branch** | `wish/rolling-pr-auth-hardening` |
-| **Repos touched** | `automagik-dev/genie` → `/home/feliperosa/vm-home/workspace/worktrees/genie-skills-revamp` |
+| **Repos touched** | `automagik-dev/genie` → `<worktrees>/genie-skills-revamp` |
 | **Design** | _No brainstorm — direct wish_ |
 
 > **Truth (2026-09-19):** Implemented on dev and main as `c4fdb32bd` + `422caaa26` — the fail-fast guard and the read/create token split are verbatim in `.github/workflows/rolling-pr.yml`; minting the RELEASE_PLEASE_TOKEN PAT is an operator action, not a deliverable.

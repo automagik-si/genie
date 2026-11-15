@@ -125,7 +125,7 @@ as a warning rather than silence.
 ## How to check any of this quickly
 
 ```bash
-cd /Users/feliperosa/workspace/repos/remotty
+cd '<remotty checkout>'
 genie board --board roadmap --json | jq -c '[.lanes[]|(.cards//[])[]][0]|keys'   # 2
 genie task --help                                                                # 1, 4
 genie doctor 2>&1 | grep 'jar: index-lane'                                       # 5

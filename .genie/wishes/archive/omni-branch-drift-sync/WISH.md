@@ -10,7 +10,7 @@
 | **Appetite** | ~1–2 h, mostly waiting on CI + 2 human merge clicks |
 | **Branch** | n/a — ops task on `automagik-dev/omni` branches directly |
 | **Design** | _No brainstorm — direct ops wish, grounded in a completed live investigation_ |
-| **Repo** | `automagik-dev/omni` (local: `/Users/feliperosa/workspace/omni`) |
+| **Repo** | `automagik-dev/omni` (local: `<omni checkout>`) |
 
 > **Truth (2026-09-19):** A finished one-shot ops task in automagik-dev/omni (PRs #770/#773 merged 2026-07-04) with zero footprint in this repository; its loss-proof invariant still holds — `main` carries no unique commits.
 
@@ -153,7 +153,7 @@ echo "PASS: main == dev (promoted)"
 
 **Steps:**
 ```bash
-R=automagik-dev/omni; O=/Users/feliperosa/workspace/omni
+R=automagik-dev/omni; O='<omni checkout>'
 # Only if `compare/homolog...dev --jq .ahead_by` > 0 AND conflicts exist.
 # LOCAL GIT IS UNRELIABLE HERE — force-fetch before any local branch op:
 git -C $O fetch origin '+refs/heads/dev:refs/remotes/origin/dev' '+refs/heads/homolog:refs/remotes/origin/homolog' --force
@@ -212,7 +212,7 @@ echo "PASS: dev = homolog = main (source-identical)"
 
 1. **Local git refs are stale/unreliable** (an rtk shim mis-updates them). Trust the **GitHub API** (`gh api`) for branch state; `git ... fetch origin '+refs/heads/X:refs/remotes/origin/X' --force` before any local branch op.
 2. **§19 merge-safety hook**: agents may merge only PRs with **base=dev**. `homolog`/`main` merges are **human-only via GitHub UI**. When merging a base=dev PR, pass the repo as a **literal** (`-R automagik-dev/omni`), NOT `-R "$VAR"` — the hook parses the raw command and a variable fails its base-verification lookup.
-3. **`--no-verify` is FORBIDDEN** by the git-safety hook. Pre-commit (biome+commitlint) and pre-push (`bun run check`) hooks need `node_modules` → in a fresh worktree, **symlink** the main repo's: `ln -sfn /Users/feliperosa/workspace/omni/node_modules $WT/node_modules`. For pushes where that's insufficient, `HUSKY=0 git push` is husky's official off-switch (not a bypass), but prefer the symlink.
+3. **`--no-verify` is FORBIDDEN** by the git-safety hook. Pre-commit (biome+commitlint) and pre-push (`bun run check`) hooks need `node_modules` → in a fresh worktree, **symlink** the main repo's: `ln -sfn '<omni checkout>'/node_modules $WT/node_modules`. For pushes where that's insufficient, `HUSKY=0 git push` is husky's official off-switch (not a bypass), but prefer the symlink.
 4. **Conflicts are only ever version/lock/manifest files** — resolve to the newer/superset side (dev). If a NON-version file ever conflicts, STOP and investigate (source should never diverge).
 5. **`grep` is mangled by rtk** — use `rg`, `git grep`, or the API+`jq`.
 6. **Never rebase/reset/force** a protected branch. Merges only.

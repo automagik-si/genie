@@ -1,6 +1,6 @@
 # Read-only user asset baseline
 
-Captured 2026-07-10 after the requested migration. Skill root: `/Users/feliperosa/.agents/skills`; agent root: `/Users/feliperosa/.codex/agents`; selected migrated source list: `/tmp/codex-skills-migration.zMIx5g` directories containing `SKILL.md`. Validation at capture time: 36/36 skill directories passed the Codex skill validator and carried `agents/openai.yaml`; 14/14 agent TOMLs parsed; the seven specialist profiles use `gpt-5.6-sol` with Ultra effort and read-only sandboxing.
+Captured 2026-07-10 after the requested migration. Skill root: `~/.agents/skills`; agent root: `~/.codex/agents`; selected migrated source list: `/tmp/codex-skills-migration.zMIx5g` directories containing `SKILL.md`. Validation at capture time: 36/36 skill directories passed the Codex skill validator and carried `agents/openai.yaml`; 14/14 agent TOMLs parsed; the seven specialist profiles use `gpt-5.6-sol` with Ultra effort and read-only sandboxing.
 
 Live `genie update` and `genie uninstall` are prohibited during remediation. Tests copy these assets into isolated temporary HOME/CODEX_HOME/GENIE_HOME fixtures. Final QA recomputes the live baseline read-only and requires exact equality.
 
@@ -9,7 +9,7 @@ Live `genie update` and `genie uninstall` are prohibited during remediation. Tes
 For each selected skill directory, enumerate regular files, sort paths with `LC_ALL=C`, serialize each record as `<relative-path><two spaces><file-sha256><newline>`, then SHA-256 that complete byte stream. Agent TOMLs are SHA-256 hashed directly and sorted by filename.
 
 ```bash
-SKILL_ROOT=/Users/feliperosa/.agents/skills
+SKILL_ROOT=~/.agents/skills
 for d in /tmp/codex-skills-migration.zMIx5g/*; do
   name=${d##*/}; target="$SKILL_ROOT/$name"
   test -f "$target/SKILL.md" || continue
@@ -19,7 +19,7 @@ for d in /tmp/codex-skills-migration.zMIx5g/*; do
     shasum -a 256 "$file" | awk '{print $1}'
   done | shasum -a 256
 done
-for file in /Users/feliperosa/.codex/agents/*.toml; do shasum -a 256 "$file"; done
+for file in ~/.codex/agents/*.toml; do shasum -a 256 "$file"; done
 ```
 
 This baseline is immutable during implementation. Final comparison evidence belongs in `REVIEW-DISPOSITION.md`, not here.

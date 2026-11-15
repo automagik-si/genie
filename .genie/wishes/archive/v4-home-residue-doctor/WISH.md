@@ -8,7 +8,7 @@
 | **Author** | Felipe (directive: "find and clean all stale genie v4 shit… genie doctor should do that") |
 | **Appetite** | small |
 | **Branch** | `wish/v4-home-residue-doctor` |
-| **Repos touched** | `automagik-dev/genie` → `/home/feliperosa/vm-home/workspace/worktrees/genie-skills-revamp` |
+| **Repos touched** | `automagik-dev/genie` → `<worktrees>/genie-skills-revamp` |
 | **Design** | _No brainstorm — direct wish_ |
 
 > **Truth (2026-09-19):** PR #2532 merged 2026-07-05 — `checkV4Residue` and `cleanupHomeResidue` are live in `legacy-v4.ts`/`doctor.ts`; the 2026-07-26 process/service addendum (#2450, pm2 + postmaster residue) was never built and targets a v4→v5 path two majors back.

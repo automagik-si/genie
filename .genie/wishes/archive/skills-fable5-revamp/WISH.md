@@ -8,7 +8,7 @@
 | **Author** | Felipe (planned with Fable 5) |
 | **Appetite** | medium |
 | **Branch** | `wish/skills-fable5-revamp` (one per repo) |
-| **Repos touched** | `automagik-dev/genie` → `/home/feliperosa/vm-home/workspace/repos/genie`; `automagik-dev/omni` → `/home/feliperosa/vm-home/workspace/repos/omni` |
+| **Repos touched** | `automagik-dev/genie` → `<genie checkout>`; `automagik-dev/omni` → `<omni checkout>` |
 | **Design** | _No brainstorm — direct wish_ |
 
 > **Truth (2026-09-19):** PR #2518 merged 2026-07-04; only the G8 v4-legacy cleanup engine survives (`src/genie-commands/legacy-v4.ts`, wired into `genie install`) — the skill rewrite was redone wholesale by skills-everywhere-c and the omni half left this repo with `plugins/omni`.
@@ -200,7 +200,7 @@ cd "$(git rev-parse --show-toplevel)" && \
 
 ### Group 5: Omni skill tier
 
-**Repo:** `/home/feliperosa/vm-home/workspace/repos/omni` — branch `wish/skills-fable5-revamp` off `dev`. All paths below are relative to `plugins/omni/` in that checkout. Do NOT touch the genie repo; if `plugins/omni/` is missing from your cwd, you are in the wrong repo — stop and relocate, never create it.
+**Repo:** `<omni checkout>` — branch `wish/skills-fable5-revamp` off `dev`. All paths below are relative to `plugins/omni/` in that checkout. Do NOT touch the genie repo; if `plugins/omni/` is missing from your cwd, you are in the wrong repo — stop and relocate, never create it.
 
 **Goal:** Revamp the three-tier omni system (`omni` router, `omni-agent`, `omni-setup`, `omni-ops`) — keep the tier design and keyword routing, move command-reference bulk into `references/`.
 
@@ -227,7 +227,7 @@ cd "$(git rev-parse --show-toplevel)"/plugins/omni && \
 
 ### Group 6: Omni commands, agents, rules
 
-**Repo:** `/home/feliperosa/vm-home/workspace/repos/omni` — branch `wish/skills-fable5-revamp` off `dev`. All paths below are relative to `plugins/omni/` in that checkout. Do NOT touch the genie repo; if `plugins/omni/` is missing from your cwd, you are in the wrong repo — stop and relocate, never create it.
+**Repo:** `<omni checkout>` — branch `wish/skills-fable5-revamp` off `dev`. All paths below are relative to `plugins/omni/` in that checkout. Do NOT touch the genie repo; if `plugins/omni/` is missing from your cwd, you are in the wrong repo — stop and relocate, never create it.
 
 **Goal:** Revamp the 11 command files, 3 agent definitions, and 1 rule file — trigger-focused, deduped against the omni-ops tier, generic filler deleted.
 
@@ -253,7 +253,7 @@ cd "$(git rev-parse --show-toplevel)"/plugins/omni && \
 
 ### Group 7: Cross-repo verification & consistency
 
-**Repos:** requires BOTH checkouts on their wish branches — genie at `/home/feliperosa/vm-home/workspace/repos/genie`, omni at `/home/feliperosa/vm-home/workspace/repos/omni`. Lints and the evidence report run in the genie repo; omni budget/frontmatter checks run in the omni checkout.
+**Repos:** requires BOTH checkouts on their wish branches — genie at `<genie checkout>`, omni at `<omni checkout>`. Lints and the evidence report run in the genie repo; omni budget/frontmatter checks run in the omni checkout.
 
 **Goal:** Prove the revamp holds as a system: budgets, lints, frozen contracts, and cross-references verified with pasted evidence; fix inconsistencies found.
 
@@ -280,7 +280,7 @@ cd "$(git rev-parse --show-toplevel)" && bun run skills:lint && bun run wishes:l
 
 ### Group 8: v4 legacy audit & trash cleaning
 
-**Repo:** `/home/feliperosa/vm-home/workspace/repos/genie` — branch `wish/skills-fable5-revamp`. Source surface only: new legacy-paths module + cleanup step under `src/genie-commands/` (+ colocated tests), cleanup call wired into `src/genie-commands/install.ts`, `src/genie-commands/uninstall.ts` consuming the shared manifest, `install.sh` only for flag pass-through. This group touches NO skill files — fully disjoint from Groups 1–4.
+**Repo:** `<genie checkout>` — branch `wish/skills-fable5-revamp`. Source surface only: new legacy-paths module + cleanup step under `src/genie-commands/` (+ colocated tests), cleanup call wired into `src/genie-commands/install.ts`, `src/genie-commands/uninstall.ts` consuming the shared manifest, `install.sh` only for flag pass-through. This group touches NO skill files — fully disjoint from Groups 1–4.
 
 **Goal:** A v4→v5 install/upgrade detects and properly cleans v4 trash — today only full `genie uninstall` knows the legacy paths, so upgraded machines keep a stale, actively misleading `~/.claude/rules/genie-orchestration.md` and orphaned `4.x` plugin caches. Architecture fact (dev reality, adapted during execution): dev's v5 cutover deleted the old `genie install` command and install.sh's handoff entirely, so G8 recreates a thin TS `genie install` finisher (bootstrap hands off via a plain non-exec call) and wires the same cleanup into `genie update` post-delivery — the upgrade path real machines actually use. Cleanup lives in TypeScript, never duplicated in bash.
 

@@ -48,7 +48,7 @@ exists only on #25.** Consequences:
 - The three `roadmap-truth` planning files (WISH.md, DESIGN.md, DRAFT.md) are on
   disk but deliberately **untracked** here. Do not `git add` them: it force-adds
   past `.gitignore` and turns `scripts/leak-scan.sh` red with 7 hits (the author
-  name plus six `/Users/feliperosa/...` paths inside the wish's own validation
+  name plus six `/Users/<user>/...` paths inside the wish's own validation
   commands). This already happened once and was reverted.
 - **18 other `.genie` files are missing from the working tree** — the other
   wishes and brainstorms. They are tracked only on `wish/terminal-splits`, so
