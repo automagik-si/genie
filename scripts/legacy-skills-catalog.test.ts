@@ -1,15 +1,17 @@
-import { afterEach, describe, expect, test } from 'bun:test';
+import { afterEach, describe, expect, setDefaultTimeout, test } from 'bun:test';
 import { execFileSync, spawnSync } from 'node:child_process';
 import {
   constants,
   accessSync,
   appendFileSync,
-  cpSync,
+  chmodSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
+  readlinkSync,
   realpathSync,
   rmSync,
   symlinkSync,
@@ -32,6 +34,37 @@ import {
 
 /** Render tests cover the additive union; isolated CLI histories below cover ownership collection. */
 const ROOT = join(import.meta.dir, '..');
+
+// One measured bound for every test and hook in this file, in place of per-test bounds (#3318): under host
+// I/O load an ordinary fixture write can stall for seconds, and any row can be the one it hits. Once the
+// reflink copies (copyFixture) and the shallow clone's fsyncs were gone, the slowest run was 11.8 s, killed
+// at Bun's 5 s default inside `git add -A` during a host I/O stall (a lower bound; three rows that copy
+// nothing died that way in one stall). 0.07-0.71 s quiet; 2.25 s at most under the busy-CPU proof. 3x the
+// slowest run, rounded up to 5 s.
+setDefaultTimeout(40_000);
+
+/**
+ * Copies a fixture file or tree by reading and writing its bytes, never as a reflink clone. `cpSync`
+ * asks the filesystem for a clone first, and on a copy-on-write filesystem a clone of freshly written
+ * blocks can wait for pending writes to reach disk: 34.3 to 90.0 s per copy under host I/O load
+ * (#3318). Directories (empty ones too), dotfiles, modes and symlinks (as links, never followed) are
+ * kept. Timestamps are not, and `cpSync` did not keep them either.
+ */
+function copyFixture(from: string, to: string): void {
+  const stat = lstatSync(from);
+  if (stat.isSymbolicLink()) {
+    symlinkSync(readlinkSync(from), to);
+  } else if (stat.isDirectory()) {
+    mkdirSync(to);
+    for (const entry of readdirSync(from)) copyFixture(join(from, entry), join(to, entry));
+    chmodSync(to, stat.mode & 0o7777);
+  } else if (stat.isFile()) {
+    writeFileSync(to, readFileSync(from));
+    chmodSync(to, stat.mode & 0o7777);
+  } else {
+    throw new Error(`fixture copy handles files, directories and symlinks only: ${from}`);
+  }
+}
 
 /** The catalog's form of plain names or descriptions: their digests, sorted as the generator sorts them. */
 function digests(values: readonly string[]): string[] {
@@ -391,7 +424,7 @@ describe('catalog CLI over isolated Git histories', () => {
     const dir = mkdtempSync(join(tmpdir(), 'legacy-catalog-consumer-'));
     scratch.push(dir);
     for (const file of ['legacy-skills.ts', 'skills-agents.ts', 'legacy-skill-digest.ts']) {
-      cpSync(join(ROOT, 'src', 'lib', file), join(dir, file));
+      copyFixture(join(ROOT, 'src', 'lib', file), join(dir, file));
     }
     writeFileSync(join(dir, 'legacy-skills-catalog.ts'), run.stdout);
     const { classifyLegacySkillEntry } = await import(join(dir, 'legacy-skills.ts'));
@@ -443,7 +476,7 @@ describe('catalog CLI over isolated Git histories', () => {
     if (sourceTag) git(repo, 'fetch', '-q', source, 'refs/tags/side:refs/tags/side');
     mkdirSync(join(repo, 'mikro'));
     for (const entry of readdirSync(source)) {
-      if (entry !== '.git') cpSync(join(source, entry), join(repo, 'mikro', entry), { recursive: true });
+      if (entry !== '.git') copyFixture(join(source, entry), join(repo, 'mikro', entry));
     }
     if (alterTree) skill(repo, 'mikro/skills/extra', 'Not the declared imported tree.');
     git(repo, 'add', '-A');
@@ -624,10 +657,6 @@ describe('catalog CLI over isolated Git histories', () => {
     expectGenieHistory(outputCatalog(seedOrigin()));
   });
 
-  // Measured timeout (#3309), per row: 0.20-0.65 s quiet; 0.64 s under the busy-CPU proof; killed inside
-  // `git add -A` at 62.9 s on a loaded gate host and at 38.0 and 58.8 s during a host I/O stall, then
-  // 113.0 s, passing, during another stall once this bound was raised. 3x the slowest run, rounded up to 5 s. The cost is write I/O, not CPU: 32 fixture git processes per row,
-  // 25 of them writing objects, refs or the index, plus one catalog CLI run (28 read-only git processes).
   test.each([false, true])(
     'foreign ancestry and prefixed integration trees are excluded (shared Genie ancestry: %s)',
     (shared) => {
@@ -643,7 +672,6 @@ describe('catalog CLI over isolated Git histories', () => {
       expect(catalog.names).toEqual(digests(GENIE_HISTORY_NAMES));
       expect(catalog.descriptions).toEqual(digests(['Demo, revised.', ...GENIE_HISTORY_DESCRIPTIONS]));
     },
-    340_000,
   );
 
   test("the Automagik brand skill copy is never catalogued, while genie's own .claude/skills history is", () => {
@@ -800,9 +828,6 @@ describe('catalog CLI over isolated Git histories', () => {
     }
   });
 
-  // Measured timeout (#3271): 0.41 s quiet; 1.34 s under the busy-CPU proof; killed at Bun's 5 s
-  // default on the loaded gate host. 3x that 5 s floor. The cost is process launches and I/O, not
-  // CPU: 119 git processes and four catalog CLI runs.
   test('anchor closure includes ordinary side parents but never authenticates clean descendants', () => {
     const repo = seedOrigin();
     const archived = git(repo, 'rev-parse', 'refs/heads/genie-archive').trim();
@@ -831,7 +856,7 @@ describe('catalog CLI over isolated Git histories', () => {
     expect(denied.stdout).toBe('');
     expect(denied.stderr).toContain('not independently Genie-owned');
     expectGenieHistory(outputCatalog(repo, provenance, provenance.slice(0, 40)));
-  }, 15_000);
+  });
 
   test('anchor CLI validates all flags before writes and supports mode/option ordering idempotently', () => {
     const repo = seedOrigin();
@@ -881,9 +906,6 @@ describe('catalog CLI over isolated Git histories', () => {
     expect(readFileSync(join(repo, 'src/lib/legacy-skills-catalog.ts'), 'utf8')).toBe(bytes);
   });
 
-  // Measured timeout (#3271), per row: 0.33 s quiet; 0.86 s under the busy-CPU proof; killed at
-  // Bun's 5 s default on the loaded gate host. 3x that 5 s floor. The cost is process launches and
-  // I/O, not CPU: about 95 git processes and three catalog CLI runs per row.
   test.each([
     ['split', false],
     ['split', true],
@@ -928,7 +950,6 @@ describe('catalog CLI over isolated Git histories', () => {
         expect(readFileSync(join(repo, 'src/lib/legacy-skills-catalog.ts'), 'utf8')).toBe(recorded);
       }
     },
-    15_000,
   );
 
   test.each([false, true])(
@@ -952,35 +973,26 @@ describe('catalog CLI over isolated Git histories', () => {
     },
   );
 
-  // Measured timeout (#3309), per row: 0.37-0.46 s quiet; 0.83 s under the busy-CPU proof; 5.02 and
-  // 5.33 s on a loaded gate host, killed; killed inside `git add -A` at 32.2 and 40.1 s during a host I/O
-  // stall. 3x the slowest run, rounded up to 5 s. The cost is write I/O, not CPU: 32 fixture git
-  // processes per row, 25 of them writing objects, refs or the index, plus two catalog CLI runs (56
-  // read-only git processes).
-  test.each([false, true])(
-    'multiple validated imports preserve shared Genie ownership (shared: %s)',
-    (shared) => {
-      const repo = seedOrigin();
-      const { split, provenance } = importMikro(repo, shared);
-      const trustedRoot = shared ? provenance?.slice(0, 40) : undefined;
-      const before = outputCatalog(repo, provenance, trustedRoot);
-      const tree = git(repo, 'rev-parse', 'HEAD^{tree}').trim();
-      const imported = git(
-        repo,
-        'commit-tree',
-        tree,
-        '-p',
-        'HEAD',
-        '-p',
-        split,
-        '-m',
-        `Repeat validated import\n\ngit-subtree-dir: mikro\n\ngit-subtree-split: ${split}`,
-      ).trim();
-      git(repo, 'update-ref', 'refs/heads/main', imported);
-      expect(outputCatalog(repo, provenance, shared ? imported : undefined)).toEqual(before);
-    },
-    125_000,
-  );
+  test.each([false, true])('multiple validated imports preserve shared Genie ownership (shared: %s)', (shared) => {
+    const repo = seedOrigin();
+    const { split, provenance } = importMikro(repo, shared);
+    const trustedRoot = shared ? provenance?.slice(0, 40) : undefined;
+    const before = outputCatalog(repo, provenance, trustedRoot);
+    const tree = git(repo, 'rev-parse', 'HEAD^{tree}').trim();
+    const imported = git(
+      repo,
+      'commit-tree',
+      tree,
+      '-p',
+      'HEAD',
+      '-p',
+      split,
+      '-m',
+      `Repeat validated import\n\ngit-subtree-dir: mikro\n\ngit-subtree-split: ${split}`,
+    ).trim();
+    git(repo, 'update-ref', 'refs/heads/main', imported);
+    expect(outputCatalog(repo, provenance, shared ? imported : undefined)).toEqual(before);
+  });
 
   test('safe pre-merge proof can justify a shared-source Genie archive, but the archive cannot prove itself', () => {
     const repo = seedOrigin();
@@ -1326,8 +1338,6 @@ describe('catalog CLI over isolated Git histories', () => {
     expect(() => collectCatalog(repo, proof, anchor)).toThrow('source-crossing HEAD history');
   });
 
-  // Twelve CLI launches and ~260 Git processes took 2.7–3.8 s locally and 4.86 s on Darwin CI.
-  // Give this real-history/consumer contract headroom above Bun's 5 s default.
   test('trusted proof keeps shared Genie archives and core despite source roles', async () => {
     const repo = seedOrigin();
     const { provenance, split, foreign, side } = importMikro(repo, true, undefined, false, true);
@@ -1388,7 +1398,7 @@ describe('catalog CLI over isolated Git histories', () => {
     expect(stale.stdout).toBe('');
     expect(stale.stderr).toContain('stale or unknown reference provenance');
     expect(readFileSync(join(repo, 'src/lib/legacy-skills-catalog.ts'), 'utf8')).toBe(recordedBefore);
-  }, 15_000);
+  });
 
   test.each(['unknown owner', 'conflicting duplicate'] as const)(
     'refuses %s in trusted reference proof without granting partial authority',
@@ -1543,7 +1553,14 @@ describe('catalog CLI over isolated Git histories', () => {
     const origin = seedOrigin();
     const clone = mkdtempSync(join(tmpdir(), 'legacy-catalog-shallow-'));
     scratch.push(clone);
-    execFileSync('git', ['clone', '-q', '--depth', '1', `file://${origin}`, join(clone, 'repo')], { stdio: 'ignore' });
+    // The clone writes a pack, its index and its reverse index, and fsyncs all three; under host I/O load
+    // that killed this test at Bun's 5 s default (#3318). The throwaway clone needs no durability, so
+    // core.fsync=none takes it from 3 fsyncs to 0. It is the only fsync anywhere in this file.
+    execFileSync(
+      'git',
+      ['-c', 'core.fsync=none', 'clone', '-q', '--depth', '1', `file://${origin}`, join(clone, 'repo')],
+      { stdio: 'ignore' },
+    );
 
     const run = runCheck(join(clone, 'repo'), '--check');
     expect(run.code).toBe(1);
@@ -1558,6 +1575,56 @@ describe('catalog CLI over isolated Git histories', () => {
     const run = runCheck(origin);
     expect(run.stderr).not.toContain('shallow clone');
     expect(run.stdout).toContain('LEGACY_SKILL_NAME_DIGESTS');
+  });
+});
+
+describe('copyFixture', () => {
+  /** Every entry under `root`, sorted: its kind, its permission bits, and its bytes or link target. */
+  function treeShape(root: string, rel = ''): Array<[string, string, number, string]> {
+    const path = join(root, rel);
+    const stat = lstatSync(path);
+    if (stat.isSymbolicLink()) return [[rel, 'link', 0, readlinkSync(path)]];
+    if (stat.isFile()) return [[rel, 'file', stat.mode & 0o7777, readFileSync(path).toString('base64')]];
+    return [
+      [rel, 'dir', stat.mode & 0o7777, ''],
+      ...readdirSync(path)
+        .sort()
+        .flatMap((entry) => treeShape(root, join(rel, entry))),
+    ];
+  }
+
+  test('copies bytes, modes, dotfiles and empty directories, and copies a symlink as a link', () => {
+    const root = mkdtempSync(join(tmpdir(), 'catalog-fixture-copy-'));
+    try {
+      const source = join(root, 'source');
+      mkdirSync(join(source, 'nested', 'empty'), { recursive: true });
+      writeFileSync(join(source, 'SKILL.md'), '---\ndescription: "A fixture skill."\n---\n');
+      writeFileSync(join(source, '.hidden'), Buffer.from([0, 1, 254, 255]));
+      writeFileSync(join(source, 'nested', 'run.sh'), '#!/bin/sh\n');
+      symlinkSync('../SKILL.md', join(source, 'nested', 'link'));
+      chmodSync(join(source, 'SKILL.md'), 0o644);
+      chmodSync(join(source, '.hidden'), 0o600);
+      chmodSync(join(source, 'nested', 'run.sh'), 0o755);
+      chmodSync(join(source, 'nested', 'empty'), 0o700);
+      chmodSync(join(source, 'nested'), 0o750);
+      chmodSync(source, 0o755);
+      const shape = treeShape(source);
+      expect(shape.map(([rel, kind, mode]) => [rel, kind, mode])).toEqual([
+        ['', 'dir', 0o755],
+        ['.hidden', 'file', 0o600],
+        ['SKILL.md', 'file', 0o644],
+        ['nested', 'dir', 0o750],
+        [join('nested', 'empty'), 'dir', 0o700],
+        [join('nested', 'link'), 'link', 0],
+        [join('nested', 'run.sh'), 'file', 0o755],
+      ]);
+
+      copyFixture(source, join(root, 'copy'));
+
+      expect(treeShape(join(root, 'copy'))).toEqual(shape);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 
