@@ -776,7 +776,7 @@ function candidateRoots(cwd, texts) {
  * The task root is the tree the answer is *about* — the candidate the most of
  * its citations resolve in — not necessarily the directory the session happened
  * to run in. It is the one directory the rlmx arm gets (`rlmx mcp --dir`), so
- * choosing the cwd when the question was "explore /home/namastex/prod/brain"
+ * choosing the cwd when the question was "explore <brain checkout>"
  * would hand that arm a tree the question is not about and score it on claims
  * it structurally cannot reach. Ties go to the cwd.
  */

@@ -103,7 +103,7 @@ model and effort in runtime session/agent configuration, never skill frontmatter
 
 **Validation:**
 ```bash
-cd /home/namastex/workspace/repos/genie && bun test src/lib/v5/ && bun run check
+cd '<genie checkout>' && bun test src/lib/v5/ && bun run check
 ```
 
 **depends-on:** none
@@ -127,7 +127,7 @@ cd /home/namastex/workspace/repos/genie && bun test src/lib/v5/ && bun run check
 
 **Validation:**
 ```bash
-cd /home/namastex/workspace/repos/genie && bun test src/term-commands/ src/lib/v5/ && bun run check
+cd '<genie checkout>' && bun test src/term-commands/ src/lib/v5/ && bun run check
 ```
 
 **depends-on:** Group 1

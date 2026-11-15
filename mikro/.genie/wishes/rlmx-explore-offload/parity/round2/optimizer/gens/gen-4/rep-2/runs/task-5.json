@@ -1,9 +1,9 @@
 {
   "task": 5,
-  "tasksDir": "/home/namastex/prod/rlmx/.genie/wishes/rlmx-explore-offload/parity/round2/train-tasks",
-  "taskFile": "/home/namastex/prod/rlmx/.genie/wishes/rlmx-explore-offload/parity/round2/train-tasks/5.md",
+  "tasksDir": "<rlmx checkout>/.genie/wishes/rlmx-explore-offload/parity/round2/train-tasks",
+  "taskFile": "<rlmx checkout>/.genie/wishes/rlmx-explore-offload/parity/round2/train-tasks/5.md",
   "suite": "other",
-  "root": "/home/namastex/prod/genie-desktop",
+  "root": "<genie-desktop checkout>",
   "model": "khal/deepseek-v4-flash",
   "round": "gen4-rep2-khal-deepseek-v4-flash",
   "startedAt": "2026-07-27T12:20:25.135Z",
@@ -23,7 +23,7 @@
       "branch": "wish/rlmx-explore-offload",
       "dirty": true
     },
-    "recipeDir": "/home/namastex/prod/rlmx/.genie/wishes/rlmx-explore-offload/parity/round2/optimizer/gens/gen-4/recipe",
+    "recipeDir": "<rlmx checkout>/.genie/wishes/rlmx-explore-offload/parity/round2/optimizer/gens/gen-4/recipe",
     "agent": "explore-r",
     "tool": "rlmx_explore-r",
     "childModelPin": {

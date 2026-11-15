@@ -73,7 +73,7 @@ Concrete genie block (what G3 writes to BOTH `<repo>/.warp/.mcp.json` and `<repo
 
 **Use an ABSOLUTE path to the genie binary — NOT bare `"genie"`.** `{"command":"genie","args":["mcp"]}` assumes `genie` is on the spawning process's PATH, which is NOT reliable:
 - **Mac (this install):** `genie` is **not** on PATH — it lives only at `~/.genie/bin/genie` (a 59 MB bun-compiled single-file binary). Bare `genie` would fail to spawn.
-- **`felipe` (Linux):** `genie` IS on PATH (`/home/genie/.local/bin/genie`, also `~/.genie/bin/genie`).
+- **`felipe` (Linux):** `genie` IS on PATH (`~/.local/bin/genie`, also `~/.genie/bin/genie`).
 
 Recommendation for G3: at `genie init`/`launch` time, resolve the **absolute path of the currently-running genie executable** (for the bun-compiled binary that is `process.execPath`) and write that as `command`, with `args: ["mcp"]`. Fallback: `~/.genie/bin/genie` expanded to an absolute path. This is self-consistent under Warp-over-SSH: `genie init` runs on the box that owns the repo (e.g. `felipe`), so it writes that box's genie path, and Warp spawns the server on that same box. Warp supports `${VAR}` substitution, but a resolved absolute path is simpler and avoids PATH ambiguity.
 

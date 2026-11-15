@@ -1,6 +1,6 @@
 # Council brief — genie v6 "corpo leve", rev. 3 simplification (Felipe, 2026-08-25)
 
-Repo: /home/namastex/workspace/repos/genie (branch v6/corpo-leve). READ-ONLY: assess, do not mutate.
+Repo: <genie checkout> (branch v6/corpo-leve). READ-ONLY: assess, do not mutate.
 
 ## Decision statement
 Simplify genie by:

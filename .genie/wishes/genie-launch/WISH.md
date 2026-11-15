@@ -251,7 +251,7 @@ node skills/brainstorm/references/design-review-evidence.mjs verify .genie/brain
    - `--check` exits 1 on any scrub-pattern hit in the transcripts or redacted frames, and 2 if any of the six is missing.
 
 **Interfaces:**
-- Consumes: `/home/genie/workspace/repos/genie/.orca/drops/launch/captures/wish-run-v2.tgz` and `brainstorm-run-bs.tgz`.
+- Consumes: `<genie checkout>/.orca/drops/launch/captures/wish-run-v2.tgz` and `brainstorm-run-bs.tgz`.
 - Produces: `scratchpad/captures/<skill>/frames-redacted/` and `scratchpad/captures/<skill>.capture.txt` for `brainstorm`, `wish`, `work`, `review`, `council` and `fix`.
 
 **Acceptance Criteria:**
@@ -260,7 +260,7 @@ node skills/brainstorm/references/design-review-evidence.mjs verify .genie/brain
 
 **Validation:**
 ```bash
-S=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad/captures; for k in brainstorm wish work review council fix; do test -s "$S/$k.capture.txt" && test "$(wc -l < "$S/$k.capture.txt")" -le 150 && test -d "$S/$k/frames-redacted" && test -n "$(ls -A "$S/$k/frames-redacted")" || exit 1; done; python3 "$S/redact.py" --check
+S='<scratchpad>'/captures; for k in brainstorm wish work review council fix; do test -s "$S/$k.capture.txt" && test "$(wc -l < "$S/$k.capture.txt")" -le 150 && test -d "$S/$k/frames-redacted" && test -n "$(ls -A "$S/$k/frames-redacted")" || exit 1; done; python3 "$S/redact.py" --check
 ```
 
 **depends-on:** none
@@ -290,7 +290,7 @@ S=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9
 
 **Validation:**
 ```bash
-M=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad/media; test "$(stat -c %s $M/genie-loop.gif)" -le 3145728 && test "$(stat -c %s $M/genie-loop.mp4)" -le 8388608 && test -s $M/genie-loop-sheet.png && python3 /var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad/media/loop-check.py $M/genie-loop.mp4
+M='<scratchpad>'/media; test "$(stat -c %s $M/genie-loop.gif)" -le 3145728 && test "$(stat -c %s $M/genie-loop.mp4)" -le 8388608 && test -s $M/genie-loop-sheet.png && python3 '<scratchpad>'/media/loop-check.py $M/genie-loop.mp4
 ```
 
 **depends-on:** none
@@ -312,7 +312,7 @@ M=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9
 **Interfaces:**
 - Consumes:
   - G2's redacted frames and transcripts;
-  - the launch rig at `/home/genie/workspace/repos/genie/.orca/drops/launch/render-src/` (Playwright and ffmpeg), copied to the scratchpad before any edit.
+  - the launch rig at `<genie checkout>/.orca/drops/launch/render-src/` (Playwright and ffmpeg), copied to the scratchpad before any edit.
 - Produces: seven MP4s and seven posters, consumed by G11 and G13.
 
 **Acceptance Criteria:**
@@ -322,7 +322,7 @@ M=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9
 
 **Validation:**
 ```bash
-M=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad/media; for f in $M/sop-brainstorm.mp4 $M/sop-wish.mp4 $M/sop-work.mp4 $M/sop-review.mp4 $M/sop-council.mp4 $M/sop-fix.mp4 $M/quickstart-wish.mp4; do test -f "$f" && test "$(stat -c %s "$f")" -le 8388608 && test -f "${f%.mp4}.jpg" || exit 1; done; for k in brainstorm wish work review council fix; do d=$(ffprobe -v error -show_entries format=duration -of csv=p=0 $M/sop-$k.mp4); awk -v d="$d" 'BEGIN{exit !(d>=30 && d<=60)}' || exit 1; done
+M='<scratchpad>'/media; for f in $M/sop-brainstorm.mp4 $M/sop-wish.mp4 $M/sop-work.mp4 $M/sop-review.mp4 $M/sop-council.mp4 $M/sop-fix.mp4 $M/quickstart-wish.mp4; do test -f "$f" && test "$(stat -c %s "$f")" -le 8388608 && test -f "${f%.mp4}.jpg" || exit 1; done; for k in brainstorm wish work review council fix; do d=$(ffprobe -v error -show_entries format=duration -of csv=p=0 $M/sop-$k.mp4); awk -v d="$d" 'BEGIN{exit !(d>=30 && d<=60)}' || exit 1; done
 ```
 
 **depends-on:** 2
@@ -356,7 +356,7 @@ M=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9
 
 **Validation:**
 ```bash
-umask 022 && B=$(git merge-base origin/dev HEAD) && git diff --quiet HEAD && git cat-file -e HEAD:UPGRADING.md && ! git diff --quiet "$B" HEAD -- README.md && python3 /var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad/upgrading-diff.py --base "$B" --head HEAD && bun test scripts/release-docs.test.ts scripts/skills-retirement-restore.test.ts src/__tests__/claude-md-drift.test.ts && test "$(git diff "$B" -- scripts/ | grep -c '^-.*expect(')" = 0
+umask 022 && B=$(git merge-base origin/dev HEAD) && git diff --quiet HEAD && git cat-file -e HEAD:UPGRADING.md && ! git diff --quiet "$B" HEAD -- README.md && python3 '<scratchpad>'/upgrading-diff.py --base "$B" --head HEAD && bun test scripts/release-docs.test.ts scripts/skills-retirement-restore.test.ts src/__tests__/claude-md-drift.test.ts && test "$(git diff "$B" -- scripts/ | grep -c '^-.*expect(')" = 0
 ```
 
 **depends-on:** 1
@@ -393,7 +393,7 @@ umask 022 && B=$(git merge-base origin/dev HEAD) && git diff --quiet HEAD && git
 
 **Validation:**
 ```bash
-umask 022 && bash /var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad/readme-checks.sh && test "$(stat -c %s .github/assets/genie-loop.gif)" -le 3145728 && test "$(git diff "$(git merge-base origin/dev HEAD)" -- package.json | grep -c '^[-+] ')" = 2 && bun run check
+umask 022 && bash '<scratchpad>'/readme-checks.sh && test "$(stat -c %s .github/assets/genie-loop.gif)" -le 3145728 && test "$(git diff "$(git merge-base origin/dev HEAD)" -- package.json | grep -c '^[-+] ')" = 2 && bun run check
 ```
 
 **depends-on:** 3, 5
@@ -436,7 +436,7 @@ umask 022 && bash /var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-
 
 **Validation:**
 ```bash
-C=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad/docs-checks.sh; bash $C nav && bash $C retired && bun run lint:docs-links && bun run lint:docs-markdown && test -z "$(git status --porcelain --ignore-submodules=none | grep -v '^ M .docs-vendor$')"
+C='<scratchpad>'/docs-checks.sh; bash $C nav && bash $C retired && bun run lint:docs-links && bun run lint:docs-markdown && test -z "$(git status --porcelain --ignore-submodules=none | grep -v '^ M .docs-vendor$')"
 ```
 
 **depends-on:** none
@@ -461,7 +461,7 @@ C=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9
 
 **Validation:**
 ```bash
-test -z "$(find .docs-vendor/genie/cli .docs-vendor/genie/observability -name '*.md*' 2>/dev/null)" && bash /var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad/docs-checks.sh retired && bun run lint:docs-links && bun run lint:docs-markdown
+test -z "$(find .docs-vendor/genie/cli .docs-vendor/genie/observability -name '*.md*' 2>/dev/null)" && bash '<scratchpad>'/docs-checks.sh retired && bun run lint:docs-links && bun run lint:docs-markdown
 ```
 
 **depends-on:** 7
@@ -486,7 +486,7 @@ test -z "$(find .docs-vendor/genie/cli .docs-vendor/genie/observability -name '*
 
 **Validation:**
 ```bash
-test -z "$(find .docs-vendor/genie/config .docs-vendor/genie/architecture .docs-vendor/genie/concepts -name '*.md*' 2>/dev/null)" && bash /var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad/docs-checks.sh retired && bun run lint:docs-links && bun run lint:docs-markdown
+test -z "$(find .docs-vendor/genie/config .docs-vendor/genie/architecture .docs-vendor/genie/concepts -name '*.md*' 2>/dev/null)" && bash '<scratchpad>'/docs-checks.sh retired && bun run lint:docs-links && bun run lint:docs-markdown
 ```
 
 **depends-on:** 8
@@ -542,7 +542,7 @@ cd .docs-vendor && P=$(find genie -name '*.md*' -not -path '*/_internal/*' | sor
 
 **Validation:**
 ```bash
-C=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad/docs-checks.sh; F="genie/index.mdx genie/installation.mdx genie/quickstart.mdx genie/skills/index.mdx genie/workflows.mdx"; bash $C nav && bash $C retired && bash $C workflows && bash $C current $F && bash $C cards genie/skills/index.mdx && bash $C voice $F && bash $C numbers $F && bun run lint:docs-links && bun run lint:docs-markdown
+C='<scratchpad>'/docs-checks.sh; F="genie/index.mdx genie/installation.mdx genie/quickstart.mdx genie/skills/index.mdx genie/workflows.mdx"; bash $C nav && bash $C retired && bash $C workflows && bash $C current $F && bash $C cards genie/skills/index.mdx && bash $C voice $F && bash $C numbers $F && bun run lint:docs-links && bun run lint:docs-markdown
 ```
 
 **depends-on:** 3, 4, 10
@@ -571,7 +571,7 @@ C=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9
 
 **Validation:**
 ```bash
-C=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad/docs-checks.sh; F="genie/cli-reference.mdx genie/release-notes.mdx genie/security/index.mdx genie/incident-response/canisterworm.mdx genie/hacks.mdx genie/security/key-rotation.mdx"; bash $C retired && bash $C tag && bash $C current $F && bash $C voice $F && bash $C numbers $F && bun run lint:docs-links && bun run lint:docs-markdown
+C='<scratchpad>'/docs-checks.sh; F="genie/cli-reference.mdx genie/release-notes.mdx genie/security/index.mdx genie/incident-response/canisterworm.mdx genie/hacks.mdx genie/security/key-rotation.mdx"; bash $C retired && bash $C tag && bash $C current $F && bash $C voice $F && bash $C numbers $F && bun run lint:docs-links && bun run lint:docs-markdown
 ```
 
 **depends-on:** 11
@@ -600,7 +600,7 @@ C=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9
 
 **Validation:**
 ```bash
-bash /var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad/docs-checks.sh all && bun run lint:docs-links && bun run lint:docs-markdown
+bash '<scratchpad>'/docs-checks.sh all && bun run lint:docs-links && bun run lint:docs-markdown
 ```
 
 **depends-on:** 2, 4, 12
@@ -726,7 +726,7 @@ set -o pipefail; M=$(gh pr view "$DOCS" --repo automagik-dev/docs --json mergeCo
 
 **Validation:**
 ```bash
-O=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad/org; test "$(gh api orgs/automagik-dev --jq .description)" = "$(cat $O/description.txt)" && test "$(gh api repos/automagik-dev/.github/contents/profile/README.md --jq .content | base64 -d)" = "$(cat $O/profile-README.md)" && test "$(gh api users/namastex888 --jq .bio)" = "$(cat $O/n888-bio.txt)" && test "$(gh api repos/namastex888/namastex888/contents/README.md --jq .content | base64 -d)" = "$(cat $O/n888-README.md)" && for r in genie workit autopg mikro; do test "$(gh api repos/automagik-dev/$r --jq '{description,topics:(.topics|sort)}' | jq -S -c .)" = "$(jq -S -c --arg r $r '.[$r]|{description,topics:(.topics|sort)}' $O/repos.json)" || exit 1; done && test "$(gh api graphql -f query='{organization(login:"automagik-dev"){pinnedItems(first:6){nodes{... on Repository{nameWithOwner}}}}}' --jq '[.data.organization.pinnedItems.nodes[].nameWithOwner]|sort|join(",")')" = "automagik-dev/autopg,automagik-dev/genie,automagik-dev/mikro,automagik-dev/workit" && test "$(gh api graphql -f query='{user(login:"namastex888"){pinnedItems(first:6){nodes{... on Repository{nameWithOwner}}}}}' --jq '[.data.user.pinnedItems.nodes[].nameWithOwner]|sort|join(",")')" = "$(sort $O/n888-pins.txt | paste -sd,)" && test "$(gh api repos/automagik-dev/forge --jq .archived)" = true && test "$(gh api 'search/issues?q=repo:automagik-dev/forge+state:open' --jq .total_count)" = 0 && while read -r n; do test "$(gh api "repos/automagik-dev/forge/issues/$n/comments" --jq '.[-1].body')" = "$(cat $O/forge-comment.md)" || exit 1; done < $O/forge-closed.txt && test "$(wc -l < $O/forge-closed.txt)" = 34 && test "$(gh api repos/namastex888/zetest --jq .archived)" = true
+O='<scratchpad>'/org; test "$(gh api orgs/automagik-dev --jq .description)" = "$(cat $O/description.txt)" && test "$(gh api repos/automagik-dev/.github/contents/profile/README.md --jq .content | base64 -d)" = "$(cat $O/profile-README.md)" && test "$(gh api users/namastex888 --jq .bio)" = "$(cat $O/n888-bio.txt)" && test "$(gh api repos/namastex888/namastex888/contents/README.md --jq .content | base64 -d)" = "$(cat $O/n888-README.md)" && for r in genie workit autopg mikro; do test "$(gh api repos/automagik-dev/$r --jq '{description,topics:(.topics|sort)}' | jq -S -c .)" = "$(jq -S -c --arg r $r '.[$r]|{description,topics:(.topics|sort)}' $O/repos.json)" || exit 1; done && test "$(gh api graphql -f query='{organization(login:"automagik-dev"){pinnedItems(first:6){nodes{... on Repository{nameWithOwner}}}}}' --jq '[.data.organization.pinnedItems.nodes[].nameWithOwner]|sort|join(",")')" = "automagik-dev/autopg,automagik-dev/genie,automagik-dev/mikro,automagik-dev/workit" && test "$(gh api graphql -f query='{user(login:"namastex888"){pinnedItems(first:6){nodes{... on Repository{nameWithOwner}}}}}' --jq '[.data.user.pinnedItems.nodes[].nameWithOwner]|sort|join(",")')" = "$(sort $O/n888-pins.txt | paste -sd,)" && test "$(gh api repos/automagik-dev/forge --jq .archived)" = true && test "$(gh api 'search/issues?q=repo:automagik-dev/forge+state:open' --jq .total_count)" = 0 && while read -r n; do test "$(gh api "repos/automagik-dev/forge/issues/$n/comments" --jq '.[-1].body')" = "$(cat $O/forge-comment.md)" || exit 1; done < $O/forge-closed.txt && test "$(wc -l < $O/forge-closed.txt)" = 34 && test "$(gh api repos/namastex888/zetest --jq .archived)" = true
 ```
 
 **depends-on:** 14, 15
@@ -753,7 +753,7 @@ O=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9
 
 **Validation:**
 ```bash
-S=/var/tmp/sofia-agents/claude-1001/-home-genie-workspace-repos-genie/065fdfff-9583-40b0-98b4-321e16c72e82/scratchpad; cd $S/wishrun/wt-gl && T=$(cat $S/docs-tag.txt); test "$T" != v6.261002.2 && gh release view "$T" -R automagik-dev/genie >/dev/null && bash $S/docs-checks.sh all && bash $S/readme-checks.sh && ! grep -rn 'v6\.261002\.2' $S/wishrun/wt-docs/.docs-vendor/genie --include=*.mdx | grep -v release-notes.mdx
+S='<scratchpad>'; cd $S/wishrun/wt-gl && T=$(cat $S/docs-tag.txt); test "$T" != v6.261002.2 && gh release view "$T" -R automagik-dev/genie >/dev/null && bash $S/docs-checks.sh all && bash $S/readme-checks.sh && ! grep -rn 'v6\.261002\.2' $S/wishrun/wt-docs/.docs-vendor/genie --include=*.mdx | grep -v release-notes.mdx
 ```
 
 **depends-on:** 13, wish-gate-any-repo (stable published)

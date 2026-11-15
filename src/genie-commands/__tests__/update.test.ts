@@ -1886,15 +1886,15 @@ describe('Diagnostics schema (G5)', () => {
   test('diagnostics process snapshot excludes pgserve/autopg noise and keeps Genie serve lines', () => {
     expect(
       isGenieProcessSnapshotLine(
-        '2554274 1 2554274 Ssl 0.0 0.4 00:08:00 /home/genie/.local/bin/genie serve start --daemon',
+        '2554274 1 2554274 Ssl 0.0 0.4 00:08:00 /home/u/.local/bin/genie serve start --daemon',
       ),
     ).toBe(true);
     expect(
       isGenieProcessSnapshotLine(
-        '2588570 171462 2588570 Rsl 1.0 2.8 3-12:34:22 bun /home/genie/.bun/install/global/node_modules/pgserve/bin/postgres-server.js postmaster --port 8432',
+        '2588570 171462 2588570 Rsl 1.0 2.8 3-12:34:22 bun /home/u/.bun/install/global/node_modules/pgserve/bin/postgres-server.js postmaster --port 8432',
       ),
     ).toBe(false);
-    expect(isGenieProcessSnapshotLine('2588570 1 2588570 S postgres -D /home/genie/.genie/data/pgserve')).toBe(false);
+    expect(isGenieProcessSnapshotLine('2588570 1 2588570 S postgres -D /home/u/.genie/data/pgserve')).toBe(false);
   });
 
   test('colour is delegated to the one gate — update.ts keeps no private NO_COLOR copy', () => {
@@ -2277,7 +2277,7 @@ describe('ensureCanonicalInstall + resolveLiveBinaryPath (review fix #3)', () =>
 // ============================================================================
 
 describe('shouldEmitPathDivergenceWarning (self-symlink suppression)', () => {
-  const canonical = '/home/genie/.genie/bin/genie';
+  const canonical = '/home/u/.genie/bin/genie';
 
   test('suppresses when live is null (nothing on PATH)', () => {
     expect(
