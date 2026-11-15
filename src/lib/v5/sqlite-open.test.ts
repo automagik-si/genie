@@ -13,7 +13,7 @@
 
 import { Database } from 'bun:sqlite';
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -276,6 +276,22 @@ describe('retryBusy wall-clock deadline', () => {
       expect(ms).toBeLessThanOrEqual(1_000);
     }
     expect(spread.size).toBeGreaterThan(20);
+  });
+
+  test('crates/genie-tasks/src/store.rs declares the same deadline, busy_timeout and backoff', () => {
+    const rust = readFileSync(join(import.meta.dir, '../../../crates/genie-tasks/src/store.rs'), 'utf8');
+    const rustMs = (name: string): number => {
+      const match = rust.match(
+        new RegExp(`^(?:pub )?const ${name}: Duration = Duration::from_millis\\(([\\d_]+)\\);$`, 'm'),
+      );
+      if (match?.[1] === undefined) throw new Error(`store.rs declares no ${name}`);
+      return Number(match[1].replaceAll('_', ''));
+    };
+    expect(rustMs('BUSY_DEADLINE')).toBe(BUSY_DEADLINE_MS);
+    expect(rustMs('BUSY_TIMEOUT')).toBe(BUSY_TIMEOUT_MS);
+    // The TS backoff constants are module-private; its first ceiling and its cap are what they set.
+    expect(rustMs('BUSY_BACKOFF_BASE')).toBe(busyBackoffMs(0, 1 - Number.EPSILON));
+    expect(rustMs('BUSY_BACKOFF_CAP')).toBe(busyBackoffMs(1_000_000, 1 - Number.EPSILON));
   });
 });
 

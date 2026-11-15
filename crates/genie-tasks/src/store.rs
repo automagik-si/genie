@@ -6,13 +6,15 @@
 //! pragmas of `src/lib/v5/sqlite-open.ts` with `synchronous=FULL` as the one difference, and writes
 //! nothing but its own tables.
 
+use std::collections::hash_map::RandomState;
 use std::fmt;
 use std::fs;
+use std::hash::{BuildHasher, Hasher};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::thread::sleep;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use rusqlite::{Connection, OpenFlags, OptionalExtension, params};
 use sha2::{Digest, Sha256};
@@ -24,10 +26,19 @@ use crate::state::{Clock, Refusal, SystemClock, TaskEvent, TaskState, apply};
 pub const SCHEMA_SQL: &str = include_str!("schema.sql");
 /// The `v7_schema` version this build writes.
 pub const SCHEMA_VERSION: i64 = 2;
-/// `src/lib/v5/sqlite-open.ts` `BUSY_TIMEOUT_MS`.
+/// One statement's wait for a contended lock inside SQLite (`busy_timeout`), `sqlite-open.ts`
+/// `BUSY_TIMEOUT_MS`. SQLite's busy handler waits without unwinding the statement and polls every
+/// 1-100 ms, so most contention never reaches [`retry_busy`].
 pub const BUSY_TIMEOUT: Duration = Duration::from_millis(5_000);
-/// `sqlite-open.ts` `BUSY_RETRY_DELAYS_MS`: paces the rare straggler that outlives busy_timeout.
-const BUSY_RETRY_MS: [u64; 5] = [25, 50, 100, 200, 400];
+/// How long [`retry_busy`] keeps retrying a contended lock, counted from the first attempt, before it
+/// fails with [`Error::Busy`] (#3315). Defined once per language: `src/lib/v5/sqlite-open.ts`
+/// `BUSY_DEADLINE_MS` holds the same value, and a test on each side reads the other file and compares.
+pub const BUSY_DEADLINE: Duration = Duration::from_millis(120_000);
+/// The backoff between attempts doubles from the base up to the cap, and each pause is jittered into
+/// `[d/2, d]`: siblings do not retry in step, and a waiting writer polls at least once a second.
+/// `sqlite-open.ts` `BUSY_BACKOFF_BASE_MS` / `BUSY_BACKOFF_CAP_MS`, compared by the same tests.
+const BUSY_BACKOFF_BASE: Duration = Duration::from_millis(25);
+const BUSY_BACKOFF_CAP: Duration = Duration::from_millis(1_000);
 /// The remedy DESIGN.md row 3 names for a missing or uninitialized database.
 pub const INIT_REMEDY: &str = "run 'genie task list' once in this repository to initialize .genie/genie.db";
 
@@ -53,6 +64,14 @@ pub enum Error {
         seq: i64,
         source: io::Error,
     },
+    /// The database stayed locked past [`BUSY_DEADLINE`]; the step that was retried committed nothing.
+    Busy {
+        path: PathBuf,
+        /// From the first attempt to giving up, as measured.
+        waited: Duration,
+        /// SQLite's own last answer, such as `database is locked`.
+        source: rusqlite::Error,
+    },
     Db(rusqlite::Error),
     Io(io::Error),
 }
@@ -66,7 +85,7 @@ impl Error {
             | Error::Uninitialized(_)
             | Error::GlobalDatabase(_)
             | Error::NewerSchema { .. } => 2,
-            Error::InvalidEvent(_) | Error::Export { .. } | Error::Db(_) | Error::Io(_) => 1,
+            Error::InvalidEvent(_) | Error::Export { .. } | Error::Busy { .. } | Error::Db(_) | Error::Io(_) => 1,
         }
     }
 }
@@ -96,6 +115,13 @@ impl fmt::Display for Error {
                     "event {seq} committed but its tasks.jsonl row was not written ({source}); run export --rebuild"
                 )
             }
+            Error::Busy { path, waited, source } => write!(
+                f,
+                "the task database {} stayed locked for {} s; another genie process may be stuck, or the disk \
+                 is stalled. Safe to retry once it clears ({source})",
+                path.display(),
+                waited.as_secs()
+            ),
             Error::Db(e) => write!(f, "genie.db: {e}"),
             Error::Io(e) => write!(f, "{e}"),
         }
@@ -343,15 +369,61 @@ fn is_busy(e: &rusqlite::Error) -> bool {
     matches!(e, rusqlite::Error::SqliteFailure(f, _) if matches!(f.extended_code & 0xff, 5 | 6 | 15))
 }
 
-/// Run `f`, retrying a contended lock on the `sqlite-open.ts` schedule.
-fn retry_busy<T>(mut f: impl FnMut() -> Result<T, Error>) -> Result<T, Error> {
-    let mut delays = BUSY_RETRY_MS.iter();
+/// The clock, the sleep and the jitter source of [`retry_busy`], injected so tests run on a made-up clock.
+trait BusyWait {
+    fn now(&self) -> Instant;
+    fn sleep(&self, pause: Duration);
+    /// A uniformly random `u64`.
+    fn random(&self) -> u64;
+}
+
+struct SystemWait;
+
+impl BusyWait for SystemWait {
+    fn now(&self) -> Instant {
+        Instant::now()
+    }
+
+    fn sleep(&self, pause: Duration) {
+        sleep(pause);
+    }
+
+    fn random(&self) -> u64 {
+        // std has no RNG. Every `RandomState` carries fresh random keys, which is all jitter needs.
+        RandomState::new().build_hasher().finish()
+    }
+}
+
+/// The pause after busy result `attempt` (0-based): `d = min(base * 2^attempt, cap)`, jittered by
+/// `random` into `[d/2, d]` whole milliseconds.
+fn busy_backoff(attempt: u32, random: u64) -> Duration {
+    let cap = BUSY_BACKOFF_CAP.as_millis() as u64;
+    let ceiling = (BUSY_BACKOFF_BASE.as_millis() as u64).saturating_mul(1 << attempt.min(16)).min(cap);
+    let floor = ceiling / 2;
+    Duration::from_millis(floor + random % (ceiling - floor + 1))
+}
+
+/// Run `f`, retrying a busy result with jittered backoff until [`BUSY_DEADLINE`] has passed since the
+/// first attempt, then fail with [`Error::Busy`] naming `db`. Any other result returns at once.
+fn retry_busy<T>(db: &Path, f: impl FnMut() -> Result<T, Error>) -> Result<T, Error> {
+    retry_busy_with(db, &SystemWait, f)
+}
+
+/// No pause crosses the deadline, so the last attempt starts at it; an attempt already running then
+/// finishes its own `busy_timeout` wait, which is why [`Error::Busy`] reports the measured time.
+fn retry_busy_with<T>(db: &Path, wait: &dyn BusyWait, mut f: impl FnMut() -> Result<T, Error>) -> Result<T, Error> {
+    let start = wait.now();
+    let mut attempt = 0u32;
     loop {
         match f() {
-            Err(Error::Db(e)) if is_busy(&e) => match delays.next() {
-                Some(ms) => sleep(Duration::from_millis(*ms)),
-                None => return Err(Error::Db(e)),
-            },
+            Err(Error::Db(e)) if is_busy(&e) => {
+                let waited = wait.now().saturating_duration_since(start);
+                if waited >= BUSY_DEADLINE {
+                    return Err(Error::Busy { path: db.to_path_buf(), waited, source: e });
+                }
+                wait.sleep(busy_backoff(attempt, wait.random()).min(BUSY_DEADLINE - waited));
+                attempt = attempt.saturating_add(1);
+            }
             other => return other,
         }
     }
@@ -397,7 +469,7 @@ enum Access {
 
 fn open_with(repo: &Path, genie_home: &Path, access: Access) -> Result<Store, Error> {
     let location = locate(repo, genie_home)?;
-    let conn = retry_busy(|| open_conn(&location.db_path, access))?;
+    let conn = retry_busy(&location.db_path, || open_conn(&location.db_path, access))?;
     Ok(Store { conn, location, genie_home: genie_home.to_path_buf(), clock: Box::new(SystemClock) })
 }
 
@@ -750,7 +822,7 @@ impl Store {
     pub fn reserve_gn(&self) -> Result<String, Error> {
         let project = self.location.project.as_str();
         let at = self.clock.now();
-        retry_busy(|| {
+        retry_busy(&self.location.db_path, || {
             self.conn.execute_batch("BEGIN IMMEDIATE")?;
             let body = || -> rusqlite::Result<String> {
                 let seq: i64 = self.conn.query_row(
@@ -779,7 +851,7 @@ impl Store {
 
     /// A failed `start` marks its reservation abandoned: the gap stays, the id is never reused.
     pub fn abandon_gn(&self, task: &str) -> Result<(), Error> {
-        retry_busy(|| {
+        retry_busy(&self.location.db_path, || {
             self.conn.execute(
                 "UPDATE v7_task_ids SET abandoned = 1 WHERE project = ?1 AND task = ?2",
                 [self.location.project.as_str(), task],
@@ -904,7 +976,7 @@ pub fn record(store: &Store, project: &str, row: &EventRow) -> Result<Recorded, 
             return Err(Error::InvalidEvent(format!("a NUL byte in {name}")));
         }
     }
-    let (dedupe, stored, line) = retry_busy(|| {
+    let (dedupe, stored, line) = retry_busy(&store.location.db_path, || {
         store.conn.execute_batch("BEGIN IMMEDIATE")?;
         match store.record_tx(project, &key, row) {
             Ok((dedupe, stored)) => {
@@ -935,4 +1007,234 @@ pub fn record(store: &Store, project: &str, row: &EventRow) -> Result<Recorded, 
     export::append(&store.genie_home, line.as_deref().expect("an appended event has an export line"))
         .map_err(|source| Error::Export { seq: stored.seq, source })?;
     Ok(Recorded::Appended { seq: stored.seq, dedupe_key: dedupe, state: stored.event.target() })
+}
+
+#[cfg(test)]
+mod busy_tests {
+    use std::cell::{Cell, RefCell};
+    use std::collections::HashSet;
+
+    use rusqlite::{ErrorCode, ffi};
+
+    use super::*;
+
+    const DB: &str = "/repo/.genie/genie.db";
+
+    /// A made-up clock that only `sleep`, or an attempt calling `advance`, moves.
+    struct FakeWait {
+        start: Instant,
+        elapsed: Cell<Duration>,
+        pauses: RefCell<Vec<Duration>>,
+        random: Box<dyn Fn() -> u64>,
+    }
+
+    impl FakeWait {
+        fn new(random: impl Fn() -> u64 + 'static) -> Self {
+            FakeWait {
+                start: Instant::now(),
+                elapsed: Cell::new(Duration::ZERO),
+                pauses: RefCell::new(Vec::new()),
+                random: Box::new(random),
+            }
+        }
+
+        fn advance(&self, by: Duration) {
+            self.elapsed.set(self.elapsed.get() + by);
+        }
+    }
+
+    impl BusyWait for FakeWait {
+        fn now(&self) -> Instant {
+            self.start + self.elapsed.get()
+        }
+
+        fn sleep(&self, pause: Duration) {
+            self.pauses.borrow_mut().push(pause);
+            self.advance(pause);
+        }
+
+        fn random(&self) -> u64 {
+            (self.random)()
+        }
+    }
+
+    /// A fixed pseudo-random sequence, so a jittered run is the same run every time.
+    fn lcg() -> impl Fn() -> u64 {
+        let state = Cell::new(0x9E37_79B9_7F4A_7C15_u64);
+        move || {
+            state.set(state.get().wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407));
+            state.get()
+        }
+    }
+
+    fn sqlite(code: i32, message: Option<&str>) -> Error {
+        Error::Db(rusqlite::Error::SqliteFailure(ffi::Error::new(code), message.map(str::to_owned)))
+    }
+
+    fn busy() -> Error {
+        sqlite(ffi::SQLITE_BUSY, Some("database is locked"))
+    }
+
+    /// `[d/2, d]` for busy result `attempt`, in milliseconds.
+    fn range(attempt: usize) -> std::ops::RangeInclusive<u128> {
+        let ceiling = (25_u128 << attempt.min(16)).min(1_000);
+        ceiling / 2..=ceiling
+    }
+
+    #[test]
+    fn a_first_try_success_neither_sleeps_nor_retries() {
+        let wait = FakeWait::new(|| 0);
+        let mut calls = 0;
+        let got = retry_busy_with(Path::new(DB), &wait, || {
+            calls += 1;
+            Ok::<_, Error>(7)
+        });
+        assert_eq!(got.unwrap(), 7);
+        assert_eq!(calls, 1);
+        assert!(wait.pauses.borrow().is_empty());
+        assert_eq!(wait.elapsed.get(), Duration::ZERO);
+    }
+
+    #[test]
+    fn busy_results_inside_the_deadline_are_retried_until_one_succeeds() {
+        let wait = FakeWait::new(lcg());
+        let mut calls = 0;
+        let got = retry_busy_with(Path::new(DB), &wait, || {
+            calls += 1;
+            if calls > 9 {
+                return Ok("committed");
+            }
+            // Each busy attempt first spends a whole busy_timeout inside SQLite.
+            wait.advance(BUSY_TIMEOUT);
+            Err(busy())
+        });
+        assert_eq!(got.unwrap(), "committed");
+        assert_eq!(calls, 10);
+        let pauses = wait.pauses.borrow();
+        assert_eq!(pauses.len(), 9, "one pause per busy result");
+        for (attempt, pause) in pauses.iter().enumerate() {
+            assert!(range(attempt).contains(&pause.as_millis()), "pause {attempt}: {pause:?}");
+        }
+        assert!(wait.elapsed.get() < BUSY_DEADLINE);
+    }
+
+    #[test]
+    fn every_busy_family_code_is_retried() {
+        for code in [ffi::SQLITE_BUSY, ffi::SQLITE_BUSY_SNAPSHOT, ffi::SQLITE_LOCKED, ffi::SQLITE_PROTOCOL] {
+            let wait = FakeWait::new(|| 0);
+            let mut calls = 0;
+            let got = retry_busy_with(Path::new(DB), &wait, || {
+                calls += 1;
+                if calls == 1 { Err(sqlite(code, None)) } else { Ok(()) }
+            });
+            assert!(got.is_ok(), "code {code}");
+            assert_eq!(calls, 2, "code {code}");
+        }
+    }
+
+    #[test]
+    fn the_deadline_fails_at_once_with_what_happened_by_effect() {
+        // Busy forever and every attempt instant: the pauses alone reach the deadline, the last one clamped.
+        let wait = FakeWait::new(lcg());
+        let mut starts = Vec::new();
+        let err = retry_busy_with(Path::new(DB), &wait, || {
+            starts.push(wait.elapsed.get());
+            Err::<(), _>(busy())
+        })
+        .unwrap_err();
+        let Error::Busy { path, waited, source } = &err else { panic!("not Busy: {err:?}") };
+        assert_eq!(*waited, BUSY_DEADLINE);
+        assert_eq!(wait.elapsed.get(), BUSY_DEADLINE, "no pause crosses the deadline");
+        assert_eq!(starts.last(), Some(&BUSY_DEADLINE), "the last attempt runs at the deadline");
+        assert_eq!(wait.pauses.borrow().iter().sum::<Duration>(), BUSY_DEADLINE);
+        assert!(wait.pauses.borrow().iter().all(|p| *p <= BUSY_BACKOFF_CAP));
+        // Past the ramp a waiting writer polls once every 0.5-1 s: no spin, no minute-long sleep.
+        assert!((120..=250).contains(&starts.len()), "{} attempts", starts.len());
+        assert_eq!(path, Path::new(DB));
+        assert_eq!(source.sqlite_error_code(), Some(ErrorCode::DatabaseBusy));
+        assert_eq!(err.exit_code(), 1);
+        assert_eq!(
+            err.to_string(),
+            "the task database /repo/.genie/genie.db stayed locked for 120 s; another genie process may be stuck, \
+             or the disk is stalled. Safe to retry once it clears (database is locked)"
+        );
+    }
+
+    #[test]
+    fn an_attempt_running_at_the_deadline_finishes_and_the_error_reports_the_measured_time() {
+        let wait = FakeWait::new(|| u64::MAX);
+        let mut starts = Vec::new();
+        let err = retry_busy_with(Path::new(DB), &wait, || {
+            starts.push(wait.elapsed.get());
+            wait.advance(BUSY_TIMEOUT);
+            Err::<(), _>(busy())
+        })
+        .unwrap_err();
+        let Error::Busy { waited, .. } = &err else { panic!("not Busy: {err:?}") };
+        assert!(starts.iter().all(|s| *s <= BUSY_DEADLINE), "no attempt starts after the deadline: {starts:?}");
+        assert_eq!(*waited, wait.elapsed.get());
+        assert!((BUSY_DEADLINE..=BUSY_DEADLINE + BUSY_TIMEOUT).contains(waited), "{waited:?}");
+        assert!(err.to_string().contains(&format!("stayed locked for {} s;", waited.as_secs())), "{err}");
+    }
+
+    #[test]
+    fn any_other_result_returns_at_once_without_a_retry() {
+        let failures: [fn() -> Error; 4] = [
+            || sqlite(ffi::SQLITE_CORRUPT, Some("database disk image is malformed")),
+            || Error::Db(rusqlite::Error::QueryReturnedNoRows),
+            || Error::Uninitialized(PathBuf::from(DB)),
+            || Error::Io(io::Error::other("disk I/O error")),
+        ];
+        for make in failures {
+            let wait = FakeWait::new(|| 0);
+            let mut calls = 0;
+            let err = retry_busy_with(Path::new(DB), &wait, || {
+                calls += 1;
+                Err::<(), _>(make())
+            })
+            .unwrap_err();
+            assert_eq!(calls, 1, "{err}");
+            assert!(wait.pauses.borrow().is_empty(), "{err}");
+            assert_eq!(err.to_string(), make().to_string());
+        }
+    }
+
+    #[test]
+    fn the_backoff_doubles_to_its_cap_and_is_jittered_between_half_and_whole() {
+        for (attempt, ceiling) in [25_u64, 50, 100, 200, 400, 800, 1_000, 1_000, 1_000].into_iter().enumerate() {
+            let ms = |random| busy_backoff(attempt as u32, random).as_millis();
+            assert_eq!(ms(0), u128::from(ceiling / 2), "attempt {attempt}: the floor");
+            assert_eq!(ms(ceiling - ceiling / 2), u128::from(ceiling), "attempt {attempt}: the ceiling");
+            assert!(range(attempt).contains(&ms(u64::MAX)), "attempt {attempt}");
+        }
+        assert_eq!(busy_backoff(u32::MAX, 0), BUSY_BACKOFF_CAP / 2, "no overflow far past the cap");
+        assert_eq!(busy_backoff(u32::MAX, 500), BUSY_BACKOFF_CAP);
+        let spread: HashSet<u128> = (0..200).map(|_| busy_backoff(6, SystemWait.random()).as_millis()).collect();
+        assert!(spread.iter().all(|ms| range(6).contains(ms)), "{spread:?}");
+        assert!(spread.len() > 20, "the system jitter spreads the pauses: {spread:?}");
+    }
+
+    /// A `const` that `sqlite-open.ts` declares, in milliseconds.
+    fn ts_const(source: &str, name: &str) -> u128 {
+        let prefix = format!("const {name} = ");
+        let value = source
+            .lines()
+            .find_map(|l| l.trim_start_matches("export ").strip_prefix(&prefix))
+            .unwrap_or_else(|| panic!("sqlite-open.ts declares no {name}"));
+        value.trim_end_matches(';').replace('_', "").parse().unwrap_or_else(|e| panic!("{name} = {value}: {e}"))
+    }
+
+    #[test]
+    fn the_typescript_opener_declares_the_same_deadline_busy_timeout_and_backoff() {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../src/lib/v5/sqlite-open.ts");
+        let ts = fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+        for (name, rust) in [
+            ("BUSY_DEADLINE_MS", BUSY_DEADLINE),
+            ("BUSY_TIMEOUT_MS", BUSY_TIMEOUT),
+            ("BUSY_BACKOFF_BASE_MS", BUSY_BACKOFF_BASE),
+            ("BUSY_BACKOFF_CAP_MS", BUSY_BACKOFF_CAP),
+        ] {
+            assert_eq!(ts_const(&ts, name), rust.as_millis(), "{name}: sqlite-open.ts and store.rs disagree");
+        }
+    }
 }
