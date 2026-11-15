@@ -329,6 +329,9 @@ describe('genie init', () => {
       expect(readFileSync(mcpPath(dir), 'utf8')).toBe(original);
     });
 
+    // Measured timeout (#3309): 0.31-0.36 s quiet; 0.46 s under the busy-CPU proof; 21.3 s on a loaded
+    // gate host. 3x the slowest run, rounded up to 5 s. The cost is process launches and I/O, not CPU:
+    // two runs of the genie CLI under test (each loads the whole command tree, ~520 files) plus git.
     test('retires the dead `genie mcp` entry and preserves every other server byte-for-byte', () => {
       initGitRepo(dir);
       writeFileSync(
@@ -360,8 +363,11 @@ describe('genie init', () => {
       // Idempotent: a second run finds nothing and writes no second backup.
       expect(runInit(dir).code).toBe(0);
       expect(readdirSync(dir).filter((n) => n.startsWith('.mcp.json.genie-backup-'))).toHaveLength(1);
-    });
+    }, 65_000);
 
+    // Measured timeout (#3309): 0.19-0.26 s quiet; 0.58 s under the busy-CPU proof; 24.7 s on a loaded
+    // gate host. 3x the slowest run, rounded up to 5 s. The cost is process launches and I/O, not CPU:
+    // two runs of the genie CLI under test (each loads the whole command tree, ~520 files) plus git.
     test('--json only claims retirement when it actually happened', () => {
       initGitRepo(dir);
       const fresh = JSON.parse(runInit(dir, ['--json']).stdout).mcp;
@@ -372,7 +378,7 @@ describe('genie init', () => {
       const retired = JSON.parse(runInit(dir, ['--json']).stdout).mcp;
       expect(retired[0]).toMatchObject({ action: 'updated' });
       expect(retired[0].detail).toContain('retired the dead `genie mcp` registration');
-    });
+    }, 75_000);
 
     test('a symlinked .mcp.json never aborts init: it is skipped with a warning and .genie/ is still scaffolded', () => {
       initGitRepo(dir);

@@ -624,6 +624,10 @@ describe('catalog CLI over isolated Git histories', () => {
     expectGenieHistory(outputCatalog(seedOrigin()));
   });
 
+  // Measured timeout (#3309), per row: 0.20-0.65 s quiet; 0.64 s under the busy-CPU proof; killed inside
+  // `git add -A` at 62.9 s on a loaded gate host and at 38.0 and 58.8 s during a host I/O stall, then
+  // 113.0 s, passing, during another stall once this bound was raised. 3x the slowest run, rounded up to 5 s. The cost is write I/O, not CPU: 32 fixture git processes per row,
+  // 25 of them writing objects, refs or the index, plus one catalog CLI run (28 read-only git processes).
   test.each([false, true])(
     'foreign ancestry and prefixed integration trees are excluded (shared Genie ancestry: %s)',
     (shared) => {
@@ -639,6 +643,7 @@ describe('catalog CLI over isolated Git histories', () => {
       expect(catalog.names).toEqual(digests(GENIE_HISTORY_NAMES));
       expect(catalog.descriptions).toEqual(digests(['Demo, revised.', ...GENIE_HISTORY_DESCRIPTIONS]));
     },
+    340_000,
   );
 
   test("the Automagik brand skill copy is never catalogued, while genie's own .claude/skills history is", () => {
@@ -947,26 +952,35 @@ describe('catalog CLI over isolated Git histories', () => {
     },
   );
 
-  test.each([false, true])('multiple validated imports preserve shared Genie ownership (shared: %s)', (shared) => {
-    const repo = seedOrigin();
-    const { split, provenance } = importMikro(repo, shared);
-    const trustedRoot = shared ? provenance?.slice(0, 40) : undefined;
-    const before = outputCatalog(repo, provenance, trustedRoot);
-    const tree = git(repo, 'rev-parse', 'HEAD^{tree}').trim();
-    const imported = git(
-      repo,
-      'commit-tree',
-      tree,
-      '-p',
-      'HEAD',
-      '-p',
-      split,
-      '-m',
-      `Repeat validated import\n\ngit-subtree-dir: mikro\n\ngit-subtree-split: ${split}`,
-    ).trim();
-    git(repo, 'update-ref', 'refs/heads/main', imported);
-    expect(outputCatalog(repo, provenance, shared ? imported : undefined)).toEqual(before);
-  });
+  // Measured timeout (#3309), per row: 0.37-0.46 s quiet; 0.83 s under the busy-CPU proof; 5.02 and
+  // 5.33 s on a loaded gate host, killed; killed inside `git add -A` at 32.2 and 40.1 s during a host I/O
+  // stall. 3x the slowest run, rounded up to 5 s. The cost is write I/O, not CPU: 32 fixture git
+  // processes per row, 25 of them writing objects, refs or the index, plus two catalog CLI runs (56
+  // read-only git processes).
+  test.each([false, true])(
+    'multiple validated imports preserve shared Genie ownership (shared: %s)',
+    (shared) => {
+      const repo = seedOrigin();
+      const { split, provenance } = importMikro(repo, shared);
+      const trustedRoot = shared ? provenance?.slice(0, 40) : undefined;
+      const before = outputCatalog(repo, provenance, trustedRoot);
+      const tree = git(repo, 'rev-parse', 'HEAD^{tree}').trim();
+      const imported = git(
+        repo,
+        'commit-tree',
+        tree,
+        '-p',
+        'HEAD',
+        '-p',
+        split,
+        '-m',
+        `Repeat validated import\n\ngit-subtree-dir: mikro\n\ngit-subtree-split: ${split}`,
+      ).trim();
+      git(repo, 'update-ref', 'refs/heads/main', imported);
+      expect(outputCatalog(repo, provenance, shared ? imported : undefined)).toEqual(before);
+    },
+    125_000,
+  );
 
   test('safe pre-merge proof can justify a shared-source Genie archive, but the archive cannot prove itself', () => {
     const repo = seedOrigin();
