@@ -149,7 +149,7 @@ all seven as bare-named agent types in fresh and reloaded sessions.
 
 **Validation:**
 ```bash
-cd /Users/feliperosa/workspace/genie && bun test src/lib/agent-sync.test.ts src/genie-commands/uninstall.test.ts && bun run check
+cd '<genie checkout>' && bun test src/lib/agent-sync.test.ts src/genie-commands/uninstall.test.ts && bun run check
 ```
 
 **depends-on:** none
@@ -192,7 +192,7 @@ cd /Users/feliperosa/workspace/genie && bun test src/lib/agent-sync.test.ts src/
 
 **Validation:**
 ```bash
-cd /Users/feliperosa/workspace/genie && bun test src/genie-commands/doctor.test.ts && bun run check
+cd '<genie checkout>' && bun test src/genie-commands/doctor.test.ts && bun run check
 ```
 
 **depends-on:** A
@@ -221,7 +221,7 @@ cd /Users/feliperosa/workspace/genie && bun test src/genie-commands/doctor.test.
 
 **Validation:**
 ```bash
-test -s "$(ls -t /Users/feliperosa/workspace/genie/.genie/wishes/routing-matrix/qa/routing-pin-qa-*.md | head -1)"
+test -s "$(ls -t .genie/wishes/routing-matrix/qa/routing-pin-qa-*.md | head -1)"
 ```
 
 **depends-on:** B (released build carrying A+B)

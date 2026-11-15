@@ -126,9 +126,9 @@ Named files: ≤10 → median 0.5h, p90 4.1h, 100% within 24h; 11–20 → media
 Active hours (commit-gap floor, v4+v5 shipped, n=120) tell the same story more weakly: ≤150 lines median 2.3h,
 >400 lines median 3.1h / p90 8.6h; ≤2 groups p90 2.9h, >6 groups p90 8.3h.
 
-## 6. Claude Code sessions (`~/.claude/projects/-Users-feliperosa-workspace-repos-genie`, main transcripts only)
+## 6. Claude Code sessions (`~/.claude/projects/-path-to-genie`, main transcripts only)
 
-Only one project dir matches (`-Users-feliperosa-workspace-repos-genie`); worktree sessions live in it. 20 sessions,
+Only one project dir matches (`-path-to-genie`); worktree sessions live in it. 20 sessions,
 226 MB, 2026-07-28 → 2026-09-16. Subagent transcripts were not summed (they are in per-session subdirs).
 
 | metric | median | p75 | p90 | max |
