@@ -329,6 +329,9 @@ describe('local delivery update-mode and trailer boundary', () => {
 });
 
 describe('local delivery embedded-trust command boundary', () => {
+  // Measured timeout (#3271): 0.17 s quiet; 0.48 s under the busy-CPU proof; 6.1 s on the loaded
+  // gate host. 3x the slowest run, rounded up to 5 s. The cost is process launches and I/O, not
+  // CPU: the genie CLI under test plus tar and the shell probes it runs.
   test('rejects descriptor tampering without invoking a network verifier or publishing a record', () => {
     const root = tempRoot('cli-tamper');
     const platform = platformId();
@@ -421,7 +424,7 @@ describe('local delivery embedded-trust command boundary', () => {
     expect(boundary).not.toContain('skipAttestation');
     expect(boundary).not.toContain('evidenceVerification');
     expect(boundary).not.toContain('GENIE_TEST');
-  });
+  }, 20_000);
 });
 
 function readFileIfPresent(path: string): string {
