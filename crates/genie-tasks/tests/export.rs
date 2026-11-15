@@ -125,6 +125,11 @@ fn appender(i: usize) {
     }
 }
 
+// Under a host I/O stall this test can fail on the store's busy budget, not on a bound of its own: 320
+// `synchronous = FULL` commits from 16 processes queue behind stalled fsyncs, and an appender kept waiting
+// longer than `retry_busy` allows (a 5 s `BUSY_TIMEOUT` per attempt, six attempts, about 31 s) gets
+// `database is locked` from `record`. Seen at 67.5 s under a host stall (#3309). The budget is #3315's
+// question, so the load and the assertions stay as they are.
 #[test]
 fn rebuild_while_sixteen_processes_append() {
     if let Ok(i) = std::env::var(ROLE) {
@@ -137,8 +142,11 @@ fn rebuild_while_sixteen_processes_append() {
     let exe = std::env::current_exe().unwrap();
     let mut children: Vec<_> = (0..APPENDERS)
         .map(|i| {
+            // `--nocapture`: libtest otherwise captures a child's panic message and prints it in its
+            // failure summary on STDOUT, which is discarded here, so a failed appender read as empty
+            // stderr (#3309). Uncaptured, the panic message lands on the stderr this test pipes.
             Command::new(&exe)
-                .args(["rebuild_while_sixteen_processes_append", "--exact", "--test-threads=1"])
+                .args(["rebuild_while_sixteen_processes_append", "--exact", "--test-threads=1", "--nocapture"])
                 .env(ROLE, i.to_string())
                 .env("GENIE_HOME", &home)
                 .env("T10_REPO", &a)
@@ -157,7 +165,8 @@ fn rebuild_while_sixteen_processes_append() {
     }
     for (i, child) in children.into_iter().enumerate() {
         let out = child.wait_with_output().unwrap();
-        assert!(out.status.success(), "appender {i} failed: {}", String::from_utf8_lossy(&out.stderr));
+        // The status names a death that writes nothing, such as a signal (#3309).
+        assert!(out.status.success(), "appender {i} failed ({}): {}", out.status, String::from_utf8_lossy(&out.stderr));
     }
 
     let store = open_store_at(&a, &home).unwrap();

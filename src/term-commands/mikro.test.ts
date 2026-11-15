@@ -204,6 +204,10 @@ describe('genie mikro coach, fixtures and init', () => {
     expect(existsSync(join(repo, '.mikro'))).toBe(false);
   });
 
+  // Measured timeout (#3309): 0.16-0.27 s quiet; 0.71 s under the busy-CPU proof; 11.1 s on a gate host
+  // at load 1-5, where a short disk stall was enough. 3x the slowest run, rounded up to 5 s. The cost is
+  // process launches and I/O, not CPU: two runs of the genie CLI (each loads the whole command tree,
+  // ~520 files), which is the contract this file tests, so neither becomes a function call.
   test('init seeds the shipped agents, and the second run keeps what is there', () => {
     const repo = tmp('genie-mikro-init-');
     const home = shippedHome(['wish-context', 'review-prep']);
@@ -216,7 +220,7 @@ describe('genie mikro coach, fixtures and init', () => {
     const second = runCli(['mikro', 'init', '--dir', repo], { env: { GENIE_HOME: home } });
     expect(second.code).toBe(0);
     expect(second.stdout).toContain('nothing was overwritten');
-  });
+  }, 35_000);
 
   test('fixtures builds a set from commits and bench then accepts it end to end', () => {
     const repo = tmp('genie-mikro-fixtures-');

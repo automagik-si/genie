@@ -11,12 +11,13 @@ const CHANNEL = 'dev';
 // verifier subprocesses. A dev run takes ~7s locally, beyond Bun's 5s default.
 // Bound each pipeline itself, then allow grouped scenarios their own budget.
 const PIPELINE_TIMEOUT_MS = 30_000;
-// Measured bound for the failure-propagation pipelines (#3271): the cosign verify-blob pipeline takes
-// 1.04 s quiet and 2.83 s under the busy-CPU proof, and was killed at the 30 s bound above on a
-// loaded gate host. 3x that 30 s floor. The cost is process launches, not CPU: the shell pipeline
-// and its fakes start about 1,600 short processes for six runs, about 130 of them whole bun
-// processes, because the fake gh, cosign and slsa-verifier are bun scripts.
-const PROPAGATION_PIPELINE_TIMEOUT_MS = 90_000;
+// Measured bound for a pipeline that a loaded host killed at the 30 s bound above (#3271, #3309): 3x
+// that 30 s floor. The cost is process launches, not CPU: the fake gh, cosign and slsa-verifier are bun
+// scripts, so every call to one starts a whole bun process. Each test that uses it states its figures.
+const LOADED_PIPELINE_TIMEOUT_MS = 90_000;
+// Measured bound for the stale-descriptor retry's pipeline (#3309): that test ran 47.1 s during a host
+// I/O stall, past the 30 s bound above, so 3x that run, rounded up to 5 s.
+const RETRY_PIPELINE_TIMEOUT_MS = 145_000;
 const PLATFORMS = ['linux-x64-glibc', 'linux-x64-musl', 'linux-arm64', 'darwin-arm64'];
 function namesFor(channel: 'stable' | 'dev'): string[] {
   const channels = channel === 'stable' ? ['stable', 'dev'] : ['dev'];
@@ -330,6 +331,11 @@ save();
   return { result, state: JSON.parse(readFileSync(statePath, 'utf8')) as FakeState & { usedClobber?: boolean } };
 }
 
+/** `run` on the default channel with a measured pipeline bound in place of the 30 s default. */
+function measured(state: FakeState, pipelineTimeoutMs = LOADED_PIPELINE_TIMEOUT_MS) {
+  return run(state, undefined, CHANNEL, 'local', pipelineTimeoutMs);
+}
+
 function calls(state: FakeState, tool: string, command?: string): Array<{ tool: string; args: string[] }> {
   return (state.calls ?? []).filter(
     (call) => call.tool === tool && (!command || call.args.slice(0, 2).join(' ') === command),
@@ -405,27 +411,38 @@ describe('exact GitHub release asset reconciliation', () => {
     expect(calls(symlink.state, 'gh')).toHaveLength(0);
   }, 60_000);
 
+  // Measured timeout (#3309): 3.3 s quiet; 8.2 s under the busy-CPU proof; 55.3 s during a host I/O
+  // stall, its second pipeline killed at the 30 s bound. 3x that run, rounded up to 5 s, and each of its
+  // two pipelines gets LOADED_PIPELINE_TIMEOUT_MS. About 1,050 short processes, 94 of them bun fakes.
   test('resumes authenticated partial drafts and rejects a cryptographically inconsistent mix', () => {
     const local = localAssets();
-    const matching = run({
+    const matching = measured({
       draft: true,
       assets: Object.fromEntries(NAMES.slice(0, 2).map((name) => [name, local[name]])),
     });
     expect(matching.result.exitCode).toBe(0);
     expect(Object.keys(matching.state.assets)).toHaveLength(NAMES.length);
 
-    const mismatch = run({ draft: true, assets: { [NAMES[0]]: 'different' } });
+    const mismatch = measured({ draft: true, assets: { [NAMES[0]]: 'different' } });
     expect(mismatch.result.exitCode).toBe(3);
     expect(uploadCalls(mismatch.state)).toHaveLength(0);
-  }, 60_000);
+  }, 170_000);
 
+  // Measured timeout (#3309): 2.3 s quiet; 3.8 s under the busy-CPU proof; 30.0 s, its pipeline killed
+  // at the 30 s bound, both on a loaded gate host and during a host I/O stall. 3x that run is 90 s, the
+  // bound its pipeline now gets (LOADED_PIPELINE_TIMEOUT_MS), so the test takes the next 5 s step and a
+  // stall is reported by the pipeline's own kill. About 470 short processes, 44 of them bun fakes.
   test('a complete authenticated draft reuses prior nondeterministic bundle bytes', () => {
-    const draft = run({ draft: true, assets: localAssets('older-run') });
+    const draft = measured({ draft: true, assets: localAssets('older-run') });
     expect(draft.result.exitCode).toBe(0);
     expect(draft.result.stdout.toString()).toContain('preserves its complete authenticated draft inventory');
     expect(uploadCalls(draft.state)).toHaveLength(0);
-  }, 60_000);
+  }, 95_000);
 
+  // Measured timeout (#3309): 1.9 s quiet; 2.5 s under the busy-CPU proof; 30.1 s on a loaded gate host,
+  // its pipeline killed at the 30 s bound, and 47.1 s, passing under a 90 s pipeline bound, during a host
+  // I/O stall. Its pipeline gets 3x that 47.1 s run (RETRY_PIPELINE_TIMEOUT_MS), and the test the next
+  // 5 s step above it. About 330 short processes, 28 of them bun fakes.
   test('a retry rejects authenticated old descriptors bound to different candidate manifest bytes', () => {
     const stale = localAssets('older-run');
     for (const [name, value] of Object.entries(stale)) {
@@ -434,10 +451,10 @@ describe('exact GitHub release asset reconciliation', () => {
       descriptor.releaseManifestSha256 = 'f'.repeat(64);
       stale[name] = `${JSON.stringify(descriptor)}\n`;
     }
-    const retry = run({ draft: true, assets: stale });
+    const retry = measured({ draft: true, assets: stale }, RETRY_PIPELINE_TIMEOUT_MS);
     expect(retry.result.exitCode).toBe(3);
     expect(uploadCalls(retry.state)).toHaveLength(0);
-  }, 60_000);
+  }, 150_000);
 
   test('an interrupted draft preserves prior bundle bytes while uploading only missing assets', () => {
     const current = localAssets();
@@ -480,9 +497,13 @@ describe('exact GitHub release asset reconciliation', () => {
     }
   }, 60_000);
 
+  // Measured timeout (#3309): 2.5 s quiet; 3.3 s under the busy-CPU proof; 30.0 s on a loaded gate host,
+  // its pipeline killed at the 30 s bound. 3x that run is 90 s, the bound its pipeline now gets
+  // (LOADED_PIPELINE_TIMEOUT_MS), so the test takes the next 5 s step and a stall is reported by the
+  // pipeline's own kill. About 450 short processes, 42 of them bun fakes.
   test('selects our release predicate when GitHub also attests the immutable release', () => {
     const publishedAssets = localAssets('published');
-    const { result, state } = run({ draft: false, assets: publishedAssets });
+    const { result, state } = measured({ draft: false, assets: publishedAssets });
     expect(result.exitCode).toBe(0);
     expect(state.assets).toEqual(publishedAssets);
     expect(uploadCalls(state)).toHaveLength(0);
@@ -490,7 +511,7 @@ describe('exact GitHub release asset reconciliation', () => {
     // answered with GitHub's immutable-release attestation ahead of ours.
     expect(state.attestationBatchSizes).toHaveLength(8);
     expect(state.attestationBatchSizes?.every((size) => size === 2)).toBe(true);
-  }, 60_000);
+  }, 95_000);
 
   test('never repairs a partial published release or accepts remote extras', () => {
     const partial = run({ draft: false, prerelease: false, assets: { [NAMES[0]]: localAssets()[NAMES[0]] } });
@@ -559,10 +580,12 @@ describe('exact GitHub release asset reconciliation', () => {
     expect(uploadCalls(absent.state)).toHaveLength(0);
   }, 60_000);
 
-  // The test budget stays 120 s: it already exceeds 3x the 33.4 s this test ran on the loaded gate
-  // host before its cosign pipeline was killed (5.3 s quiet, 14.7 s under the busy-CPU proof).
+  // Measured timeout (#3271, #3309): 5.2-7.5 s quiet; 13.6-14.7 s under the busy-CPU proof; 33.4 s on a
+  // loaded gate host before its cosign pipeline was killed at the 30 s bound, and killed at its former
+  // 120 s budget, at 120.0 s, in a later gate on a loaded host. 3x that run. Each of its six pipelines
+  // gets LOADED_PIPELINE_TIMEOUT_MS: the cosign verify-blob one takes 1.04 s quiet and 2.83 s under the
+  // busy-CPU proof, and the six start about 1,600 short processes, about 130 of them bun fakes.
   test('propagates upload and verification failures', () => {
-    const measured = (state: FakeState) => run(state, undefined, CHANNEL, 'local', PROPAGATION_PIPELINE_TIMEOUT_MS);
     const upload = measured({ draft: true, assets: {}, failOn: 'uploads.github.com' });
     expect(upload.result.exitCode).toBe(42);
 
@@ -588,5 +611,5 @@ describe('exact GitHub release asset reconciliation', () => {
     const nativePolicy = measured({ draft: false, assets: localAssets('published'), invalidNative: true });
     expect(nativePolicy.result.exitCode).not.toBe(0);
     expect(uploadCalls(nativePolicy.state)).toHaveLength(0);
-  }, 120_000);
+  }, 360_000);
 });
