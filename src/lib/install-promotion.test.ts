@@ -908,6 +908,52 @@ describe('installer promotion transaction', () => {
       closeInstallStagingDirectory(guard);
     }
   });
+
+  // #3323: the payload copy reads and writes bytes. A copy that fails part-way must end exactly where the
+  // cpSync copy did: the source's error, a partial stage held under its own name and nothing published.
+  test.skipIf(process.getuid?.() === 0)(
+    'a payload copy that fails part-way stays in the held stage, publishes nothing and restores the cwd',
+    () => {
+      const root = makeRoot();
+      const home = join(root, 'home');
+      const bin = join(home, 'bin');
+      const external = join(root, 'external');
+      const stageName = '.install-staging-66666666-6666-4666-8666-666666666666';
+      mkdirSync(bin, { recursive: true, mode: 0o700 });
+      mkdirSync(external, { mode: 0o700 });
+      writePayload(external, '2.0.0');
+      const unreadable = join(external, 'plugins', 'generation.txt');
+      const cwdBefore = lstatSync('.');
+      let failure: unknown;
+      try {
+        admitExternalInstallStaging({
+          genieHome: home,
+          externalStagingRoot: external,
+          expectedVersion: '2.0.0',
+          randomId: () => '66666666-6666-4666-8666-666666666666',
+          verifyVersion: () => true,
+          // A source read error inside the next member, after five members have landed.
+          afterPayloadMemberCopied: (member) => {
+            if (member === 'genie') chmodSync(unreadable, 0o000);
+          },
+        });
+      } catch (error) {
+        failure = error;
+      } finally {
+        chmodSync(unreadable, 0o644);
+      }
+
+      expect((failure as NodeJS.ErrnoException).code).toBe('EACCES');
+      expect(lstatSync('.').ino).toBe(cwdBefore.ino);
+      // The failure path removes the held stage only when it is empty (rmdir), so the members copied
+      // before the failure stay inside it under its own name, outside every published path.
+      expect(readdirSync(bin)).toEqual([stageName]);
+      expect(readdirSync(join(bin, stageName)).sort()).toEqual(
+        ['.agents', '.claude-plugin', 'LICENSE', 'VERSION', 'genie', 'plugins'].sort(),
+      );
+      expect(readdirSync(join(bin, stageName, 'plugins'))).toEqual([]);
+    },
+  );
 });
 
 // Bun 1.4 caches process.cwd() lazily and does not see the libc fchdir that binds the payload copy to
