@@ -212,6 +212,8 @@ describe('retryBusy wall-clock deadline', () => {
   });
 
   test('an attempt running at the deadline finishes and the error reports the measured time', () => {
+    // Two statements that each wait out a whole busy_timeout.
+    const attemptMs = 2 * BUSY_TIMEOUT_MS;
     const { wait, state, advance } = fakeWait(() => 0.999);
     const starts: number[] = [];
     let thrown: unknown;
@@ -220,6 +222,7 @@ describe('retryBusy wall-clock deadline', () => {
         PATH,
         () => {
           starts.push(state.elapsed);
+          advance(BUSY_TIMEOUT_MS);
           advance(BUSY_TIMEOUT_MS);
           throw busy();
         },
@@ -232,8 +235,10 @@ describe('retryBusy wall-clock deadline', () => {
     const err = thrown as BusyDbError;
     expect(Math.max(...starts)).toBeLessThanOrEqual(BUSY_DEADLINE_MS);
     expect(err.waitedMs).toBe(state.elapsed);
+    // The overshoot is the whole last attempt, not one busy_timeout: the bound is deadline + one attempt.
+    expect(err.waitedMs).toBe((starts.at(-1) as number) + attemptMs);
     expect(err.waitedMs).toBeGreaterThanOrEqual(BUSY_DEADLINE_MS);
-    expect(err.waitedMs).toBeLessThanOrEqual(BUSY_DEADLINE_MS + BUSY_TIMEOUT_MS);
+    expect(err.waitedMs).toBeLessThanOrEqual(BUSY_DEADLINE_MS + attemptMs);
     expect(err.message).toContain(`stayed locked for ${Math.floor(err.waitedMs / 1000)} s;`);
   });
 

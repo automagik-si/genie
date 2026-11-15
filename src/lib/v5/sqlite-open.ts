@@ -304,9 +304,12 @@ export function busyBackoffMs(attempt: number, random: number): number {
  * {@link BUSY_DEADLINE_MS} has passed since the first attempt, then throw
  * {@link BusyDbError} naming `path`. A {@link GenieDbError} (foreign,
  * malformed — retrying can't fix it) and any non-busy throw pass through at
- * once. No pause crosses the deadline, so the last attempt starts at it; an
- * attempt already running then finishes its own busy_timeout wait, which is
- * why the error reports the measured time.
+ * once. The deadline is checked between attempts, and no pause crosses it, so
+ * the last attempt starts at or before it. That attempt runs to its end, and
+ * each lock-waiting statement in it can wait its own busy_timeout (a
+ * fresh-schema open runs about eleven autocommit CREATEs), so the total can
+ * exceed the deadline by up to one attempt; review measured about 3 s under a
+ * held write lock (#3321). That is why the error reports the measured time.
  */
 export function retryBusy<T>(path: string, attempt: () => T, wait: BusyWait = SYSTEM_BUSY_WAIT): T {
   const start = wait.now();

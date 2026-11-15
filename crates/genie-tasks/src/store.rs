@@ -409,8 +409,11 @@ fn retry_busy<T>(db: &Path, f: impl FnMut() -> Result<T, Error>) -> Result<T, Er
     retry_busy_with(db, &SystemWait, f)
 }
 
-/// No pause crosses the deadline, so the last attempt starts at it; an attempt already running then
-/// finishes its own `busy_timeout` wait, which is why [`Error::Busy`] reports the measured time.
+/// The deadline is checked between attempts, and no pause crosses it, so the last attempt starts at or
+/// before it. That attempt runs to its end, and each lock-waiting statement in it can wait its own
+/// `busy_timeout` (the store's open runs up to two, `record` one), so the total can exceed the deadline
+/// by up to one attempt; review measured about 3 s under a held write lock (#3321). That is why
+/// [`Error::Busy`] reports the measured time.
 fn retry_busy_with<T>(db: &Path, wait: &dyn BusyWait, mut f: impl FnMut() -> Result<T, Error>) -> Result<T, Error> {
     let start = wait.now();
     let mut attempt = 0u32;
@@ -1162,10 +1165,13 @@ mod busy_tests {
 
     #[test]
     fn an_attempt_running_at_the_deadline_finishes_and_the_error_reports_the_measured_time() {
+        // Like the store's open: two statements that each wait out a whole busy_timeout.
+        let attempt = BUSY_TIMEOUT * 2;
         let wait = FakeWait::new(|| u64::MAX);
         let mut starts = Vec::new();
         let err = retry_busy_with(Path::new(DB), &wait, || {
             starts.push(wait.elapsed.get());
+            wait.advance(BUSY_TIMEOUT);
             wait.advance(BUSY_TIMEOUT);
             Err::<(), _>(busy())
         })
@@ -1173,7 +1179,9 @@ mod busy_tests {
         let Error::Busy { waited, .. } = &err else { panic!("not Busy: {err:?}") };
         assert!(starts.iter().all(|s| *s <= BUSY_DEADLINE), "no attempt starts after the deadline: {starts:?}");
         assert_eq!(*waited, wait.elapsed.get());
-        assert!((BUSY_DEADLINE..=BUSY_DEADLINE + BUSY_TIMEOUT).contains(waited), "{waited:?}");
+        // The overshoot is the whole last attempt, not one busy_timeout: the bound is deadline + one attempt.
+        assert_eq!(*waited, *starts.last().unwrap() + attempt);
+        assert!((BUSY_DEADLINE..=BUSY_DEADLINE + attempt).contains(waited), "{waited:?}");
         assert!(err.to_string().contains(&format!("stayed locked for {} s;", waited.as_secs())), "{err}");
     }
 
