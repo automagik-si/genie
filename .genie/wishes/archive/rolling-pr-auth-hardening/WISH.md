@@ -27,7 +27,7 @@ Harden the workflow: fail fast with an actionable `::error` when the secret is a
 
 ### OUT
 
-- Minting/refreshing the PAT itself — human action item for Felipe (repo Settings → Secrets → `RELEASE_PLEASE_TOKEN`).
+- Minting/refreshing the PAT itself — human action item for the owner (repo Settings → Secrets → `RELEASE_PLEASE_TOKEN`).
 - Any other workflow; any change to the rolling-PR cadence or merge policy (§19 humans-only main merges unchanged).
 
 ## Decisions
@@ -49,7 +49,7 @@ _Backfilled 2026-09-19 when this wish was archived and its legacy terminal statu
 - [x] With the secret absent or dead (current reality: present, 401): `workflow_dispatch` run fails in seconds with the actionable `::error` text, not a raw gh auth message. — satisfied by `c4fdb32b`.
 - [x] `gh pr list` step authenticates via `github.token` (no PAT dependency on the read path). — satisfied by `c4fdb32b` (read/create token split).
 - [x] YAML parses; workflow diff touches only `rolling-pr.yml`. — verified in the shipped commits (`c4fdb32b`, `422caaa2`).
-- [ ] Once Felipe refreshes the PAT: the hourly run creates/confirms the rolling PR again (post-merge QA item — **open human action**, blocked on the PAT mint).
+- [ ] Once the owner refreshes the PAT: the hourly run creates/confirms the rolling PR again (post-merge QA item — **open human action**, blocked on the PAT mint).
 
 ## Execution Strategy
 
@@ -87,7 +87,7 @@ cd "$(git rev-parse --show-toplevel)" && python3 -c "import yaml,sys; yaml.safe_
 ## QA Criteria
 
 - [ ] Post-merge `workflow_dispatch` (secret still absent) → clear actionable failure in the Actions UI.
-- [ ] After Felipe adds the PAT → next hourly run green, rolling PR exists.
+- [ ] After the owner adds the PAT → next hourly run green, rolling PR exists.
 
 ---
 
@@ -101,7 +101,7 @@ cd "$(git rev-parse --show-toplevel)" && python3 -c "import yaml,sys; yaml.safe_
 
 ## Review Results
 
-**Resolution (2026-07-10): already implemented on dev, no dispatch needed.** A council freshness probe found the hardening had landed independently: `c4fdb32b` adds the fail-fast guard on an absent/dead PAT and splits the read path (`gh pr list` on `github.token`) from the create path (PAT), and `422caaa2` makes the workflow a healthy no-op when dev==main. `git branch -r --contains` confirms both commits are on `origin/dev` and `origin/main`. Acceptance criteria 1–3 are satisfied by the shipped code; criterion 4 (hourly run creates the rolling PR again) stays blocked on Felipe minting/refreshing `RELEASE_PLEASE_TOKEN` with `contents:read` + `pull-requests:write`. No engineering was dispatched for this wish.
+**Resolution (2026-07-10): already implemented on dev, no dispatch needed.** A council freshness probe found the hardening had landed independently: `c4fdb32b` adds the fail-fast guard on an absent/dead PAT and splits the read path (`gh pr list` on `github.token`) from the create path (PAT), and `422caaa2` makes the workflow a healthy no-op when dev==main. `git branch -r --contains` confirms both commits are on `origin/dev` and `origin/main`. Acceptance criteria 1–3 are satisfied by the shipped code; criterion 4 (hourly run creates the rolling PR again) stays blocked on the owner minting/refreshing `RELEASE_PLEASE_TOKEN` with `contents:read` + `pull-requests:write`. No engineering was dispatched for this wish.
 
 ---
 

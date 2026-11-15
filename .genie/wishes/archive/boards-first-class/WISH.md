@@ -68,7 +68,7 @@ plan-reviewed to SHIP after 3 fix loops (2026-07-21).
 
 | # | Decision | Rationale |
 |---|----------|-----------|
-| 1 | Lanes = lifecycle contract, extendable; blocked is a badge, never a lane | Felipe-ratified; v4 precedent (its pipeline columns never included blocked) |
+| 1 | Lanes = lifecycle contract, extendable; blocked is a badge, never a lane | owner-ratified; v4 precedent (its pipeline columns never included blocked) |
 | 2 | Axis named `lane`; moves append `task_events` `kind='move'` | `stage` is taken by the audit-trail concept; one timeline per card |
 | 3 | `task_events` is a NEW table; `stage_log` retained + backfilled | Rename would split-brain older binaries on the worktree-shared DB and break `exportState` |
 | 4 | All schema changes additive at `user_version = 1`, `EXPECTED_TABLES` + `schemaIsCurrent()` in lockstep | Version bump would lock older binaries out (`sqlite-open.ts:88-90`) |
@@ -209,7 +209,7 @@ _What must be verified on dev after merge. The QA agent tests each criterion._
 - [ ] Integration: a real subagent run (`/work` on any small task) leaves a claim event, heartbeat, and report event visible in `task status`
 - [ ] Cross-runtime: a card claimed under Claude Code and released, then commented from a Codex session, shows both authors with correct `author_kind`
 - [ ] Regression: existing `genie board` (laneless), `task list/checkout/done`, MCP server, and `task export` behave; board `--json` unchanged
-- [ ] Live board: Felipe's roadmap board renders all 13 cards with lanes after backfill, no data loss
+- [ ] Live board: the owner's roadmap board renders all 13 cards with lanes after backfill, no data loss
 
 ---
 
@@ -238,7 +238,7 @@ _What must be verified on dev after merge. The QA agent tests each criterion._
 | B: timeline + runtime | eng-B-timeline-runtime (opus) | **SHIP** loop 0 (TOCTOU-audited) | `8368705c` |
 | C: jar unification | eng-C-jar-unification (opus, worktree) | **SHIP** loop 0 | `45ab48a8` (cherry-pick), orchestrator halves `1ca40d21` |
 
-Routing: `Human override: approver=felipe; wish/group=boards-first-class#B; cap=routing.fableGate; old=fable-high; new=opus; reason=preserve fable tokens; timestamp=2026-07-21T18:30Z` (ultracode session directive "in opus to preserve fable tokens").
+Routing: `Human override: approver=owner; wish/group=boards-first-class#B; cap=routing.fableGate; old=fable-high; new=opus; reason=preserve fable tokens; timestamp=2026-07-21T18:30Z` (ultracode session directive "in opus to preserve fable tokens").
 
 ### Wish-level adversarial verify (ultracode)
 
@@ -266,7 +266,7 @@ Full `bun test` **2067 pass / 0 fail** (82 files); typecheck clean; biome clean 
 
 (a) `parseLanes` lacks per-element shape validation — LOW; (b) doctor.test.ts commit-message count 12-vs-13 — LOW; (c) missing-lane-column degradation untested — LOW; (d) ANSI passthrough in operator reason text — NIT (pre-existing pattern); (e) surrogate-pair slice — LOW cosmetic.
 
-### Open post-merge QA (by design — Felipe's live ritual)
+### Open post-merge QA (by design — the owner's live ritual)
 
 Fresh-repo idea→move-through-lanes e2e; real `/work` leaving claim+heartbeat+report; cross-runtime author_kind (Claude Code + Codex on one card); dev regression sweep (laneless board, checkout/done, MCP, export); live roadmap renders 13 cards no data loss.
 

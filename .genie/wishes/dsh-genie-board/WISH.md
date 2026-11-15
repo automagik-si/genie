@@ -283,11 +283,11 @@ Remaining HIGH gaps after the second review round:
 2. **Compatibility-floor sequencing is circular.** Group 2 depends on a “first released version” that Group 3 has not released. Define a candidate/version-stamping contract produced by the same release, then prove that exact version in Group 3, or add and reconcile an explicit earlier release gate.
 3. **Published-release proof is incomplete.** The tar membership check can pass with only one required member; the verifier does not itself require the four named artifacts or inspect plugin contents, and no executable step creates or identifies the signed candidate and sidecars. Specify the authorized candidate workflow and independently assert every required member in each exact artifact before publication.
 
-Fix-loop budget is exhausted (`2/2`). Cause: `ambiguous-spec` for the hydration contract and `missing-context` for the release-candidate workflow. Owner: Sofia/Felipe. Next gate: resolve those product/release decisions, amend the plan, and obtain a fresh independent plan review. Implementation, release work, and external publication remain blocked.
+Fix-loop budget is exhausted (`2/2`). Cause: `ambiguous-spec` for the hydration contract and `missing-context` for the release-candidate workflow. Owner: Sofia/the owner. Next gate: resolve those product/release decisions, amend the plan, and obtain a fresh independent plan review. Implementation, release work, and external publication remain blocked.
 
-### Decision resolution — direct Felipe approval (2026-09-03)
+### Decision resolution — direct owner approval (2026-09-03)
 
-Felipe directly authorized the bounded plan amendment: complete aggregate views from one structured read; one immutable candidate version derived before build/sign/publish; and the authorized, human-approved stable workflow with fail-closed proof of exactly four platform artifacts and every required plugin member. The amended plan removes partial hydration, makes candidate stamping non-circular, and adds per-artifact digest/signature/provenance/member verification. No implementation, release, push, or topic publication was authorized by this amendment.
+The owner directly authorized the bounded plan amendment: complete aggregate views from one structured read; one immutable candidate version derived before build/sign/publish; and the authorized, human-approved stable workflow with fail-closed proof of exactly four platform artifacts and every required plugin member. The amended plan removes partial hydration, makes candidate stamping non-circular, and adds per-artifact digest/signature/provenance/member verification. No implementation, release, push, or topic publication was authorized by this amendment.
 
 ### Plan review round 3 — SHIP (2026-09-03T19:48:26Z)
 

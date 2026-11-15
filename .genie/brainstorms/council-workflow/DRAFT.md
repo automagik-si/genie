@@ -15,9 +15,9 @@ Turn `/specialist-panel` into a native reusable well-thought workflow (Claude Co
 - `skills/council/` (genie repo, shipped via plugin): topic DELIBERATION — 10 lens members, smart routing to 3-4, 2-round Socratic (round 2 via SendMessage continuing sessions), dissent-preserving report, advisory-only, no voting. Members/config: all inherit model. Supporting files: members/routing.md, members/config.md, templates/report.md.
 - The 7 persona skills live in `~/.claude/skills/` (personal) — NOT shipped with genie. Full methodologies with ground-truth discovery steps, not just lens one-liners.
 
-### Prior ruling (skill-absorbs, Felipe 2026-07-09)
+### Prior ruling (skill-absorbs, the owner 2026-07-09)
 - council → lens LIBRARY (consumed by review panels + brainstorm domain-experts) + THIN `/council` route preserved (strategy pre-artifact, dissent preservation, appeal court for reviewer↔gate disagreements).
-- Open GAP there: "/council users besides Felipe? keep `/council` name or `genie council`?"
+- Open GAP there: "/council users besides the owner? keep `/council` name or `genie council`?"
 - Collision noted: skills-fable5-revamp execution review pending on same files.
 - **This brainstorm is the concrete implementation vehicle for the council disposition** — the "thin route" becomes a launcher for the native workflow engine.
 
@@ -38,31 +38,31 @@ Turn `/specialist-panel` into a native reusable well-thought workflow (Claude Co
 2. **Persona custody:** absorb 7 heavyweight persona skills into genie's lens library (genie owns; dual-maintenance vs personal copies) vs args-driven "bring your own lenses" with genie shipping only lightweight lenses.
 3. **Invocation UX + naming:** `/council` vs `/panel`; saved-workflow-command vs thin-skill-launches-Workflow. Depends on plugin-workflow verification (background agent).
 4. **Fate of personal `~/.claude/skills/specialist-panel`** after genie ships the engine.
-5. **Fix-routing for non-Felipe users:** panel prescribes "run <persona skill> to fix" — genie-native answer is findings → `/wish` (already the panel's genie-repo path). Confirm.
+5. **Fix-routing for non-owner users:** panel prescribes "run <persona skill> to fix" — genie-native answer is findings → `/wish` (already the panel's genie-repo path). Confirm.
 6. **Repo-profile write:** keep single-writer merge — in workflow-land the synthesis/persist stage agent is the writer.
 7. **Sequencing/collisions:** skills-fable5-revamp execution review + control-plane-contract touch same skill files; how to record vs skill-absorbs G4 (this supersedes part of it).
 
 ## DECIDED
 
-1. **Replace semantics = engine unificado, 2 modos** (Felipe, 2026-07-09): UM workflow parametrizado (args: mode, topic/focus, roster). Modo `audit` = specialist lanes sobre repo; modo `deliberation` = council lenses sobre decisão, com round 2 socrático via agents frescos alimentados com round 1. Uma lens library alimenta ambos. `skills/council/` morre como orquestrador; thin `/council` route vira launcher do engine (consistente com ruling skill-absorbs G4).
+1. **Replace semantics = engine unificado, 2 modos** (o dono, 2026-07-09): UM workflow parametrizado (args: mode, topic/focus, roster). Modo `audit` = specialist lanes sobre repo; modo `deliberation` = council lenses sobre decisão, com round 2 socrático via agents frescos alimentados com round 1. Uma lens library alimenta ambos. `skills/council/` morre como orquestrador; thin `/council` route vira launcher do engine (consistente com ruling skill-absorbs G4).
 
-2. **Persona custody = absorver como skills do plugin** (Felipe, 2026-07-09): as 7 persona SKILL.mds migram pro repo genie e shipam via plugin. O workflow lê o MESMO arquivo como lens (fonte única, zero drift); cada persona fica invocável standalone pra fix-mode por qualquer usuário genie. Cópias pessoais de Felipe aposentam. Council sai, suas 10 lentes fundem na mesma library (mapear overlaps: benchmarker≈Gregg, sentinel≈Lorenc, ergonomist≈Procida, architect≈Ousterhout...; lentes sem lane par — questioner, operator, deployer, measurer, tracer, simplifier — viram lens cards de deliberação).
+2. **Persona custody = absorver como skills do plugin** (o dono, 2026-07-09): as 7 persona SKILL.mds migram pro repo genie e shipam via plugin. O workflow lê o MESMO arquivo como lens (fonte única, zero drift); cada persona fica invocável standalone pra fix-mode por qualquer usuário genie. Cópias pessoais do dono aposentam. Council sai, suas 10 lentes fundem na mesma library (mapear overlaps: benchmarker≈Gregg, sentinel≈Lorenc, ergonomist≈Procida, architect≈Ousterhout...; lentes sem lane par — questioner, operator, deployer, measurer, tracer, simplifier — viram lens cards de deliberação).
 
-3. **Entrada única = `/council`, absorve audit** (Felipe, 2026-07-09): council é O nome do engine. `/council <tópico>` → deliberation; `/council audit [focus]` → audit (7 lanes). O nome specialist-panel aposenta. Fecha o GAP do skill-absorbs ("keep /council name?" → SIM, e vira a entrada de tudo). Uma rota, um workflow script, dois modos por preset.
+3. **Entrada única = `/council`, absorve audit** (o dono, 2026-07-09): council é O nome do engine. `/council <tópico>` → deliberation; `/council audit [focus]` → audit (7 lanes). O nome specialist-panel aposenta. Fecha o GAP do skill-absorbs ("keep /council name?" → SIM, e vira a entrada de tudo). Uma rota, um workflow script, dois modos por preset.
 
-4. **Escopo = incluir consumidores** (Felipe, 2026-07-09): o wish TAMBÉM rewira `/review` (panels multi-lens por change-type) e `/brainstorm` (o passo "dispatch 2-3 lens subagents" passa a ler lens cards da library). Entrega a visão G4 completa. Consequência: colisão com skills-fable5-revamp vira dependência de sequenciamento explícita.
-5. **Naming público = renomear por lane, inspiração citada** (Felipe, 2026-07-09): skills shipam como `repo-hygiene`, `architecture`, `code-quality`, `qa`, `perf`, `supply-chain`, `dx-docs`; corpo cita "lens inspired by the work of <expert>". Zero nome de pessoa real como identidade de produto. Cópias pessoais de Felipe podem manter os nomes antigos até aposentar.
+4. **Escopo = incluir consumidores** (o dono, 2026-07-09): o wish TAMBÉM rewira `/review` (panels multi-lens por change-type) e `/brainstorm` (o passo "dispatch 2-3 lens subagents" passa a ler lens cards da library). Entrega a visão G4 completa. Consequência: colisão com skills-fable5-revamp vira dependência de sequenciamento explícita.
+5. **Naming público = renomear por lane, inspiração citada** (o dono, 2026-07-09): skills shipam como `repo-hygiene`, `architecture`, `code-quality`, `qa`, `perf`, `supply-chain`, `dx-docs`; corpo cita "lens inspired by the work of <expert>". Zero nome de pessoa real como identidade de produto. Cópias pessoais do dono podem manter os nomes antigos até aposentar.
 
 ### Resolvidos por consequência (não perguntados)
 - Fix-routing p/ usuários genie: personas shipam como skills standalone (decisão 2) → "run <lane skill> and fix" funciona pra todos; em repos genie a authority boundary continua findings→`/wish`.
 - Repo-profile: mantém single-writer — o stage de synthesis/persist do workflow é o único escritor de `.genie/repo-profile.md`.
-- Skills pessoais de Felipe (specialist-panel + 7 personas): aposentam após o ship (hygiene local dele, fora do escopo do repo).
+- Skills pessoais do dono (specialist-panel + 7 personas): aposentam após o ship (hygiene local dele, fora do escopo do repo).
 - Lens library unificada: 7 persona SKILL.mds (modes: both — voz + metodologia) + 6 lentes council-only (questioner, simplifier, operator, deployer, measurer, tracer; cards leves). As 4 lentes redundantes do council (benchmarker≈perf, sentinel≈supply-chain, ergonomist≈dx-docs, architect≈architecture) morrem; routing table remapeada pra apontar pros persona skills. 13 lentes totais.
 - Round 2 socrático em workflow: agents FRESCOS por round (round 2 recebe a própria posição round-1 do membro + as dos outros via prompt). Sem SendMessage — mais resumível/cacheável; perde continuidade de sessão (aceito).
 - Audit mode: round1 lanes → synthesis (dedupe/conflito/re-rank global) → persist profile. Deliberation: round1 → round2 → synthesis (consenso/tensões/dissent). templates/report.md absorvido no prompt de synthesis.
 - Council engine passa a exigir Claude Code (workflow runtime) — alvo Codex/Hermes fica OUT (o council antigo via Agent tool já era CC-only na prática).
 
-6. **Launch = saved workflow como comando** (Felipe, 2026-07-09): `/council` é o próprio saved workflow (meta name 'council'); o modelo media args estruturado na invocação; routing table vive como dado JS no script. SEM skill intermediária de orquestração.
+6. **Launch = saved workflow como comando** (o dono, 2026-07-09): `/council` é o próprio saved workflow (meta name 'council'); o modelo media args estruturado na invocação; routing table vive como dado JS no script. SEM skill intermediária de orquestração.
 
 ### Verificação de distribuição (2026-07-09, plugins-reference fetch direto)
 - **Plugins NÃO shipam workflows.** Component path fields completos: skills, commands, agents, hooks, mcpServers, outputStyles, lspServers, experimental.themes, experimental.monitors, userConfig, channels, dependencies. Zero menção a workflows na referência inteira.
@@ -74,7 +74,7 @@ Turn `/specialist-panel` into a native reusable well-thought workflow (Claude Co
 
 ## SCOPE (draft)
 **IN:** `council.js` saved workflow (engine 2 modos, routing como dado JS), lens library unificada (13: 7 lane skills + 6 cards em references/lenses/), 7 persona skills renomeadas por lane, stamp+copy no install/update (smart-install), morte de `skills/council/` inteiro (routing/config/report absorvidos), rewiring `/review` panels + `/brainstorm` domain-experts, lints (lens frontmatter, refs probe-guarded, workflow script structural), docs.
-**OUT:** rewiring de outros consumidores (work/fix/pm), Codex/Hermes support pro engine, autonomia dream/scheduler, mudanças no routing-matrix dos role agents, deleção das skills pessoais de Felipe (hygiene local), CLI `genie council` (term-command), `.claude/workflows/` scaffold por repo via `genie init` (override por repo fica como feature documentada, não entregue).
+**OUT:** rewiring de outros consumidores (work/fix/pm), Codex/Hermes support pro engine, autonomia dream/scheduler, mudanças no routing-matrix dos role agents, deleção das skills pessoais do dono (hygiene local), CLI `genie council` (term-command), `.claude/workflows/` scaffold por repo via `genie init` (override por repo fica como feature documentada, não entregue).
 
 ## RISKS (draft)
 | Risco | Sev | Mitigação |

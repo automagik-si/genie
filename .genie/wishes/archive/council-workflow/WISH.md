@@ -33,7 +33,7 @@ Genie's multi-perspective reasoning is split across two model-driven orchestrato
 - Codex/Hermes support for the engine (workflow runtime is Claude Code-only — accepted).
 - `genie council` term-command; per-repo `.claude/workflows/` scaffolding via `genie init` (repo override stays a documented capability).
 - dream/scheduler autonomy; routing-matrix role-agent changes.
-- Deleting Felipe's personal `~/.claude/skills/` copies (local hygiene, outside the repo).
+- Deleting the owner's personal `~/.claude/skills/` copies (local hygiene, outside the repo).
 
 ## Decisions
 
@@ -47,7 +47,7 @@ Genie's multi-perspective reasoning is split across two model-driven orchestrato
 | 6 | Install-time stamp+copy to `~/.claude/workflows/` | Plugins cannot ship workflows (verified against plugins reference 2026-07-09); smart-install runs with `CLAUDE_PLUGIN_ROOT` so `LENS_ROOT` stamping is deterministic and update-safe |
 | 7 | Fresh-agent Socratic round 2 | Workflows have no SendMessage; feeding each member its own R1 back preserves identity, gains resumability |
 | 8 | `skills/council/` deleted whole | Skill-vs-workflow precedence for one name is undocumented — avoid the collision |
-| 9 | Consumers wired now (not deferred) | Felipe chose delivering the full G4 vision in this wish; both steps are new to the repo skills; sequencing handled by waves |
+| 9 | Consumers wired now (not deferred) | The owner chose delivering the full G4 vision in this wish; both steps are new to the repo skills; sequencing handled by waves |
 
 ## Dependencies
 
@@ -178,13 +178,13 @@ bash .genie/wishes/council-workflow/validate/g4-consumers.sh
 **Deliverables:**
 1. `lint:council-workflow` wired into `bun run check` (package.json).
 2. Docs: skills/README.md, plugin README/docs notes, workflow requirements (CC ≥ 2.1.154, paid plans, `disableWorkflows`).
-3. Live QA evidence: `.genie/wishes/council-workflow/qa/deliberation-run.md` + `qa/audit-run.md` — **USER-GATED, post-release (Felipe's ruling 2026-07-10):** the real test is the shipped surface, not a scriptPath simulation. Ritual (now driven by agent-sync): merge → release → on the reference machine run `genie update` twice (the first only swaps the binary — the old code has no agent-sync, so nothing converges; the second — the same canonical verb — converges every agent; every later release needs only one run) → verify `~/.claude/workflows/council.js` is stamped and `~/.claude/skills/` are current → Felipe runs `/council` himself ("revisar tudo") to validate; the run outputs become the qa/ evidence files. `validate/g5-gate.sh` deliberately keeps failing at the qa/ assertions until then — that pending tail is the designed state, not a defect.
+3. Live QA evidence: `.genie/wishes/council-workflow/qa/deliberation-run.md` + `qa/audit-run.md` — **USER-GATED, post-release (the owner's ruling 2026-07-10):** the real test is the shipped surface, not a scriptPath simulation. Ritual (now driven by agent-sync): merge → release → on the reference machine run `genie update` twice (the first only swaps the binary — the old code has no agent-sync, so nothing converges; the second — the same canonical verb — converges every agent; every later release needs only one run) → verify `~/.claude/workflows/council.js` is stamped and `~/.claude/skills/` are current → the owner runs `/council` himself ("revisar tudo") to validate; the run outputs become the qa/ evidence files. `validate/g5-gate.sh` deliberately keeps failing at the qa/ assertions until then — that pending tail is the designed state, not a defect.
 
 **Acceptance Criteria:**
 - [x] `bun run check` green AND its output proves `lint:council-workflow` actually ran (behavioral wiring check, not just script existence)
-- [ ] Both QA evidence files present with real run output — post-release, from Felipe's own `/council` runs
+- [ ] Both QA evidence files present with real run output — post-release, from the owner's own `/council` runs
 
-**Status:** PARTIAL (2026-07-10) — engineering half DONE by the orchestrator inline (Felipe stopped agent dispatch for this wave): `lint:council-workflow` wired into `check` after `wishes:lint` (behavioral proof: check output shows it running, exit 0, 725 pass / 1 skip), plugin README gained the `/council` workflow section (ships/distribution/modes/requirements/override) + `workflows/` in the tree. Live-QA half USER-GATED post-release per Felipe's ruling — `validate/g5-gate.sh` correctly halts at the qa/ assertions until his `/council` runs land. Stamp path pre-validated: the shipped `council-stamp.cjs` stamped a scratchpad copy (placeholder → absolute `LENS_ROOT`, action "written").
+**Status:** PARTIAL (2026-07-10) — engineering half DONE by the orchestrator inline (the owner stopped agent dispatch for this wave): `lint:council-workflow` wired into `check` after `wishes:lint` (behavioral proof: check output shows it running, exit 0, 725 pass / 1 skip), plugin README gained the `/council` workflow section (ships/distribution/modes/requirements/override) + `workflows/` in the tree. Live-QA half USER-GATED post-release per the owner's ruling — `validate/g5-gate.sh` correctly halts at the qa/ assertions until his `/council` runs land. Stamp path pre-validated: the shipped `council-stamp.cjs` stamped a scratchpad copy (placeholder → absolute `LENS_ROOT`, action "written").
 
 **Validation:**
 ```bash

@@ -4,7 +4,7 @@ Date: 2026-07-03 · Worker: g1-spike · Gates: G2, G3
 
 ## Verdict: hand-rolled
 
-A hand-rolled newline-delimited JSON-RPC 2.0 stdio server (zero deps) satisfied a **real Claude Code** client end-to-end (`initialize` → `tools/list` → `tools/call`) on two boxes, and speaks the exact MCP protocol (`2024-11-05`) Warp uses. Genie stays 4-runtime-deps-lean — no 5th dep (`@modelcontextprotocol/sdk`) required. The SDK remains the documented fallback (dynamic-imported like `nats` in `omni.ts`) **only if** Warp's live UI later reveals a framing/handshake quirk during Felipe's eyeball check (see Warp evidence below) — nothing observed suggests it will.
+A hand-rolled newline-delimited JSON-RPC 2.0 stdio server (zero deps) satisfied a **real Claude Code** client end-to-end (`initialize` → `tools/list` → `tools/call`) on two boxes, and speaks the exact MCP protocol (`2024-11-05`) Warp uses. Genie stays 4-runtime-deps-lean — no 5th dep (`@modelcontextprotocol/sdk`) required. The SDK remains the documented fallback (dynamic-imported like `nats` in `omni.ts`) **only if** Warp's live UI later reveals a framing/handshake quirk during the owner's eyeball check (see Warp evidence below) — nothing observed suggests it will.
 
 Throwaway server: `.genie/wishes/genie-mcp/spike/server.mjs` (runs under both `node` and `bun`; NOT in `src/`).
 
@@ -33,9 +33,9 @@ Claude Code `.mcp.json` notes for G3:
 - Project `.mcp.json` servers are **pending approval** until the user trusts the workspace (runs `claude` interactively and accepts the trust dialog) — expected, not a bug; document it.
 - Supports `${VAR}` env expansion and an optional per-server `"timeout"` (ms).
 
-### Warp — schema + protocol CONFIRMED; live UI connection NEEDS FELIPE'S EYES
+### Warp — schema + protocol CONFIRMED; live UI connection NEEDS THE OWNER'S EYES
 
-`felipe` is a **Linux** dev box (`warp-terminal` Linux build) that Felipe reaches **via Warp's SSH remote feature** — the Warp GUI runs on Felipe's Mac and drives a `~/.warp/remote-server/` component on `felipe`. Warp opens the repo on the remote, so it discovers `<repo>/.warp/.mcp.json` **on `felipe`** and spawns the stdio server **on `felipe`**.
+`felipe` is a **Linux** dev box (`warp-terminal` Linux build) that the owner reaches **via Warp's SSH remote feature** — the Warp GUI runs on the owner's Mac and drives a `~/.warp/remote-server/` component on `felipe`. Warp opens the repo on the remote, so it discovers `<repo>/.warp/.mcp.json` **on `felipe`** and spawns the stdio server **on `felipe`**.
 
 Confirmed without the GUI:
 - **Authoritative schema** — Warp's own bundled skill on the box: `~/.warp/remote-server/bundled_resources/bundled/skills/add-mcp-server/SKILL.md` (see Config Schema below). This is Warp's shipped source of truth, not a third-party doc.
@@ -43,7 +43,7 @@ Confirmed without the GUI:
 - **The server runs where Warp spawns it** — the raw `initialize`/`tools/list` handshake was replayed with `node` on `felipe` and returned correct envelopes.
 - **Config staged for eyeball** — `~/genie-mcp-spike/scratch-repo/.warp/.mcp.json` (+ `.mcp.json`) on `felipe`, pointing at `~/genie-mcp-spike/server.mjs`.
 
-**What needs Felipe's eyes (cannot be driven over ssh — Warp is a GUI):** open Warp on the Mac → SSH into `felipe` → `cd ~/genie-mcp-spike/scratch-repo` → check **Settings → AI/Agents → MCP servers**. Expect `genie-spike` listed **"Detected from Warp"** and a green/connected status; optionally ask Warp's agent to call the `echo` tool. Warp auto-detects `.mcp.json` changes on save (no restart). Since Warp speaks the same MCP `2024-11-05` JSON-RPC that Claude Code accepted against this exact server, the risk is low; the only unproven bit is Warp's client-side connect, not the protocol.
+**What needs the owner's eyes (cannot be driven over ssh — Warp is a GUI):** open Warp on the Mac → SSH into `felipe` → `cd ~/genie-mcp-spike/scratch-repo` → check **Settings → AI/Agents → MCP servers**. Expect `genie-spike` listed **"Detected from Warp"** and a green/connected status; optionally ask Warp's agent to call the `echo` tool. Warp auto-detects `.mcp.json` changes on save (no restart). Since Warp speaks the same MCP `2024-11-05` JSON-RPC that Claude Code accepted against this exact server, the risk is low; the only unproven bit is Warp's client-side connect, not the protocol.
 
 ## Config schema (both files)
 
@@ -119,5 +119,5 @@ The MCP transport must not load on `genie board`/`task`/`--help`. Because the ha
 ## Cleanup done
 
 - Removed both Claude Code registrations (Mac local-scope + felipe local-scope).
-- Left intentionally for Felipe's Warp eyeball: `~/genie-mcp-spike/` on `felipe` (server.mjs + scratch-repo with `.warp/.mcp.json` + `.mcp.json`). Safe to `rm -rf ~/genie-mcp-spike` after the Warp check.
+- Left intentionally for the owner's Warp eyeball: `~/genie-mcp-spike/` on `felipe` (server.mjs + scratch-repo with `.warp/.mcp.json` + `.mcp.json`). Safe to `rm -rf ~/genie-mcp-spike` after the Warp check.
 - Local Mac scratch repo is under `/var/folders/.../T/` (OS-cleaned tmp).

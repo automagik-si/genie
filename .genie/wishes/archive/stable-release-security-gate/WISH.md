@@ -54,14 +54,14 @@ Close inherited stable-publication risks that are unchanged by PR #2545 but stil
 
 ## Execution Strategy
 
-Split 2026-07-14 (operator decision, brainstorm disposition): code hardening is agent-executable now; external GitHub settings are human-owned and gated on Felipe.
+Split 2026-07-14 (operator decision, brainstorm disposition): code hardening is agent-executable now; external GitHub settings are human-owned and gated on the owner.
 
 ### Wave 1
 
 | Group | Agent | Complexity | Model | Description |
 |-------|-------|------------|-------|-------------|
 | 1 | security engineer + independent reviewer | 7 — privileged CI workflows, provenance, transactional swap | engineer-complex + reviewer | Repo-code protected release chain (F16–F18, F31 code side) |
-| 2 | Felipe (human) + evidence capture | 2 — external repo settings + exported proof | human gate | GitHub Environment/ruleset configuration and evidence |
+| 2 | The owner (human) + evidence capture | 2 — external repo settings + exported proof | human gate | GitHub Environment/ruleset configuration and evidence |
 
 ## Execution Groups
 
@@ -143,7 +143,7 @@ bun test
 - **LOW:** rollback restores only the binary, not sidecars (VERSION/plugins) — practically unreachable, documented in-code.
 - **LOW:** first-party `actions/*` remain tag-pinned (wish scoped pinning to third-party).
 
-**Group 2 external state refreshed 2026-07-15 (operator-directed, executed via `gh api` as namastex888; approver set named by the operator):** GitHub Environment `production` requires reviewers `namastex888` + `vasconceloscezar`, has `prevent_self_review: true` and `can_admins_bypass: false`, and admits only the protected `main` control branch. Immutable releases are enabled. Ruleset `main-protection` (id 9203218, active, no bypass actors) requires one last-push-independent approval, resolved threads, strict exact `Quality Gate (typecheck + lint + test)`, merge-only history, and blocks deletion/non-fast-forward updates on `refs/heads/main`. Ruleset `v-tags-immutable` (id 18938286, active, no bypass actors) blocks deletion/update/non-fast-forward on `refs/tags/v*`. The reviewer-free `release-manifests` environment is restricted to `main` and has no secrets, so its current `can_admins_bypass: true` setting grants no manifest authority; set it to `false` before separately approving and provisioning the deploy-key secret. The secret is deliberately absent because the organization currently disables deploy keys; no broader bypass was introduced. Version and Release workflows remain disabled during the cutover. Evidence: [`qa/github-settings-evidence-20260714.json`](qa/github-settings-evidence-20260714.json). G2 CLOSED 2026-07-27: the credential landed as the genie-release-bot App (#2643/#2644) and the human-initiation/two-maintainer gate was observed end to end on stable run 30240023804.
+**Group 2 external state refreshed 2026-07-15 (operator-directed, executed via `gh api` as the owner; approver set named by the operator):** GitHub Environment `production` requires reviewers `namastex888` + `vasconceloscezar`, has `prevent_self_review: true` and `can_admins_bypass: false`, and admits only the protected `main` control branch. Immutable releases are enabled. Ruleset `main-protection` (id 9203218, active, no bypass actors) requires one last-push-independent approval, resolved threads, strict exact `Quality Gate (typecheck + lint + test)`, merge-only history, and blocks deletion/non-fast-forward updates on `refs/heads/main`. Ruleset `v-tags-immutable` (id 18938286, active, no bypass actors) blocks deletion/update/non-fast-forward on `refs/tags/v*`. The reviewer-free `release-manifests` environment is restricted to `main` and has no secrets, so its current `can_admins_bypass: true` setting grants no manifest authority; set it to `false` before separately approving and provisioning the deploy-key secret. The secret is deliberately absent because the organization currently disables deploy keys; no broader bypass was introduced. Version and Release workflows remain disabled during the cutover. Evidence: [`qa/github-settings-evidence-20260714.json`](qa/github-settings-evidence-20260714.json). G2 CLOSED 2026-07-27: the credential landed as the genie-release-bot App (#2643/#2644) and the human-initiation/two-maintainer gate was observed end to end on stable run 30240023804.
 
 **Plan re-review 2026-07-14 (reviewer agent aca929030341671c0): SHIP — all six gaps resolved, coverage complete (6 SC / 3 QA / 4 IN jointly owned by G1+G2), status persisted APPROVED by the invoking orchestrator.** One LOW non-blocking observation: the dev-flow regression AC exercises dev only, acceptable because the guard is a single `channel == 'stable'` exemption and the homolog branch is dormant.
 

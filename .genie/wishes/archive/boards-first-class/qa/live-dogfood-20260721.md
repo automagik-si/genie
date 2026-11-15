@@ -1,7 +1,7 @@
 # Live dogfood — boards-first-class on the shipped binary (2026-07-21)
 
 **Build under test:** installed `genie 5.260721.7` (dev channel; contains #2611 merge `fa163bd2`).
-**Method:** real CLI invocations only — fresh tmp repo for e2e, Felipe's live roadmap for the
+**Method:** real CLI invocations only — fresh tmp repo for e2e, the owner's live roadmap for the
 data-loss check. Script: session scratchpad `dogfood-qa.sh`; raw output reproduced below in part.
 
 ## Update path (obstacles found + resolved)
@@ -43,10 +43,10 @@ check out`. Timeline render shows all 11 authored events in order.
 `genie board --board roadmap` (installed binary) renders all 14 cards in their lanes with action
 hints: Idea 6 / Brainstorm 3 / Wish 0 / Work 2 / Review 3 / Done 0.
 
-## QA #3 — cross-runtime: OPEN (Felipe-gated)
+## QA #3 — cross-runtime: OPEN (owner-gated)
 
 Requires a comment from a real Codex session on a Claude-claimed card; verify both authors with
-correct `author_kind` in `task status`. Command prepared for Felipe.
+correct `author_kind` in `task status`. Command prepared for the owner.
 
 ## Verdict
 

@@ -29,8 +29,8 @@ The v5 omni approval bridge is live-proven (a PreToolUse hook → WhatsApp 🔔 
 ### OUT
 - Reworking the hook/dispatch layer or the global-db schema beyond USING the existing `omni_message_id` column (+ at most a small status-reaction bookkeeping field if the spike shows one is needed).
 - Multi-approval batching / a full interactive TUI in WhatsApp (buttons, lists) — a later wish.
-- Reconnecting the offline `pessoal-whatsapp` instance (a QR scan — Felipe's manual action; not code).
-- Sending live WhatsApp messages during automated tests (fake transport only; live QA is the single `genie omni test-approval --live` helper, run deliberately, between Felipe's own numbers).
+- Reconnecting the offline `pessoal-whatsapp` instance (a QR scan — the owner's manual action; not code).
+- Sending live WhatsApp messages during automated tests (fake transport only; live QA is the single `genie omni test-approval --live` helper, run deliberately, between the owner's own numbers).
 - Changing the approve/deny vocabulary or the timeout→ask fail-safe (both proven correct).
 - Correlating bare unquoted text replies (no quoted-message id → stays oldest-pending fallback; correlation is for reactions + quoted replies).
 
@@ -38,7 +38,7 @@ The v5 omni approval bridge is live-proven (a PreToolUse hook → WhatsApp 🔔 
 
 | # | Decision | Rationale |
 |---|----------|-----------|
-| 1 | Two-state ⏳→✅ ack via genie's OWN swapping status reaction (fallback: message-edit / status line if no outbound-react API) | Felipe's explicit ask: hourglass on receipt, green check once answered. A single swapping reaction is the lowest-noise way to show live state; coexists with the human's 👍/👎. The capability is unverified, so G1 gates it with a NO-GO fallback |
+| 1 | Two-state ⏳→✅ ack via genie's OWN swapping status reaction (fallback: message-edit / status line if no outbound-react API) | The owner's explicit ask: hourglass on receipt, green check once answered. A single swapping reaction is the lowest-noise way to show live state; coexists with the human's 👍/👎. The capability is unverified, so G1 gates it with a NO-GO fallback |
 | 2 | Correlate resolution by the REAL Omni message id; retire the self-referential local ref at `omni-runner.ts:367` | Live QA confirmed oldest-pending resolves the WRONG approval under concurrency; today `announce()` stores a genId() ref that matches nothing inbound. The real id is also the target for the status reaction |
 | 3 | Group 1 is a SPIKE — verify (a) the inbound reaction subject, (b) the id-returning send path, (c) the OUTBOUND set-reaction capability, AND (d) whether inbound text replies carry a quoted-message id — before building | The live QA disproved `omni.event.>`; the ⏳→✅ ack depends on outbound-react existing; text correlation depends on a quoted id. Ground all four in this Omni build's actual contract with an explicit GO/NO-GO per capability |
 | 4 | Reactions first-class (both directions); text replies stay as fallback | Genie's ⏳/✅/❌ status outbound, the human's 👍/👎 inbound. Bare text is the compatibility path (oldest-pending) |
@@ -77,12 +77,12 @@ _Backfilled 2026-09-19 when this wish was archived and its legacy terminal statu
 **Goal:** Replace the disproven `omni.event.>` + self-referential-id assumptions, confirm genie can SET a reaction on a message it sent (or pick a fallback), and learn whether text replies carry a quoted id — using the real contract of this Omni build.
 
 **Deliverables:**
-1. Against the live hub (via `ssh felipe`, MINIMAL messages — one/two clearly-labelled sends between Felipe's OWN numbers 1986780008↔12982298888, subscribe-and-observe for reactions): determine (a) the exact NATS subject + payload omni publishes when a WhatsApp user REACTS; (b) whether the Omni HTTP send API returns a stable `messageId` later inbound events reference; (c) the OUTBOUND set-reaction path — can genie set/change a reaction (⏳ then ✅) on a message it sent, and does the emoji swap in place? If NO, the fallback (message-edit prepend, or a status reply); (d) whether an inbound text reply payload carries a quoted/replied-to message id. Use `omni --json` + a bounded NATS subscriber — NO ad-hoc approval loops.
+1. Against the live hub (via `ssh felipe`, MINIMAL messages — one/two clearly-labelled sends between the owner's OWN numbers 1986780008↔12982298888, subscribe-and-observe for reactions): determine (a) the exact NATS subject + payload omni publishes when a WhatsApp user REACTS; (b) whether the Omni HTTP send API returns a stable `messageId` later inbound events reference; (c) the OUTBOUND set-reaction path — can genie set/change a reaction (⏳ then ✅) on a message it sent, and does the emoji swap in place? If NO, the fallback (message-edit prepend, or a status reply); (d) whether an inbound text reply payload carries a quoted/replied-to message id. Use `omni --json` + a bounded NATS subscriber — NO ad-hoc approval loops.
 2. `.genie/wishes/omni-approval-ux/SPIKE.md`: the inbound reaction subject + payload, the id-returning send path, the outbound set-reaction GO/NO-GO + swap-or-fallback mechanism, the text quoted-id finding, and a GO recommendation for G2/G3 with the exact fields genie must store/match.
 
 **Acceptance Criteria:**
 - [x] SPIKE.md documents the inbound reaction subject + payload, the correlatable-send decision, the outbound set-reaction GO/NO-GO (+ fallback if NO-GO), and the text quoted-id finding — evidence-backed.
-- [x] No spam: at most one or two clearly-labelled messages between Felipe's own numbers.
+- [x] No spam: at most one or two clearly-labelled messages between the owner's own numbers.
 
 **Validation:**
 ```bash
