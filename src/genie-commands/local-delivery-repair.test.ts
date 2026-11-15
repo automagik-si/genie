@@ -2,7 +2,6 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { createHash } from 'node:crypto';
 import {
   chmodSync,
-  cpSync,
   linkSync,
   mkdirSync,
   mkdtempSync,
@@ -14,6 +13,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
+import { copyTreeBytes } from '../lib/byte-copy.js';
 import type { DeliveryEvidencePlatformId } from '../lib/delivery-evidence-verify.js';
 import { buildTestDeliveryEvidencePack } from '../lib/delivery-evidence-verify.test-support.js';
 import { scanPhysicalTree } from '../lib/release-payload-proof.js';
@@ -378,9 +378,11 @@ describe('local delivery embedded-trust command boundary', () => {
 
     const genieHome = join(root, 'genie-home');
     mkdirSync(join(genieHome, 'bin'), { recursive: true });
-    cpSync(payloadTree, join(genieHome, 'plugins', 'genie'), { recursive: true });
+    mkdirSync(join(genieHome, 'plugins'));
+    // Byte copies: a cpSync clone of these just-written files waited 30 s in a host I/O stall (#3323).
+    copyTreeBytes(payloadTree, join(genieHome, 'plugins', 'genie'));
     writeFileSync(join(genieHome, 'VERSION'), `${VERSION}\n`);
-    cpSync(binary, join(genieHome, 'bin', 'genie'));
+    copyTreeBytes(binary, join(genieHome, 'bin', 'genie'));
     chmodSync(join(genieHome, 'bin', 'genie'), 0o755);
 
     const fakeBin = join(root, 'fake-bin');
