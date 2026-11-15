@@ -748,7 +748,7 @@ describe('busy classification', () => {
   });
 
   test('BusyDbError is a GenieDbError distinct from MalformedDbError', () => {
-    const busy = new BusyDbError('/tmp/genie.db', new Error('database is locked'));
+    const busy = new BusyDbError('/tmp/genie.db', new Error('database is locked'), 120_000);
     expect(busy).toBeInstanceOf(GenieDbError);
     expect(busy).not.toBeInstanceOf(MalformedDbError);
     expect(busy.name).toBe('BusyDbError');

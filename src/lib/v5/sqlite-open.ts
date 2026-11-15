@@ -8,8 +8,8 @@
  *
  *   - busy_timeout FIRST, then WAL — every later lock can wait for the write
  *     lock instead of raising an instant SQLITE_BUSY,
- *   - a bounded busy-retry loop so a straggler that outlives busy_timeout under
- *     multi-process contention surfaces as a typed {@link BusyDbError} (safe to
+ *   - a busy-retry loop bounded by a wall-clock deadline, so a lock that stays
+ *     contended past it surfaces as a typed {@link BusyDbError} (safe to
  *     retry), never a {@link MalformedDbError} (corruption),
  *   - refusal of foreign / malformed databases with typed errors,
  *   - idempotent, caller-supplied schema creation stamped into
@@ -25,19 +25,30 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 /**
- * Milliseconds a writer waits for the write lock before giving up. Chosen so
- * concurrent writers serialize into clean conflicts instead of raising
- * SQLITE_BUSY under contention.
+ * Milliseconds one statement waits for a contended lock inside SQLite
+ * (`busy_timeout`). Chosen so concurrent writers serialize into clean conflicts
+ * instead of raising SQLITE_BUSY under contention: SQLite's busy handler waits
+ * without unwinding the statement and polls every 1-100 ms, so most contention
+ * never reaches {@link retryBusy}.
  */
 export const BUSY_TIMEOUT_MS = 5_000;
 
 /**
- * Backoff schedule (ms) for re-attempting the open sequence when a transient
- * SQLITE_BUSY escapes busy_timeout under heavy multi-process contention. Total
- * sleep budget (775ms) stays well under BUSY_TIMEOUT_MS; each attempt already
- * waits up to busy_timeout for the lock, so this only paces the rare straggler.
+ * How long {@link retryBusy} keeps re-attempting a contended open, counted from
+ * the first attempt, before it fails with {@link BusyDbError} (#3315). Defined
+ * once per language: `crates/genie-tasks/src/store.rs` `BUSY_DEADLINE` holds
+ * the same value, and a test on each side reads the other file and compares.
  */
-const BUSY_RETRY_DELAYS_MS = [25, 50, 100, 200, 400] as const;
+export const BUSY_DEADLINE_MS = 120_000;
+
+/**
+ * The backoff between attempts doubles from the base up to the cap, and each
+ * pause is jittered into `[d/2, d]`: siblings do not retry in step, and a
+ * waiting writer polls at least once a second. `store.rs` `BUSY_BACKOFF_BASE` /
+ * `BUSY_BACKOFF_CAP`, compared by the same tests.
+ */
+const BUSY_BACKOFF_BASE_MS = 25;
+const BUSY_BACKOFF_CAP_MS = 1_000;
 
 /**
  * SQLite PRIMARY result codes that mean "the write lock was contended", not
@@ -82,18 +93,23 @@ export class MalformedDbError extends GenieDbError {
 }
 
 /**
- * The file is a healthy genie DB, but the open lost the write lock to another
- * process even after busy_timeout + bounded retries. Transient contention —
- * safe to retry the whole open. Never conflate with {@link MalformedDbError}:
- * a locked database is not a corrupt one.
+ * The file is a healthy genie DB, but it stayed locked until
+ * {@link BUSY_DEADLINE_MS} passed. Transient contention — safe to retry the
+ * whole open. Never conflate with {@link MalformedDbError}: a locked database
+ * is not a corrupt one.
  */
 export class BusyDbError extends GenieDbError {
   readonly path: string;
-  constructor(path: string, cause?: unknown) {
+  /** From the first attempt to giving up, as measured. */
+  readonly waitedMs: number;
+  constructor(path: string, cause: unknown, waitedMs: number) {
     const detail = cause instanceof Error ? cause.message : cause != null ? String(cause) : 'unknown';
-    super(`Database at ${path} is under transient contention (safe to retry): ${detail}`);
+    super(
+      `The task database ${path} stayed locked for ${Math.floor(waitedMs / 1000)} s; another genie process may be stuck, or the disk is stalled. Safe to retry once it clears (${detail})`,
+    );
     this.name = 'BusyDbError';
     this.path = path;
+    this.waitedMs = waitedMs;
   }
 }
 
@@ -262,26 +278,62 @@ function sleepMs(ms: number): void {
   Atomics.wait(SLEEP_SIGNAL, 0, 0, ms);
 }
 
+/** The clock, the sleep and the jitter source of {@link retryBusy}; tests inject a made-up clock. */
+export interface BusyWait {
+  /** Monotonic milliseconds. */
+  now: () => number;
+  sleep: (ms: number) => void;
+  /** Uniform in `[0, 1)`. */
+  random: () => number;
+}
+
+const SYSTEM_BUSY_WAIT: BusyWait = { now: () => performance.now(), sleep: sleepMs, random: Math.random };
+
 /**
- * Run the open→validate sequence, retrying only on transient SQLITE_BUSY. A
- * foreign/malformed DB (GenieDbError) fails fast — retrying can't fix it. A busy
- * error that outlives busy_timeout AND the backoff budget surfaces as a typed
- * {@link BusyDbError}, never as {@link MalformedDbError}.
+ * The pause after busy result `attempt` (0-based): `d = min(base * 2^attempt,
+ * cap)`, jittered by `random` into `[d/2, d]` whole milliseconds.
  */
-function initWithBusyRetry(db: Database, opts: OpenSqliteOptions): void {
-  for (let attempt = 0; ; attempt++) {
+export function busyBackoffMs(attempt: number, random: number): number {
+  const ceiling = Math.min(BUSY_BACKOFF_BASE_MS * 2 ** Math.min(attempt, 16), BUSY_BACKOFF_CAP_MS);
+  const floor = Math.floor(ceiling / 2);
+  return floor + Math.floor(random * (ceiling - floor + 1));
+}
+
+/**
+ * Run `attempt`, retrying a busy throw with jittered backoff until
+ * {@link BUSY_DEADLINE_MS} has passed since the first attempt, then throw
+ * {@link BusyDbError} naming `path`. A {@link GenieDbError} (foreign,
+ * malformed — retrying can't fix it) and any non-busy throw pass through at
+ * once. No pause crosses the deadline, so the last attempt starts at it; an
+ * attempt already running then finishes its own busy_timeout wait, which is
+ * why the error reports the measured time.
+ */
+export function retryBusy<T>(path: string, attempt: () => T, wait: BusyWait = SYSTEM_BUSY_WAIT): T {
+  const start = wait.now();
+  for (let n = 0; ; n++) {
     try {
-      applyPragmas(db);
-      const version = readUserVersion(db, opts.path);
-      initOrValidate(db, version, opts);
-      return;
+      return attempt();
     } catch (err) {
       if (err instanceof GenieDbError) throw err; // foreign/malformed — not retryable
       if (!isBusyError(err)) throw err; // genuine error — caller maps to Malformed
-      if (attempt >= BUSY_RETRY_DELAYS_MS.length) throw new BusyDbError(opts.path, err);
-      sleepMs(BUSY_RETRY_DELAYS_MS[attempt]);
+      const waited = wait.now() - start;
+      if (waited >= BUSY_DEADLINE_MS) throw new BusyDbError(path, err, waited);
+      wait.sleep(Math.min(busyBackoffMs(n, wait.random()), BUSY_DEADLINE_MS - waited));
     }
   }
+}
+
+/**
+ * Run the open→validate sequence under {@link retryBusy}: a busy open that
+ * outlives the deadline surfaces as a typed {@link BusyDbError}, never as
+ * {@link MalformedDbError}.
+ */
+function initWithBusyRetry(db: Database, opts: OpenSqliteOptions): void {
+  retryBusy(opts.path, () => {
+    applyPragmas(db);
+    const version = readUserVersion(db, opts.path);
+    initOrValidate(db, version, opts);
+  });
 }
 
 function applyPragmas(db: Database): void {
