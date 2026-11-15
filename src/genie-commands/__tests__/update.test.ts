@@ -27,7 +27,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { DELIVERY_EVIDENCE_REPOSITORY, type DeliveryEvidenceRepository } from '../../lib/delivery-evidence-verify.js';
 import {
   testCertificateExtension,
@@ -1235,6 +1235,46 @@ describe('private external update staging', () => {
     try {
       expect(() => createPrivateUpdateTempRoot(base)).toThrow('unsafe cross-principal replacement');
       expect(readdirSync(base)).toEqual([]);
+    } finally {
+      chmodSync(namespace, 0o700);
+      rmSync(namespace, { recursive: true, force: true });
+    }
+  });
+
+  // #3308: the test above makes the namespace 0777, so a guard narrowed to the other-write bit
+  // (mask 0o002) still passed the whole suite, though #3271's host had a group-writable (775)
+  // temp parent. Each row sets one write bit on one of the two directories the guard checks.
+  // runDelivery calls createPrivateUpdateTempRoot() before it downloads anything, so an empty
+  // base means nothing was staged and nothing could be promoted. The same directory at 0700
+  // must then be accepted, so the refusal comes from that one bit and nothing else.
+  test.each([
+    ['a group-writable (0775) base', 'base', 0o775],
+    ['a world-writable (0757) base', 'base', 0o757],
+    ['a group-writable (0775) namespace parent', 'namespace', 0o775],
+  ] as const)('refuses %s and stages nothing, then accepts it at 0700', (_label, unsafeDir, mode) => {
+    const namespace = mkdtempSync(join(tmpdir(), 'genie-update-temp-mode-'));
+    const base = join(namespace, 'base');
+    mkdirSync(base, { mode: 0o700 });
+    const unsafe = unsafeDir === 'base' ? base : namespace;
+    chmodSync(unsafe, mode);
+    try {
+      // The whole message, not toThrow's substring match: the namespace path is a prefix of the
+      // base path, so a guard that named the base on the namespace check would still match.
+      let refusal: unknown = null;
+      try {
+        createPrivateUpdateTempRoot(base);
+      } catch (error) {
+        refusal = error;
+      }
+      expect(refusal instanceof Error ? refusal.message : refusal).toBe(
+        `update temp parent permits unsafe cross-principal replacement: ${unsafe}`,
+      );
+      expect(readdirSync(base)).toEqual([]);
+
+      chmodSync(unsafe, 0o700);
+      const root = createPrivateUpdateTempRoot(base);
+      expect(readdirSync(base)).toEqual([basename(root)]);
+      expect(statSync(root).mode & 0o777).toBe(0o700);
     } finally {
       chmodSync(namespace, 0o700);
       rmSync(namespace, { recursive: true, force: true });
