@@ -199,9 +199,20 @@ describe('catalog CLI over isolated Git histories', () => {
         // A fixture commit, merge or fetch otherwise spawns `git maintenance run --auto`,
         // which never has work to do in these tiny repositories: six extra processes per
         // test, all paid again on a loaded host (#3271). Set per call, so no extra spawn.
-        GIT_CONFIG_COUNT: '1',
+        // The fixture identity, signing and hook settings ride the same per-call config, so
+        // seeding a repository runs no `git config`: four processes and four lock-and-rename
+        // rewrites of .git/config per repository, each one exposed to a host I/O stall (#3309).
+        GIT_CONFIG_COUNT: '5',
         GIT_CONFIG_KEY_0: 'maintenance.auto',
         GIT_CONFIG_VALUE_0: 'false',
+        GIT_CONFIG_KEY_1: 'user.email',
+        GIT_CONFIG_VALUE_1: 'test@example.com',
+        GIT_CONFIG_KEY_2: 'user.name',
+        GIT_CONFIG_VALUE_2: 'Test',
+        GIT_CONFIG_KEY_3: 'commit.gpgsign',
+        GIT_CONFIG_VALUE_3: 'false',
+        GIT_CONFIG_KEY_4: 'core.hooksPath',
+        GIT_CONFIG_VALUE_4: '/dev/null',
         GIT_AUTHOR_DATE: '2026-01-01T00:00:00Z',
         GIT_COMMITTER_DATE: '2026-01-01T00:00:00Z',
       },
@@ -242,10 +253,6 @@ describe('catalog CLI over isolated Git histories', () => {
       readFileSync(join(ROOT, 'src', 'lib', 'legacy-skill-digest.ts'), 'utf8'),
     );
     git(dir, 'init', '-q', '-b', 'main');
-    git(dir, 'config', 'user.email', 'test@example.com');
-    git(dir, 'config', 'user.name', 'Test');
-    git(dir, 'config', 'commit.gpgsign', 'false');
-    git(dir, 'config', 'core.hooksPath', '/dev/null');
     // Use the real locked install, never bunx's shared download cache. Exclude the
     // symlink before any add -A so dependencies cannot become delivery history.
     appendFileSync(join(dir, '.git', 'info', 'exclude'), '\n/node_modules\n');
@@ -408,10 +415,6 @@ describe('catalog CLI over isolated Git histories', () => {
     } else {
       git(source, 'init', '-q', '-b', 'main');
     }
-    git(source, 'config', 'user.email', 'test@example.com');
-    git(source, 'config', 'user.name', 'Test');
-    git(source, 'config', 'commit.gpgsign', 'false');
-    git(source, 'config', 'core.hooksPath', '/dev/null');
     // The archive is also a source ancestor, so it needs independent role proof.
     if (sharedAncestry) git(source, 'merge', '-q', '--no-edit', 'origin/genie-archive');
     skill(source, 'skills/foreign-ancestor', 'Mikro skill retired before import.');
