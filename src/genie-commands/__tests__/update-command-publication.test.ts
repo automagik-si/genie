@@ -69,6 +69,9 @@ function buildReleasePayload(
 }
 
 describe('updateCommand publication boundary', () => {
+  // Measured timeout (#3271): 0.25 s quiet; 0.66 s under the busy-CPU proof; 7.7 s on the loaded
+  // gate host. 3x the slowest run, rounded up to 5 s. The cost is I/O, not CPU: 144 fsyncs on the
+  // temp filesystem, one bun runner, tar and the post-update diagnostics' probes.
   test('a verified candidate is promoted and its binding is proven against the delivered payload', () => {
     const root = tempRoot('update-command-publication');
     const genieHome = join(root, 'genie-home');
@@ -120,6 +123,12 @@ describe('updateCommand publication boundary', () => {
     writeFileSync(manifestPath, pack.manifestBytes);
     writeFileSync(descriptorPath, pack.descriptorBytes);
     writeFileSync(bundlePath, pack.bundleBytes);
+    // The update stages under os.tmpdir() and refuses a temp parent that group or other can
+    // write (assertTrustedUpdateTempParent). Inherited, a host TMPDIR of mode 775 made the
+    // runner refuse before promoting, so `--version` still printed the old 1.1.1 (#3271).
+    // The runner gets a TMPDIR this test owns: a mode-0700 directory inside its own root.
+    const runnerTmp = join(root, 'tmp');
+    mkdirSync(runnerTmp, { mode: 0o700 });
 
     const env = { ...process.env };
     env.GENIE_BUNDLE_ROOT = undefined;
@@ -138,6 +147,7 @@ describe('updateCommand publication boundary', () => {
       GENIE_TEST_BUNDLE: bundlePath,
       NO_COLOR: '1',
       PATH: `${bin}:${fakeBin}:${process.env.PATH ?? ''}`,
+      TMPDIR: runnerTmp,
     });
 
     const result = Bun.spawnSync(['bun', RUNNER], { env, stdout: 'pipe', stderr: 'pipe' });
@@ -152,5 +162,5 @@ describe('updateCommand publication boundary', () => {
     const installed = Bun.spawnSync([join(bin, 'genie'), '--version'], { stdout: 'pipe', stderr: 'pipe' });
     expect(installed.exitCode).toBe(0);
     expect(installed.stdout.toString()).toContain(VERSION);
-  });
+  }, 25_000);
 });
