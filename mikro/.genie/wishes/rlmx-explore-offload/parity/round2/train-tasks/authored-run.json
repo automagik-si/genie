@@ -11,12 +11,12 @@
     "--run-json",
     "authored-run.json"
   ],
-  "spec": "/home/namastex/prod/rlmx/.genie/wishes/rlmx-explore-offload/parity/round2/authored-spec.json",
+  "spec": "<rlmx checkout>/.genie/wishes/rlmx-explore-offload/parity/round2/authored-spec.json",
   "written": 8,
   "startAt": 1,
   "strictness": "term on the anchor line itself (no ±3 slack, no re-anchoring), term in the claim, ≤8 occurrences or 5% of the file, claim 40..260 chars, every anchor cited in the reference answer, reference answer passes criteria 2 and 3",
   "disjointFrom": {
-    "excludeTasksDir": "/home/namastex/prod/rlmx/.genie/wishes/rlmx-explore-offload/tasks",
+    "excludeTasksDir": "<rlmx checkout>/.genie/wishes/rlmx-explore-offload/tasks",
     "excludedTaskFiles": [
       "1.md",
       "2.md",
@@ -29,7 +29,7 @@
     "measured": [
       {
         "file": "1.md",
-        "root": "/home/namastex/prod/rlmx",
+        "root": "<rlmx checkout>",
         "anchorFiles": 5,
         "strongestOverlapWith": null,
         "anchorFileOverlap": null,
@@ -38,7 +38,7 @@
       },
       {
         "file": "2.md",
-        "root": "/home/namastex/prod/rlmx",
+        "root": "<rlmx checkout>",
         "anchorFiles": 1,
         "strongestOverlapWith": null,
         "anchorFileOverlap": null,
@@ -47,7 +47,7 @@
       },
       {
         "file": "3.md",
-        "root": "/home/namastex/prod/xdna-top",
+        "root": "<xdna-top checkout>",
         "anchorFiles": 2,
         "strongestOverlapWith": null,
         "anchorFileOverlap": null,
@@ -56,7 +56,7 @@
       },
       {
         "file": "4.md",
-        "root": "/home/namastex/prod/xdna-top",
+        "root": "<xdna-top checkout>",
         "anchorFiles": 2,
         "strongestOverlapWith": null,
         "anchorFileOverlap": null,
@@ -65,7 +65,7 @@
       },
       {
         "file": "5.md",
-        "root": "/home/namastex/prod/genie-desktop",
+        "root": "<genie-desktop checkout>",
         "anchorFiles": 1,
         "strongestOverlapWith": null,
         "anchorFileOverlap": null,
@@ -74,7 +74,7 @@
       },
       {
         "file": "6.md",
-        "root": "/home/namastex/prod/genie-desktop",
+        "root": "<genie-desktop checkout>",
         "anchorFiles": 1,
         "strongestOverlapWith": null,
         "anchorFileOverlap": null,
@@ -83,7 +83,7 @@
       },
       {
         "file": "7.md",
-        "root": "/home/namastex/prod/fde-station",
+        "root": "<fde-station checkout>",
         "anchorFiles": 1,
         "strongestOverlapWith": null,
         "anchorFileOverlap": null,
@@ -92,7 +92,7 @@
       },
       {
         "file": "8.md",
-        "root": "/home/namastex/prod/fde-station",
+        "root": "<fde-station checkout>",
         "anchorFiles": 1,
         "strongestOverlapWith": null,
         "anchorFileOverlap": null,
@@ -125,7 +125,7 @@
   "tasks": [
     {
       "file": "1.md",
-      "root": "/home/namastex/prod/rlmx",
+      "root": "<rlmx checkout>",
       "rootGit": "2a32fd9",
       "session": "authored-rlmx-recursion-child",
       "requiredFacts": 7,
@@ -143,7 +143,7 @@
     },
     {
       "file": "2.md",
-      "root": "/home/namastex/prod/rlmx",
+      "root": "<rlmx checkout>",
       "rootGit": "2a32fd9",
       "session": "authored-rlmx-khal-provider",
       "requiredFacts": 7,
@@ -157,7 +157,7 @@
     },
     {
       "file": "3.md",
-      "root": "/home/namastex/prod/xdna-top",
+      "root": "<xdna-top checkout>",
       "rootGit": "c05ea15",
       "session": "authored-xdna-npu-power",
       "requiredFacts": 7,
@@ -172,7 +172,7 @@
     },
     {
       "file": "4.md",
-      "root": "/home/namastex/prod/xdna-top",
+      "root": "<xdna-top checkout>",
       "rootGit": "c05ea15",
       "session": "authored-xdna-record-export",
       "requiredFacts": 6,
@@ -187,7 +187,7 @@
     },
     {
       "file": "5.md",
-      "root": "/home/namastex/prod/genie-desktop",
+      "root": "<genie-desktop checkout>",
       "rootGit": "3da8750",
       "session": "authored-genie-desktop-pty",
       "requiredFacts": 5,
@@ -201,7 +201,7 @@
     },
     {
       "file": "6.md",
-      "root": "/home/namastex/prod/genie-desktop",
+      "root": "<genie-desktop checkout>",
       "rootGit": "3da8750",
       "session": "authored-genie-desktop-rtk",
       "requiredFacts": 5,
@@ -215,7 +215,7 @@
     },
     {
       "file": "7.md",
-      "root": "/home/namastex/prod/fde-station",
+      "root": "<fde-station checkout>",
       "rootGit": "d1e2206",
       "session": "authored-fde-station-enroll",
       "requiredFacts": 6,
@@ -229,7 +229,7 @@
     },
     {
       "file": "8.md",
-      "root": "/home/namastex/prod/fde-station",
+      "root": "<fde-station checkout>",
       "rootGit": "d1e2206",
       "session": "authored-fde-station-publish",
       "requiredFacts": 5,

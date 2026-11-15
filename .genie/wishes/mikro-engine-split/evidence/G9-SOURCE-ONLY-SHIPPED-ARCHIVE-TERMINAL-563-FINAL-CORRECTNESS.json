@@ -12,7 +12,7 @@
   "sourceCandidateSha256": "7241a0a39d2a270093e6ae0d1af905f9603b3092eff373795146f493ff8e29e9",
   "originalCriteriaSha256": "4c1c29f61bd7389197eff5d421c26e47d9d4f67003cfb3a101c1953b78eae868",
   "sourceIdentity": {
-    "checkout": "/home/genie/.local/share/mikro-engine-split/experiments-g8/final-local-smokes/history-only-reword-6qjyzwas/tree",
+    "checkout": "<experiment workspace>/experiments-g8/final-local-smokes/history-only-reword-6qjyzwas/tree",
     "manifest": ".genie/wishes/mikro-engine-split/evidence/G9-SOURCE-ONLY-SHIPPED-ARCHIVE-TERMINAL-563-FINAL-CANDIDATE-MANIFEST.json",
     "fileCount": 2480,
     "algorithm": "SHA-256 over UTF-8 json.dumps(records,sort_keys=True,separators=(comma,colon),ensure_ascii=False), records lexicographically sorted by relative path. Each record covers path/kind/permission mode/sha256(file bytes or symlink target UTF-8). Deleted tracked entries retain explicit null mode/hash. Existing gitlink entries cover index mode160000, exact gitlinkCommit and SHA256 of UTF8 gitlink:commit; not external checkout bytes.",
@@ -870,7 +870,7 @@
       "commands": [
         "Recorded entire frozen engine cohort once, serially",
         "Recorded same18 genuine native saved-wish runs",
-        "bun scripts/mikro/engine-experiment.ts --manifest /home/genie/.local/share/mikro-engine-split/experiments-g8/frozen-inputs/engine-manifest-receipt3.json --report-only"
+        "bun scripts/mikro/engine-experiment.ts --manifest <experiment workspace>/experiments-g8/frozen-inputs/engine-manifest-receipt3.json --report-only"
       ],
       "result": "108engine+18native actually executed; native jobexit2; report-onlyexit1 completefalse/parityfalse/recommendationnull",
       "limits": "Seven engine full-total and three native offload-accounting gaps; no selective rerun/refreeze/regrade/canonical partial append."

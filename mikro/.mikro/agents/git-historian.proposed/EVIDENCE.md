@@ -112,10 +112,10 @@ version that adds up.
 By project:
 
 ```
-    255 calls    576,614 chars  -home-namastex-workspace
-     93 calls    106,975 chars  -home-namastex-prod-brain
-     52 calls     98,824 chars  -home-namastex-workspace-repos-omni
-     43 calls     58,308 chars  -home-namastex-prod
+    255 calls    576,614 chars  -path-to-workspace
+     93 calls    106,975 chars  -path-to-prod-brain
+     52 calls     98,824 chars  -path-to-workspace-repos-omni
+     43 calls     58,308 chars  -path-to-prod
 ```
 
 It clears all five candidate rules:
@@ -152,11 +152,11 @@ Heaviest calls in the family, `<transcript>:<line>`, verbatim commands:
 
 | chars | ref | command |
 |---|---|---|
-| 22,646 | `~/.claude/projects/-home-namastex-workspace/2cbc9745-3e7e-4191-b818-43ee1074af44/subagents/workflows/wf_f79ae5b0-ed4/agent-a5f7f32678e7b4a4a.jsonl:148` | `cd /home/namastex/prod/mikro && D=…/staged.diff; git diff HEAD …` |
-| 21,397 | `~/.claude/projects/-home-namastex-workspace/2cbc9745-3e7e-4191-b818-43ee1074af44/subagents/workflows/wf_2c703ec8-b5b/agent-ac930a9d88b2b7cfe.jsonl:96` | `cd /home/namastex/prod/mikro && echo "=== mine-explore-tasks.mjs DIFF vs HEAD ===" && git diff HEAD -- scripts/mine-explore-tasks.mjs` |
-| 15,727 | `~/.claude/projects/-home-namastex-workspace/2cbc9745-3e7e-4191-b818-43ee1074af44/subagents/workflows/wf_2c703ec8-b5b/agent-a463a6e03d0653966.jsonl:65` | `cd /home/namastex/prod/mikro && git diff HEAD -- scripts/mine-explore-tasks.mjs \| head -300` |
-| 12,068 | `~/.claude/projects/-home-namastex-workspace/2cbc9745-3e7e-4191-b818-43ee1074af44/subagents/workflows/wf_f79ae5b0-ed4/agent-a9e94a72bc3c24490.jsonl:25` | `cd /home/namastex/prod/mikro && git show --stat 6ec4822 && echo "=== DIFF ===" && git show 6ec4822 -- src/ \| head -200` |
-| 11,074 | `~/.claude/projects/-home-namastex-workspace/2cbc9745-3e7e-4191-b818-43ee1074af44/subagents/workflows/wf_3e5dad7a-424/agent-a9cba19481ca2a0e9.jsonl:12` | `cd /home/namastex/prod/mikro && git diff HEAD -- .claude-plugin/ plugins/ CHANGELOG.md` |
+| 22,646 | `~/.claude/projects/-path-to-workspace/2cbc9745-3e7e-4191-b818-43ee1074af44/subagents/workflows/wf_f79ae5b0-ed4/agent-a5f7f32678e7b4a4a.jsonl:148` | `cd '<mikro checkout>' && D=…/staged.diff; git diff HEAD …` |
+| 21,397 | `~/.claude/projects/-path-to-workspace/2cbc9745-3e7e-4191-b818-43ee1074af44/subagents/workflows/wf_2c703ec8-b5b/agent-ac930a9d88b2b7cfe.jsonl:96` | `cd '<mikro checkout>' && echo "=== mine-explore-tasks.mjs DIFF vs HEAD ===" && git diff HEAD -- scripts/mine-explore-tasks.mjs` |
+| 15,727 | `~/.claude/projects/-path-to-workspace/2cbc9745-3e7e-4191-b818-43ee1074af44/subagents/workflows/wf_2c703ec8-b5b/agent-a463a6e03d0653966.jsonl:65` | `cd '<mikro checkout>' && git diff HEAD -- scripts/mine-explore-tasks.mjs \| head -300` |
+| 12,068 | `~/.claude/projects/-path-to-workspace/2cbc9745-3e7e-4191-b818-43ee1074af44/subagents/workflows/wf_f79ae5b0-ed4/agent-a9e94a72bc3c24490.jsonl:25` | `cd '<mikro checkout>' && git show --stat 6ec4822 && echo "=== DIFF ===" && git show 6ec4822 -- src/ \| head -200` |
+| 11,074 | `~/.claude/projects/-path-to-workspace/2cbc9745-3e7e-4191-b818-43ee1074af44/subagents/workflows/wf_3e5dad7a-424/agent-a9cba19481ca2a0e9.jsonl:12` | `cd '<mikro checkout>' && git diff HEAD -- .claude-plugin/ plugins/ CHANGELOG.md` |
 
 Regenerate the full list with
 `… scan-transcripts.mjs --explain git-history --examples 8`.
@@ -446,9 +446,9 @@ remainder row and its own total:
       496  total — equals the family's 496 calls
 ```
 
-By project, post-fix: 270 calls / 588,785 chars `-home-namastex-workspace` ·
-95 / 170,427 `-home-namastex-workspace-repos-omni` · 89 / 104,029
-`-home-namastex-prod-brain` · 42 / 77,895 `-home-namastex-prod`.
+By project, post-fix: 270 calls / 588,785 chars `-path-to-workspace` ·
+95 / 170,427 `-path-to-workspace-repos-omni` · 89 / 104,029
+`-path-to-prod-brain` · 42 / 77,895 `-path-to-prod`.
 
 ### 7.4 What the correction does *not* change
 

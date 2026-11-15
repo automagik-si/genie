@@ -6,7 +6,7 @@ Read-only research, 2026-09-19. Host Orca CLI **1.4.205** (`orca --version`), sc
 **Citation key.** `[cli]` = `orca --help` / `orca agent-context --json` on this host. `[guide:X]` = the
 version-matched guide the binary itself serves, `orca skills get X` (the installed `~/.claude/skills/orca-cli/SKILL.md`
 and `.../orchestration/SKILL.md` are *discovery stubs only* — they say so in their own text and refuse to list flags).
-`[repo:path]` = a file in `/home/genie/workspace/repos/genie`. `[gh:N]` = issue N in `stablyai/orca` (Orca's own
+`[repo:path]` = a file in `<genie checkout>`. `[gh:N]` = issue N in `stablyai/orca` (Orca's own
 tracker). `[super-orca]` = `github.com/marius-patrik/super-orca`, a **third-party reconstruction** of plugin API v0 —
 used only where `[gh:N]` corroborates it.
 
