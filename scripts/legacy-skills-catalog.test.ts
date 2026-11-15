@@ -196,6 +196,12 @@ describe('catalog CLI over isolated Git histories', () => {
         ...process.env,
         GIT_CONFIG_GLOBAL: '/dev/null',
         GIT_CONFIG_NOSYSTEM: '1',
+        // A fixture commit, merge or fetch otherwise spawns `git maintenance run --auto`,
+        // which never has work to do in these tiny repositories: six extra processes per
+        // test, all paid again on a loaded host (#3271). Set per call, so no extra spawn.
+        GIT_CONFIG_COUNT: '1',
+        GIT_CONFIG_KEY_0: 'maintenance.auto',
+        GIT_CONFIG_VALUE_0: 'false',
         GIT_AUTHOR_DATE: '2026-01-01T00:00:00Z',
         GIT_COMMITTER_DATE: '2026-01-01T00:00:00Z',
       },
@@ -786,6 +792,9 @@ describe('catalog CLI over isolated Git histories', () => {
     }
   });
 
+  // Measured timeout (#3271): 0.41 s quiet; 1.34 s under the busy-CPU proof; killed at Bun's 5 s
+  // default on the loaded gate host. 3x that 5 s floor. The cost is process launches and I/O, not
+  // CPU: 119 git processes and four catalog CLI runs.
   test('anchor closure includes ordinary side parents but never authenticates clean descendants', () => {
     const repo = seedOrigin();
     const archived = git(repo, 'rev-parse', 'refs/heads/genie-archive').trim();
@@ -814,7 +823,7 @@ describe('catalog CLI over isolated Git histories', () => {
     expect(denied.stdout).toBe('');
     expect(denied.stderr).toContain('not independently Genie-owned');
     expectGenieHistory(outputCatalog(repo, provenance, provenance.slice(0, 40)));
-  });
+  }, 15_000);
 
   test('anchor CLI validates all flags before writes and supports mode/option ordering idempotently', () => {
     const repo = seedOrigin();
@@ -864,6 +873,9 @@ describe('catalog CLI over isolated Git histories', () => {
     expect(readFileSync(join(repo, 'src/lib/legacy-skills-catalog.ts'), 'utf8')).toBe(bytes);
   });
 
+  // Measured timeout (#3271), per row: 0.33 s quiet; 0.86 s under the busy-CPU proof; killed at
+  // Bun's 5 s default on the loaded gate host. 3x that 5 s floor. The cost is process launches and
+  // I/O, not CPU: about 95 git processes and three catalog CLI runs per row.
   test.each([
     ['split', false],
     ['split', true],
@@ -908,6 +920,7 @@ describe('catalog CLI over isolated Git histories', () => {
         expect(readFileSync(join(repo, 'src/lib/legacy-skills-catalog.ts'), 'utf8')).toBe(recorded);
       }
     },
+    15_000,
   );
 
   test.each([false, true])(

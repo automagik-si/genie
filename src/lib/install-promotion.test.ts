@@ -523,6 +523,9 @@ describe('installer promotion transaction', () => {
     expect(pendingRoots(fixture)).toHaveLength(1);
   });
 
+  // Measured timeout (#3271): 0.13 s quiet; 0.18 s under the busy-CPU proof; killed at Bun's 5 s
+  // default on the loaded gate host. 3x that 5 s floor. The cost is I/O, not CPU: an interrupted
+  // promotion plus its recovery make 261 fsyncs on the temp filesystem.
   test('a symlink prior is moved and restored as an object without touching its target', () => {
     const fixture = makeFixture();
     const victim = join(fixture.root, 'victim');
@@ -542,7 +545,7 @@ describe('installer promotion transaction', () => {
     expect(readlinkSync(templates)).toBe(victim);
     expect(readFileSync(join(victim, 'untouched.txt'), 'utf8')).toBe('untouched\n');
     expect(physicalPathIdentitiesEqual(inspectPhysicalPath(templates), prior)).toBe(true);
-  });
+  }, 15_000);
 
   test('an active transaction is rollback-only even after a committed receipt and prior backup publication', () => {
     const fixture = makeFixture();
@@ -645,6 +648,9 @@ describe('installer promotion transaction', () => {
     expect(pendingRoots(fixture)).toHaveLength(1);
   });
 
+  // Measured timeout (#3271): 0.09 s quiet; 0.26 s under the busy-CPU proof; killed at Bun's 5 s
+  // default on the loaded gate host. 3x that 5 s floor. The cost is I/O, not CPU: an interrupted
+  // promotion plus its rollback make 185 fsyncs on the temp filesystem.
   test('forged verified and committed receipts after the final binary publish cannot authorize activation', () => {
     const fixture = makeFixture();
     const priorBinary = inspectPhysicalPath(join(fixture.bin, 'genie'));
@@ -663,7 +669,7 @@ describe('installer promotion transaction', () => {
     assertGeneration(fixture.staging, '2.0.0');
     expect(physicalPathIdentitiesEqual(inspectPhysicalPath(join(fixture.bin, 'genie')), priorBinary)).toBe(true);
     expect(pendingRoots(fixture)).toEqual([]);
-  });
+  }, 15_000);
 
   for (const forgedTerminal of ['committed', 'rolledback'] as const) {
     test(`rejects a forged canonical ${forgedTerminal} receipt without an authorized receipt history`, () => {

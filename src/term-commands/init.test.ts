@@ -428,6 +428,9 @@ function runInitWithHome(cwd: string, genieHome: string): { code: number; stderr
 }
 
 describe('init marker-owned Codex retirement', () => {
+  // Measured timeout (#3271): 0.09 s quiet; 0.37 s under the busy-CPU proof; 6.3 s on the loaded
+  // gate host. 3x the slowest run, rounded up to 5 s. The cost is process launches and I/O, not
+  // CPU: the genie CLI under test (which loads the whole command tree) plus git.
   test('removes an owned marker and preserves unrelated TOML', () => {
     initGitRepo(dir);
     const codexPath = join(dir, '.codex', 'config.toml');
@@ -438,7 +441,7 @@ describe('init marker-owned Codex retirement', () => {
     );
     expect(runInitWithHome(dir, join(dir, 'home')).code).toBe(0);
     expect(readFileSync(codexPath, 'utf8')).toBe('model = "x"\n');
-  });
+  }, 20_000);
 
   test('an unowned same-key Codex route is preserved byte-for-byte and reported, never overwritten', () => {
     initGitRepo(dir);
@@ -458,6 +461,10 @@ describe('init marker-owned Codex retirement', () => {
    * contract docs already promised) `genie init` dirtied an otherwise clean worktree with an
    * untracked `config.toml.genie-backup-<stamp>` — the same class of trash the removal exists to
    * clear, moved one filename over.
+   *
+   * Measured timeout (#3271): 0.14 s quiet; 0.39 s under the busy-CPU proof; 6.7 s on the loaded
+   * gate host. 3x the slowest run, rounded up to 5 s. The cost is process launches and I/O, not
+   * CPU: the genie CLI under test (which loads the whole command tree) plus four git calls.
    */
   test('the backup a removal leaves behind is ignored, so init leaves the worktree clean', () => {
     initGitRepo(dir);
@@ -484,5 +491,5 @@ describe('init marker-owned Codex retirement', () => {
       .filter(Boolean)
       .map((line) => line.slice(3));
     expect(untracked).not.toContain(join('.codex', backups[0] as string));
-  });
+  }, 25_000);
 });

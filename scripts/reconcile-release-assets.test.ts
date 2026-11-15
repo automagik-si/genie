@@ -11,6 +11,12 @@ const CHANNEL = 'dev';
 // verifier subprocesses. A dev run takes ~7s locally, beyond Bun's 5s default.
 // Bound each pipeline itself, then allow grouped scenarios their own budget.
 const PIPELINE_TIMEOUT_MS = 30_000;
+// Measured bound for the failure-propagation pipelines (#3271): the cosign verify-blob pipeline takes
+// 1.04 s quiet and 2.83 s under the busy-CPU proof, and was killed at the 30 s bound above on a
+// loaded gate host. 3x that 30 s floor. The cost is process launches, not CPU: the shell pipeline
+// and its fakes start about 1,600 short processes for six runs, about 130 of them whole bun
+// processes, because the fake gh, cosign and slsa-verifier are bun scripts.
+const PROPAGATION_PIPELINE_TIMEOUT_MS = 90_000;
 const PLATFORMS = ['linux-x64-glibc', 'linux-x64-musl', 'linux-arm64', 'darwin-arm64'];
 function namesFor(channel: 'stable' | 'dev'): string[] {
   const channels = channel === 'stable' ? ['stable', 'dev'] : ['dev'];
@@ -92,6 +98,7 @@ function run(
   mutate?: (dist: string) => void,
   channel: 'stable' | 'dev' = CHANNEL,
   localPrefix = 'local',
+  pipelineTimeoutMs = PIPELINE_TIMEOUT_MS,
 ) {
   const root = mkdtempSync(join(tmpdir(), 'genie-release-assets-'));
   roots.push(root);
@@ -303,7 +310,7 @@ save();
 
   const result = Bun.spawnSync(['bash', SCRIPT], {
     cwd: root,
-    timeout: PIPELINE_TIMEOUT_MS,
+    timeout: pipelineTimeoutMs,
     killSignal: 'SIGKILL',
     env: {
       ...process.env,
@@ -552,18 +559,21 @@ describe('exact GitHub release asset reconciliation', () => {
     expect(uploadCalls(absent.state)).toHaveLength(0);
   }, 60_000);
 
+  // The test budget stays 120 s: it already exceeds 3x the 33.4 s this test ran on the loaded gate
+  // host before its cosign pipeline was killed (5.3 s quiet, 14.7 s under the busy-CPU proof).
   test('propagates upload and verification failures', () => {
-    const upload = run({ draft: true, assets: {}, failOn: 'uploads.github.com' });
+    const measured = (state: FakeState) => run(state, undefined, CHANNEL, 'local', PROPAGATION_PIPELINE_TIMEOUT_MS);
+    const upload = measured({ draft: true, assets: {}, failOn: 'uploads.github.com' });
     expect(upload.result.exitCode).toBe(42);
 
-    const endorsement = run({ draft: true, assets: {}, failOn: 'gh attestation verify' });
+    const endorsement = measured({ draft: true, assets: {}, failOn: 'gh attestation verify' });
     expect(endorsement.result.exitCode).toBe(42);
 
-    const verification = run({ draft: false, assets: localAssets('published'), failOn: 'cosign verify-blob' });
+    const verification = measured({ draft: false, assets: localAssets('published'), failOn: 'cosign verify-blob' });
     expect(verification.result.exitCode).toBe(42);
     expect(uploadCalls(verification.state)).toHaveLength(0);
 
-    const mismatchedSecondPass = run({
+    const mismatchedSecondPass = measured({
       draft: false,
       assets: localAssets('published'),
       secondControlSha: 'd'.repeat(40),
@@ -571,11 +581,11 @@ describe('exact GitHub release asset reconciliation', () => {
     expect(mismatchedSecondPass.result.exitCode).toBe(3);
     expect(mismatchedSecondPass.result.stderr.toString()).toContain('control digest mismatch');
 
-    const genericPolicy = run({ draft: false, assets: localAssets('published'), invalidGeneric: true });
+    const genericPolicy = measured({ draft: false, assets: localAssets('published'), invalidGeneric: true });
     expect(genericPolicy.result.exitCode).not.toBe(0);
     expect(uploadCalls(genericPolicy.state)).toHaveLength(0);
 
-    const nativePolicy = run({ draft: false, assets: localAssets('published'), invalidNative: true });
+    const nativePolicy = measured({ draft: false, assets: localAssets('published'), invalidNative: true });
     expect(nativePolicy.result.exitCode).not.toBe(0);
     expect(uploadCalls(nativePolicy.state)).toHaveLength(0);
   }, 120_000);
