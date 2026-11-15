@@ -5,7 +5,7 @@
 | **Wish** | `omni-approval-ux` |
 | **Group** | G1 (SPIKE) — gates G2 + G3 |
 | **Date** | 2026-07-03 |
-| **Method** | Source-of-truth grounding in the LIVE Omni build (`~/prod/omni`, running as PID 291967) + running NATS (`nats-server -js`, PID 291945, `:4222`) reached via `ssh felipe`. Zero live WhatsApp messages sent (see "Live messaging" below). |
+| **Method** | Source-of-truth grounding in the LIVE Omni build (`~/prod/omni`, running as PID 291967) + running NATS (`nats-server -js`, PID 291945, `:4222`) reached via `ssh <linux box>`. Zero live WhatsApp messages sent (see "Live messaging" below). |
 | **Omni build** | bun monorepo at `<omni checkout>`; genie-facing bridge = `packages/core/src/providers/nats-genie-provider.ts`; reaction dispatch = `packages/api/src/plugins/agent-dispatcher.ts`; WhatsApp channel = `packages/channel-whatsapp/src/plugin.ts` + `handlers/messages.ts`. |
 
 ## TL;DR verdicts
