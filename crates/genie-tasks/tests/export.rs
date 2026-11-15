@@ -125,11 +125,11 @@ fn appender(i: usize) {
     }
 }
 
-// Under a host I/O stall this test can fail on the store's busy budget, not on a bound of its own: 320
-// `synchronous = FULL` commits from 16 processes queue behind stalled fsyncs, and an appender kept waiting
-// longer than `retry_busy` allows (a 5 s `BUSY_TIMEOUT` per attempt, six attempts, about 31 s) gets
-// `database is locked` from `record`. Seen at 67.5 s under a host stall (#3309). The budget is #3315's
-// question, so the load and the assertions stay as they are.
+// Under a host I/O stall, 320 `synchronous = FULL` commits from 16 processes queue behind stalled fsyncs.
+// The store's busy budget used to be six attempts (a 5 s `BUSY_TIMEOUT` each, about 31 s), and an appender
+// kept waiting longer got `database is locked` from `record`: seen at 67.5 s (#3309). Since #3315
+// `retry_busy` waits until `BUSY_DEADLINE` (120 s from the first attempt) instead, so a stall shorter than
+// that only slows this test down. The load and the assertions stay as they are.
 #[test]
 fn rebuild_while_sixteen_processes_append() {
     if let Ok(i) = std::env::var(ROLE) {
