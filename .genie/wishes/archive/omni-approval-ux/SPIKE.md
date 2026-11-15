@@ -47,7 +47,7 @@ $ grep -rn "omni.event" ~/prod/omni/packages/*/src ~/prod/omni/apps/*/src
   "content": "[<owner>]: [Reaction: 👍 on message 3EB097217C5450F5E0166D]",
   "sender": "<owner>",
   "instanceId": "506377b1-eb79-4ae3-abc1-80bd00986f6b",
-  "chatId": "5512982298888@s.whatsapp.net",
+  "chatId": "<phone number>@s.whatsapp.net",
   "messageId": "3EB097217C5450F5E0166D",
   "agent": "<agent>",
   "timestamp": "2026-07-03T...Z"
