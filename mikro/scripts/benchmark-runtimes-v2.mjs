@@ -4,13 +4,13 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
-const PRIME_ROOT = "/home/genie/.local/lib/node_modules/prime-agent";
+const PRIME_ROOT = join(homedir(), ".local/lib/node_modules/prime-agent");
 const PINNED_PRIME_VERSION = "0.8.1";
 const SELECTION_PATH = join(ROOT, ".genie/evidence/prime-runtime-benchmark/model-benchmark-sdk-v2-selection-lock.json");
 const MODEL = Object.freeze({
