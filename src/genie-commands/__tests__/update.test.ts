@@ -1258,7 +1258,15 @@ describe('private external update staging', () => {
     const unsafe = unsafeDir === 'base' ? base : namespace;
     chmodSync(unsafe, mode);
     try {
-      expect(() => createPrivateUpdateTempRoot(base)).toThrow(
+      // The whole message, not toThrow's substring match: the namespace path is a prefix of the
+      // base path, so a guard that named the base on the namespace check would still match.
+      let refusal: unknown = null;
+      try {
+        createPrivateUpdateTempRoot(base);
+      } catch (error) {
+        refusal = error;
+      }
+      expect(refusal instanceof Error ? refusal.message : refusal).toBe(
         `update temp parent permits unsafe cross-principal replacement: ${unsafe}`,
       );
       expect(readdirSync(base)).toEqual([]);
