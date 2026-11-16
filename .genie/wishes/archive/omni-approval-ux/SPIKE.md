@@ -5,7 +5,7 @@
 | **Wish** | `omni-approval-ux` |
 | **Group** | G1 (SPIKE) — gates G2 + G3 |
 | **Date** | 2026-07-03 |
-| **Method** | Source-of-truth grounding in the LIVE Omni build (`~/prod/omni`, running as PID 291967) + running NATS (`nats-server -js`, PID 291945, `:4222`) reached via `ssh felipe`. Zero live WhatsApp messages sent (see "Live messaging" below). |
+| **Method** | Source-of-truth grounding in the LIVE Omni build (`~/prod/omni`, running as PID 291967) + running NATS (`nats-server -js`, PID 291945, `:4222`) reached via `ssh <linux box>`. Zero live WhatsApp messages sent (see "Live messaging" below). |
 | **Omni build** | bun monorepo at `<omni checkout>`; genie-facing bridge = `packages/core/src/providers/nats-genie-provider.ts`; reaction dispatch = `packages/api/src/plugins/agent-dispatcher.ts`; WhatsApp channel = `packages/channel-whatsapp/src/plugin.ts` + `handlers/messages.ts`. |
 
 ## TL;DR verdicts
@@ -44,10 +44,10 @@ $ grep -rn "omni.event" ~/prod/omni/packages/*/src ~/prod/omni/apps/*/src
 **Reference payload genie will receive on `omni.message.{instance}.{chat}` for a 👍 reaction:**
 ```json
 {
-  "content": "[Felipe Rosa]: [Reaction: 👍 on message 3EB097217C5450F5E0166D]",
-  "sender": "Felipe Rosa",
+  "content": "[<owner>]: [Reaction: 👍 on message 3EB097217C5450F5E0166D]",
+  "sender": "<owner>",
   "instanceId": "506377b1-eb79-4ae3-abc1-80bd00986f6b",
-  "chatId": "5512982298888@s.whatsapp.net",
+  "chatId": "<phone number>@s.whatsapp.net",
   "messageId": "3EB097217C5450F5E0166D",
   "agent": "<agent>",
   "timestamp": "2026-07-03T...Z"
@@ -124,7 +124,7 @@ The mechanism is source-proven; the ONLY unproven bit is the empirical in-place 
 
 ## Live messaging
 
-**Live WhatsApp messages sent: 0.** One labelled test send (AI number → Felipe's personal number, DM) was attempted to empirically confirm (b) the returned field and (c) the in-place swap; the Claude Code auto-mode safety classifier correctly blocked it (a teammate-message is not the user's explicit intent for an outbound real-world message, and the recipient number was agent-inferred). Per the anti-spam directive I did **not** work around the block. All four findings above are **source-proven** against the live running build; the only item awaiting empirical confirmation is (c)'s in-place reaction swap render, which is covered by the documented NO-GO fallbacks. A single deliberate `--live` round-trip (via the G3 `genie omni test-approval --live` harness, or a user-approved `omni send`) can confirm it later.
+**Live WhatsApp messages sent: 0.** One labelled test send (AI number → the owner's personal number, DM) was attempted to empirically confirm (b) the returned field and (c) the in-place swap; the Claude Code auto-mode safety classifier correctly blocked it (a teammate-message is not the user's explicit intent for an outbound real-world message, and the recipient number was agent-inferred). Per the anti-spam directive I did **not** work around the block. All four findings above are **source-proven** against the live running build; the only item awaiting empirical confirmation is (c)'s in-place reaction swap render, which is covered by the documented NO-GO fallbacks. A single deliberate `--live` round-trip (via the G3 `genie omni test-approval --live` harness, or a user-approved `omni send`) can confirm it later.
 
 ## GO/NO-GO summary
 - (a) subject grounded → **GO** (build against `omni.message.*`, retire `omni.event.*`).

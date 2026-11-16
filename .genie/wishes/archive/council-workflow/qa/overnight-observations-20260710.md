@@ -1,6 +1,6 @@
 # /council — Overnight QA Observations (2026-07-10)
 
-**Context:** first real `/council` dogfood of the overnight run — a lens council deliberation (3 lenses, 2 rounds) plus the live-QA ritual against the stamped `~/.claude/workflows/council.js`. These are the observations to fold into the council-workflow **final execution review**, which stays pending Felipe's live-QA tail (`/council "revisar tudo"`) after the next stable release.
+**Context:** first real `/council` dogfood of the overnight run — a lens council deliberation (3 lenses, 2 rounds) plus the live-QA ritual against the stamped `~/.claude/workflows/council.js`. These are the observations to fold into the council-workflow **final execution review**, which stays pending the owner's live-QA tail (`/council "revisar tudo"`) after the next stable release.
 
 ---
 
@@ -24,5 +24,5 @@ The stamp mechanism fired only on **SessionStart**, so a mid-session `/plugin up
 
 ## Still pending (USER-GATED, post-stable-release)
 
-1. **Live-QA ritual** — Felipe runs `/council "revisar tudo"` against the released, self-synced `council.js`. This exercises the string-args path end-to-end on the shipped artifact (not a patched copy).
+1. **Live-QA ritual** — the owner runs `/council "revisar tudo"` against the released, self-synced `council.js`. This exercises the string-args path end-to-end on the shipped artifact (not a patched copy).
 2. **Final execution review** — written after the ritual; the g5-gate parks in this `qa/` directory until then. It should incorporate this defect story and the deliberation-quality observations from the first 3-lens / 2-round dogfood.

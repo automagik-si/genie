@@ -2,7 +2,7 @@
 
 Publication copy: private host capture, telemetry, billing and run-activity observations are omitted below. The complete original remains machine-local; source SHA256 `8c8ee9e3ae2cd1daa6030afdf35e68400fc5c36a144724442767f5ce8bd7376b`.
 
-Written 2026-10-04 by genie-af (Claude Code) for Felipe. Status: starting point for a brainstorm/wish, nothing implemented.
+Written 2026-10-04 by genie-af (Claude Code) for the owner. Status: starting point for a brainstorm/wish, nothing implemented.
 
 ## The goal (owner's words, distilled)
 

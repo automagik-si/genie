@@ -402,8 +402,8 @@ G3, 2026-10-02. The `brainstorm` card, rendered with `renderSkillCard(root, 'bra
 | Mintlify | `genie/render-check.mdx` on throwaway docs branch `render-check/skill-cards`, `<img src="/genie/images/skills/brainstorm.svg" />`, rendered by `mint dev` 4.2.970 | rendered (Geist, JetBrains Mono) | rendered | rendered | [render-mintlify.png](evidence/render-mintlify.png) |
 
 - Font proof: each platform's `<img>` capture was compared with two local Chromium renders of the same card, one as shipped and one with its `@font-face` block removed (which falls back to DejaVu). GitHub differs 1.98% from the as-shipped render and 4.56% from the fallback; Mintlify 1.82% and 4.29%. The glyph shapes match Geist and JetBrains Mono.
-- Mintlify substitute, approved by the owner: the draft docs PR [automagik-dev/docs#87](https://github.com/automagik-dev/docs/pull/87) got no preview ("Mintlify Deployment: Skipping deployment — No eligible deployments found for changes"). Per this plan's risk row the check stopped and asked; Felipe chose "Render local com mint dev". The local renderer draws the same `<img>` in the same browser engine; what it does not exercise is the hosted CDN's response headers. #87 is closed unmerged.
-- Owner checkpoint: Felipe approved the card visually ("Aprovado") and the Mintlify substitute on 2026-10-02.
+- Mintlify substitute, approved by the owner: the draft docs PR [automagik-dev/docs#87](https://github.com/automagik-dev/docs/pull/87) got no preview ("Mintlify Deployment: Skipping deployment — No eligible deployments found for changes"). Per this plan's risk row the check stopped and asked; the owner chose "Render local com mint dev". The local renderer draws the same `<img>` in the same browser engine; what it does not exercise is the hosted CDN's response headers. #87 is closed unmerged.
+- Owner checkpoint: the owner approved the card visually ("Aprovado") and the Mintlify substitute on 2026-10-02.
 - Neither `render-check.md` nor `render-check.mdx` exists on `wish/skill-cards` or on any PR head; both throwaway branches are deleted in G8.
 
 ## Review Results
@@ -424,7 +424,7 @@ _The read-only reviewer returns evidence; the invoking orchestrator appends a ti
 - Reviewer: claude-opus-5-5, independent read-only plan reviewer (same reviewer as review 1, re-checking its own findings under the frozen criteria). Plan sha256 `1210fb84c1bf39cb754d719f97faf07f8771513b5d0c568ffb78df291090bcc7`.
 - All seven blocking findings of review 1 verified fixed, with the G6/G8 queries run on #3089 and #3071 and the G3/G4 ordering loop exercised in scratch repos.
 - Three non-blocking LOWs, applied after the verdict and changing nothing else: LOW-1 G1 detaches the clone's main worktree before adding the linked one; LOW-2 G2's validation is marked as holding at G2's head only; LOW-3 G4 and SC11 diff against `origin/dev...HEAD` (merge base), not a moving `origin/dev`.
-- Owner approval: Felipe, 2026-10-02, "aprovado, pode executar quando o review sair SHIP". Status persisted as APPROVED by the orchestrator.
+- Owner approval: 2026-10-02, "aprovado, pode executar quando o review sair SHIP". Status persisted as APPROVED by the orchestrator.
 
 ---
 
@@ -453,7 +453,7 @@ _The read-only reviewer returns evidence; the invoking orchestrator appends a ti
 
 ### Group 3 — 2026-10-02T02:56Z — owner checkpoint passed
 
-- See `## Render check`: fonts, logo and glow render through `<img>` on GitHub and in Mintlify (local `mint dev`, owner-approved substitute after the preview was skipped); Felipe approved the card. Evidence commit `d0b5cb1cd`; docs#87 closed unmerged. The G3 validation block exits 0.
+- See `## Render check`: fonts, logo and glow render through `<img>` on GitHub and in Mintlify (local `mint dev`, owner-approved substitute after the preview was skipped); the owner approved the card. Evidence commit `d0b5cb1cd`; docs#87 closed unmerged. The G3 validation block exits 0.
 
 ### Group 4 review — 2026-10-02T03:14:00Z — SHIP
 
@@ -476,17 +476,17 @@ _The read-only reviewer returns evidence; the invoking orchestrator appends a ti
 
 ### Group 6 — merged
 
-- [#3092](https://github.com/automagik-dev/genie/pull/3092) merged into `dev` by Felipe at 2026-10-02T04:17:27Z (`2afb03fb8`). The G6 validation block exits 0 (`bun run check` on `2803f432f`, `check:fast` on `9a4c80ed8`, read-back of head, base, file set and both `Unit (…)` checks).
+- [#3092](https://github.com/automagik-dev/genie/pull/3092) merged into `dev` by the owner at 2026-10-02T04:17:27Z (`2afb03fb8`). The G6 validation block exits 0 (`bun run check` on `2803f432f`, `check:fast` on `9a4c80ed8`, read-back of head, base, file set and both `Unit (…)` checks).
 
 ### Group 7 — merged
 
-- [automagik-dev/docs#88](https://github.com/automagik-dev/docs/pull/88): exactly the 18 `genie/images/skills/*.svg`, generated at the reviewed head in the docs submodule; the G7 validation block exits 0 (`--docs --check` included). Merged into docs `main` by Felipe at 2026-10-02T04:20:57Z (`bc0b43ba7`). Ruling: no separate reviewer for G7, since its content is generated bytes the reviewed generator's `--docs --check` proves.
+- [automagik-dev/docs#88](https://github.com/automagik-dev/docs/pull/88): exactly the 18 `genie/images/skills/*.svg`, generated at the reviewed head in the docs submodule; the G7 validation block exits 0 (`--docs --check` included). Merged into docs `main` by the owner at 2026-10-02T04:20:57Z (`bc0b43ba7`). Ruling: no separate reviewer for G7, since its content is generated bytes the reviewed generator's `--docs --check` proves.
 
 ### Group 8 — bump and cleanup
 
 - Branch `chore/bump-docs-skill-cards` from `origin/dev` (`2dfaf3492`); `git submodule update --remote .docs-vendor` moves the pointer from `d87ae8404` to `bc0b43ba7`, the docs#88 merge on docs `main` (ancestor check passes); `.docs-vendor/genie/images/skills/` holds 18 SVGs, and `bun scripts/skill-card-images.ts --docs --check` exits 0 against them.
 - Both `render-check/skill-cards` branches deleted (genie and docs); docs#87 closed unmerged.
-- [#3093](https://github.com/automagik-dev/genie/pull/3093) merged into `dev` by Felipe at 2026-10-02T11:45:11Z (`9097ccf82`); every check green, the three `Docs Lint` jobs included. The G8 validation block exits 0.
+- [#3093](https://github.com/automagik-dev/genie/pull/3093) merged into `dev` by the owner at 2026-10-02T11:45:11Z (`9097ccf82`); every check green, the three `Docs Lint` jobs included. The G8 validation block exits 0.
 
 ### QA on `dev` — 2026-10-02 — PASS → SHIPPED
 

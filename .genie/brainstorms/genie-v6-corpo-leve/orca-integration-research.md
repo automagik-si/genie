@@ -104,7 +104,7 @@ cards** today (Done 56, Idea 11, Wish 5, Review 3) with `id`, `title`, `lane`, `
 `genie task` ⇄ GitHub issue ⇄ Orca Tasks page, identity key = the issue number stored on the card (and
 `worktree create --issue <n>` to link the workspace). Sync direction must be **one-way genie→GitHub for content**,
 with GitHub→genie only for the issue number, or the roadmap's three-way `task sync` and GitHub become two writers of
-one truth. **Missing before design:** whether Felipe wants 75 cards (56 already Done) mirrored as public issues at all;
+one truth. **Missing before design:** whether the owner wants 75 cards (56 already Done) mirrored as public issues at all;
 whether `tasks.wish` maps to a label, a milestone, or a parent issue; and what happens to lanes Orca has no word for
 (Idea, Brainstorm, Wish) since Orca's columns are workspace statuses, not issue states.
 
@@ -172,7 +172,7 @@ Ranked. "Today?" = expressible under `pluginApi: 1` / the public CLI **now**, wi
 - **Rides:** the native GitHub task provider — the one of four that needs no Orca change.
 - **Genie ships:** a `genie task push/pull --github` verb (issue number as identity key on the card), a lane↔label map, and a `task sync` rule making GitHub a derived mirror, never a second writer.
 - **Size:** M (new CLI verb + roadmap schema field + conflict policy).
-- **Missing evidence:** Felipe's appetite for public issues; the mapping for lanes GitHub has no word for; whether the repo is public enough for 75 cards.
+- **Missing evidence:** the owner's appetite for public issues; the mapping for lanes GitHub has no word for; whether the repo is public enough for 75 cards.
 
 **3 — Genie health + wish state as a sidebar panel** *(rank 5; do only if 1 lands well)*
 - **Sees:** one Genie panel: current wish, its groups, review verdicts, doctor warnings (skills record drift, retirement leftovers, collision backups).

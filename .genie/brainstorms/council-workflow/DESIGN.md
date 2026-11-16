@@ -8,7 +8,7 @@
 
 ## Problem
 
-Genie's multi-perspective reasoning is split across two model-driven orchestrators — `skills/council/` (topic deliberation, Agent-tool turn-by-turn) and Felipe's personal `specialist-panel` skill (7-lane repo audit) — which duplicate the same fan-out→synthesize pattern in prompt form: fragile, non-resumable, context-hungry, and (in the panel's case) not shipped with the product at all.
+Genie's multi-perspective reasoning is split across two model-driven orchestrators — `skills/council/` (topic deliberation, Agent-tool turn-by-turn) and the owner's personal `specialist-panel` skill (7-lane repo audit) — which duplicate the same fan-out→synthesize pattern in prompt form: fragile, non-resumable, context-hungry, and (in the panel's case) not shipped with the product at all.
 
 ## Scope
 
@@ -28,7 +28,7 @@ Genie's multi-perspective reasoning is split across two model-driven orchestrato
 - `genie council` term-command (CLI) — the surface is the saved workflow, not a CLI verb.
 - Per-repo `.claude/workflows/` scaffolding via `genie init` — repo-level override is a documented capability, not a deliverable.
 - dream/scheduler autonomy, routing-matrix role-agent changes.
-- Deleting Felipe's personal `~/.claude/skills/` copies (his local hygiene, outside the repo).
+- Deleting the owner's personal `~/.claude/skills/` copies (his local hygiene, outside the repo).
 
 ## Approach
 
@@ -53,7 +53,7 @@ council.js
 
 Council invariants preserved in the script: ≥2 members must deliver Round 1 or the run reports failure; silent members recorded as "no response"; advisory-only, no voting; audit stays assess-only with the authority boundary (findings crystallize via `/wish`, never a parallel approval mechanism).
 
-**Alternatives considered:** thin skill launching the Workflow tool via `scriptPath` (rejected by Felipe: keeps an orchestration skill alive; native command is cleaner); two sibling workflows for audit/deliberation (rejected: duplicates the roster→rounds→synthesis pattern); lens-library-only without standalone skills (rejected: loses standalone fix-mode for genie users).
+**Alternatives considered:** thin skill launching the Workflow tool via `scriptPath` (rejected by the owner: keeps an orchestration skill alive; native command is cleaner); two sibling workflows for audit/deliberation (rejected: duplicates the roster→rounds→synthesis pattern); lens-library-only without standalone skills (rejected: loses standalone fix-mode for genie users).
 
 **Distribution constraint (verified 2026-07-09 against the plugins reference):** plugins cannot ship workflows — component fields are skills, commands, agents, hooks, mcpServers, outputStyles, lspServers, experimental.themes/monitors, userConfig, channels, dependencies. Hence the install-time stamp+copy to `~/.claude/workflows/`. Documented precedence (project > personal) makes per-repo overrides possible for free.
 
@@ -64,7 +64,7 @@ Council invariants preserved in the script: ≥2 members must deliver Round 1 or
 | One engine, two modes (not audit-only, not two scripts) | Both are the same fan-out→synthesize pattern; one script + mode presets maximizes reuse and honors the skill-absorbs G4 ruling (lens library + preserved /council entry) |
 | Personas absorbed as standalone plugin skills | Single source of truth — the workflow reads the same SKILL.md as its lens; fix-mode ("run code-quality and fix") ships to every genie user |
 | `/council` is the single entry, audit via `/council audit` | Council is genie lore; keeps the name users know, closes the open G4 naming GAP |
-| Consumers (/review, /brainstorm) wired in this wish | Felipe chose delivering the full G4 vision now; both steps are new to the repo skills; sequencing risk handled by waves |
+| Consumers (/review, /brainstorm) wired in this wish | The owner chose delivering the full G4 vision now; both steps are new to the repo skills; sequencing risk handled by waves |
 | Lane names, not people names, in the public plugin | Real living experts' names as speaking product personas without consent is a liability; methodology retained, inspiration cited |
 | Saved workflow command, no launcher skill | Most native shape; model mediates args; routing lives as data in the script |
 | Install-time stamp+copy to `~/.claude/workflows/` | Plugins verifiably cannot ship workflows; smart-install runs with `CLAUDE_PLUGIN_ROOT` so it can stamp `LENS_ROOT` deterministically and re-stamp on update |

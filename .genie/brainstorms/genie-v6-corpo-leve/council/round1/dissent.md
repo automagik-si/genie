@@ -40,7 +40,7 @@ _Rodada 1 (2026-08-25): proposta rev. 3 crua (deletar plugins, skills.sh, harnes
 5. If `ui-bridge` leaves, also drop `hire_roster` (migration) and `interactivity.ts` roster paths; if `genie mcp` stays, name its consumer (LLM tools only) and prune write tools nobody calls.
 6. Fix `genie-orca-work:59` sonnet mention; make orca board-disable concrete (only task/board/mcp verbs? also git sync hooks and `init` scaffold? — brief unknown #5 must be answered before code).
 
-**Unknowns:** skills.sh install contract; whether any external Codex/Hermes install exists; whether Felipe wants *any* mechanical guard left on CC (if "prose is enough", say so and delete `src/hooks/` too — 6.9k LOC with no caller is worse than deleting).
+**Unknowns:** skills.sh install contract; whether any external Codex/Hermes install exists; whether the owner wants *any* mechanical guard left on CC (if "prose is enough", say so and delete `src/hooks/` too — 6.9k LOC with no caller is worse than deleting).
 
 ## 2. LEAVES / STAYS / STAYS-RESCOPED (dissent call)
 

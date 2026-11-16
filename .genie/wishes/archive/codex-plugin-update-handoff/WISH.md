@@ -116,7 +116,7 @@ Implementation must begin in a new isolated worktree based on refreshed `main` a
 |---|----------|-----------|
 | 1 | Delivery and activation are separate phases | The live failure came from delivery invoking a host command that pruned the generation retained by this task. |
 | 2 | Every activation-capable or integration-reporting path shares one observer/classifier/gate | A total tagged state and opaque permit make bypasses and fail-open behavior mechanically testable. |
-| 3 | Legacy sync-only branches before the activation subsystem | Felipe ratified this exception; SessionStart agent sync must never query or diagnose plugin state. |
+| 3 | Legacy sync-only branches before the activation subsystem | The owner ratified this exception; SessionStart agent sync must never query or diagnose plugin state. |
 | 4 | Only A's deep consent API can mint a branded retirement assertion | The API owns the real-TTY, environment, flag, and version-specific prompt guards; pure authorization consumes the unforgeable assertion and returns a process-local permit rather than persisted liveness truth. |
 | 5 | Pending delivery exits 2 with `deliveryComplete:true` | Automation must distinguish delivered-but-action-required from both success and failure. |
 | 6 | Genie never manages Codex cache generations or trust records | Those are host-owned boundaries; Genie verifies supported CLI outcomes and remains opaque to trust storage. |
@@ -771,7 +771,7 @@ done
 This is an explicitly user-gated lifecycle check, not an execution group or task. It does not block
 Groups A–E, execution review, PR creation, or merge to dev. The lifecycle is:
 
-`A–E SHIP → PR/dev merge → exact-commit homolog candidate → Felipe live ritual → stable promotion → WISH SHIPPED`.
+`A–E SHIP → PR/dev merge → exact-commit homolog candidate → the owner's live ritual → stable promotion → WISH SHIPPED`.
 
 Homolog is the canonical pre-stable candidate channel for this ritual. Against that exact candidate,
 record
@@ -894,7 +894,7 @@ _What must be verified on dev after merge. The QA agent tests each criterion._
 
 ### Contract amendment — 2026-07-12 (user-ratified)
 
-- Felipe ratified the lifecycle lease contract verbatim (see "Lifecycle lease contract"), resolving
+- The owner ratified the lifecycle lease contract verbatim (see "Lifecycle lease contract"), resolving
   the `ambiguous-spec` escalation: lease ownership (Group A deep store), acquisition timing (per
   command), transaction extent (through terminal state, operation-ID fenced), and loser semantics
   (`codex-lifecycle-busy`, exit 2, `deliveryComplete:false`, zero mutation) are now pinned.
@@ -973,7 +973,7 @@ pre-existing and non-load-bearing (race flake = lease-file read-during-write, de
 NAME only); (5) residue honesty confirmed — two seam notes documented (Resolution-Y child lease
 extent; install pre-gate writes), both LOW within the ratified boundary; (6) merge-gate language
 satisfied; post-release dogfood sequencing explicitly supported by the wish text. Condition
-riding the verdict: Felipe's live-QA veto on Fork A must be surfaced at the ritual.
+riding the verdict: the owner's live-QA veto on Fork A must be surfaced at the ritual.
 
 ### Execution — Group E (release-readiness) — 2026-07-22 — SHIP loop 0
 
@@ -999,7 +999,7 @@ Engineer eng-D-lifecycle-surfaces (opus), 8 commits `da7359ae..5f51f785`. **Fork
 orchestrator** (setup = pure activation surface: observe → A consent → A authorize → B executor;
 marketplace/delivery stays with update/install) under four conditions, all met: actionable
 refusal on undelivered payload, UX change documented (exit matrix + codex-integration-map.md +
-this note — **Felipe veto point at final gate/live QA:** `genie setup --codex` no longer
+this note — **The owner's veto point at final gate/live QA:** `genie setup --codex` no longer
 performs from-scratch install), D-side sync-TTY helper (fail-closed /dev/tty read), and
 prove-not-accommodate re-specs (~19 setup tests). Delivered: doctor `integrationSummary`
 (add-only checks[], one bounded observation, pending exits 2 with ok:true), init fallback gated
@@ -1047,7 +1047,7 @@ rather than dead-ending (never installs from a fresh machine without prior deliv
 CI, `CODEX_THREAD_ID`, non-TTY, piped, and decline/EOF are unconditional activation refusals
 (exit 2, A-owned trailer, zero mutation). The per-command 0/1/2 exit matrix and result trailer
 are documented in `plugins/genie/references/codex-integration-map.md`. This change is surfaced
-to Felipe for final-gate veto; if vetoed it becomes a follow-up wish, not a re-revert.
+to the owner for final-gate veto; if vetoed it becomes a follow-up wish, not a re-revert.
 
 ### Execution — Group A (activation-protocol-core) — 2026-07-12
 

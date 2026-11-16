@@ -15,7 +15,7 @@
 
 ## Summary
 
-Genie's planning documents belong in genie's own taxonomy: `.genie/wishes/` and `.genie/brainstorms/`, tracked in git — not `.claude/plans/`. Migrate the v5-era plans there, make every doc/skill/test path claim coherent (resolves the Codex P2 on PR #2500), fix the hardcoded absolute paths the Gemini review flagged, and update Felipe's user-level `~/.claude/skills/` to speak genie (`.genie/` artifacts + `genie task`/`genie board` state) now that the v5 CLI is real. Sanitization pass: our own tooling uses our own product.
+Genie's planning documents belong in genie's own taxonomy: `.genie/wishes/` and `.genie/brainstorms/`, tracked in git — not `.claude/plans/`. Migrate the v5-era plans there, make every doc/skill/test path claim coherent (resolves the Codex P2 on PR #2500), fix the hardcoded absolute paths the Gemini review flagged, and update the owner's user-level `~/.claude/skills/` to speak genie (`.genie/` artifacts + `genie task`/`genie board` state) now that the v5 CLI is real. Sanitization pass: our own tooling uses our own product.
 
 ## Scope
 
@@ -29,7 +29,7 @@ Genie's planning documents belong in genie's own taxonomy: `.genie/wishes/` and 
 ### OUT
 - Rewrites of the 13 deferred repo skills (unchanged, still lint-ignored).
 - Any change to the four core REPO skills beyond path verification — they already use `.genie/` + `genie task`.
-- CI/workflow changes; `docs/` submodule; PR #2500 merge (Felipe's).
+- CI/workflow changes; `docs/` submodule; PR #2500 merge (the owner's).
 - Building `genie init` or any new CLI surface.
 - Migrating this taxonomy convention into other repos.
 
@@ -39,7 +39,7 @@ Genie's planning documents belong in genie's own taxonomy: `.genie/wishes/` and 
 |---|----------|-----------|
 | 1 | Planning documents live tracked in `.genie/wishes|brainstorms`; `.claude/plans/` retires | Genie's product taxonomy is the source of truth (Codex P2: shipped skills + e2e already read `.genie/`); dogfooding our own layout |
 | 2 | "Runtime-only" narrows to state: genie.db* ignored, documents tracked | Housekeeping's blanket claim overshot; the real rule is documents-in-git / state-in-sqlite (design D2) |
-| 3 | User-level skills prefer genie state when available, degrade to native tasks | Felipe's skills run in non-genie repos too; hard-requiring genie would break them there |
+| 3 | User-level skills prefer genie state when available, degrade to native tasks | The owner's skills run in non-genie repos too; hard-requiring genie would break them there |
 | 4 | Validation blocks use `git rev-parse --show-toplevel`, never absolute paths | Gemini review; portability for CI and other machines |
 | 5 | Global genie binary refreshed into `~/.genie/bin` (the update-managed home), stale bun shim removed | A stale v4 binary answering `genie task` is a live hazard; overwriting the bun shim would break future `genie update`, which only swaps binaries under `~/.genie/bin` |
 
@@ -57,7 +57,7 @@ _Backfilled 2026-09-19 when this wish was archived and its legacy terminal statu
 - [x] No migrated WISH.md contains a hardcoded `/Users/` path in a validation block (grep gate).
 - [x] TAXONOMY.md (lines ~11/31), .gitignore comment, README (line ~46, the Codex P2 ref) all state the same layout; skills/README.md checked and corrected only if it references plan paths.
 - [x] `~/.claude/skills/{brainstorm,wish,work,review}` reference `.genie/` homes and the genie task/board state surface with a native fallback (grep each file).
-- [~] `genie task --help` shows the v5 sqlite shape — TRUE for the installed ~/.genie/bin/genie; bare-PATH resolution pending Felipe adding `export PATH="$HOME/.genie/bin:$PATH"` to ~/.zshrc (rc edits deliberately not automated).
+- [~] `genie task --help` shows the v5 sqlite shape — TRUE for the installed ~/.genie/bin/genie; bare-PATH resolution pending the owner adding `export PATH="$HOME/.genie/bin:$PATH"` to ~/.zshrc (rc edits deliberately not automated).
 - [x] Full `bun run check` + e2e green; CI green on push.
 
 ## Execution Strategy
@@ -107,7 +107,7 @@ V5_E2E_BUILD=1 bash tests/e2e/v5-lifecycle.sh
 ---
 
 ### Group 2: User-level skills + global binary (environment)
-**Goal:** Felipe's `~/.claude/skills` speak genie; the on-PATH genie is the v5 build.
+**Goal:** the owner's `~/.claude/skills` speak genie; the on-PATH genie is the v5 build.
 
 **Deliverables:**
 1. Rewrite `~/.claude/skills/brainstorm/SKILL.md`: artifacts at `.genie/brainstorms/<slug>/{DRAFT,DESIGN}.md`, jar at `.genie/INDEX.md`; methodology (WRS, one-question, review gate) unchanged.

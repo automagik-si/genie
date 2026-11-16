@@ -55,14 +55,14 @@ Opening Warp: warp://launch//Users/.../.warp/launch_configurations/genie-warp-sm
 - **`open warp://launch/...` succeeded (exit 0).** In `launch.ts`, the `Opening Warp:` line is printed *only* when the opener returns success (`materialize()` → `openImpl(uri, platform)` truthy); a failed opener would instead fall through to the `Open it manually:` block. So the URI was accepted by the OS handler.
 - 3 worktrees materialized on disk under the scratch base; the launch config written to the real Warp dir; `.genie/launch/<group>.prompt` written inside each worktree.
 
-## CRITICAL — pane-title-on-leaf / what needs Felipe's eyes
+## CRITICAL — pane-title-on-leaf / what needs the owner's eyes
 
 I cannot see the Warp UI from here. The following are **confirmed observable from outside the UI**:
 - The `open` handler accepted the URI (exit 0) and Warp was running.
 - The YAML is schema-valid: 3 leaf panes, each with a `title`, a `cwd`, and a `claude "$(cat ...)"` command; first pane focused.
 - Pane titles ARE emitted on the leaves (`title: a|b|c`) — the open question was whether the leaf-level `title` is what Warp renders on each pane tab.
 
-**Needs Felipe's eyes (UI-only, not observable here):**
+**Needs the owner's eyes (UI-only, not observable here):**
 1. Did a Warp window actually open (no silent failure / no error dialog)?
 2. Did exactly **3 panes** appear in the single tab, laid out as the grid?
 3. Is each pane's **cwd** the correct per-group worktree?
@@ -94,9 +94,9 @@ S=/tmp/genie-warp-eyes && rm -rf "$S" && mkdir -p "$S" && git -C "$S" init -q \
 | `launch --dry-run` exits 0 | e2e | explicit rc capture |
 | `launch` (real emit) writes a schema-valid YAML with per-pane title/cwd/command | manual smoke | plus `launch.test.ts` unit coverage of the emitter |
 | `launch` real open: `open warp://…` returns 0 | manual smoke | confirmed via the `Opening Warp:` branch + clean-run exit 0 |
-| 3 panes actually render in Warp with right cwds/titles/claude | **manual-only, needs Felipe's eyes** | open questions 1–5 above; not scriptable from outside the UI |
+| 3 panes actually render in Warp with right cwds/titles/claude | **manual-only, needs the owner's eyes** | open questions 1–5 above; not scriptable from outside the UI |
 
 ## Open question status
 
-- **Pane-title-on-leaf:** emitter-side RESOLVED (titles are emitted on each leaf; verified in the YAML). Warp-render side OPEN — needs Felipe to confirm the leaf `title` shows on each pane tab (eyes item 4).
+- **Pane-title-on-leaf:** emitter-side RESOLVED (titles are emitted on each leaf; verified in the YAML). Warp-render side OPEN — needs the owner to confirm the leaf `title` shows on each pane tab (eyes item 4).
 - **3-panes-open / correct cwds / claude-seeded:** OPEN — UI-only, eyes items 1–3, 5.

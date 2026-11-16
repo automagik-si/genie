@@ -8,7 +8,7 @@
 | **Author** | Felipe Rosa |
 | **Appetite** | large |
 | **Branch** | `wish/genie-launch` |
-| **Repos touched** | automagik-dev/genie, automagik-dev/docs, automagik-dev/.github, the automagik-dev and namastex888 GitHub profiles |
+| **Repos touched** | automagik-dev/genie, automagik-dev/docs, automagik-dev/.github, the automagik-dev and the owner's GitHub profiles |
 | **Design** | [DESIGN.md](../../brainstorms/genie-launch/DESIGN.md) |
 
 ## Summary
@@ -18,7 +18,7 @@ This wish rebuilds every surface a launch visitor reaches:
 - **README:** rewritten skills first. Its retirement prose moves verbatim to a new `UPGRADING.md`.
 - **Docs:** the genie docs section shrinks from 65 nav pages to at most 15 v6 pages.
 - **Media:** six SOP videos made from real captures, plus an animated mascot loop.
-- **Org and profile pages:** updated, with Felipe approving each write.
+- **Org and profile pages:** updated, with the owner approving each write.
 
 The design is reviewed SHIP and was amended on 2026-10-02 for the owner's decisions of that day. The skill card images it needs already shipped through the skill-cards wish.
 
@@ -51,7 +51,7 @@ The design is reviewed SHIP and was amended on 2026-10-02 for the owner's decisi
   - any docs framework or site-wide theme change;
   - media in CI;
   - Omni in the genie README and in the `genie/` docs.
-- Fixing or replacing the Mintlify deployment. Putting B live belongs to Felipe's coming migration off Mintlify (design Decision 10).
+- Fixing or replacing the Mintlify deployment. Putting B live belongs to the owner's coming migration off Mintlify (design Decision 10).
 - Any change to `src/`, `skills/`, the release workflows, or `package.json` beyond the one description link.
 
 ## Decisions
@@ -66,7 +66,7 @@ The design is reviewed SHIP and was amended on 2026-10-02 for the owner's decisi
 | 6 | Real captures are recorded the way V2 was: an interactive session in tmux, with `capture-pane -e` frames to disk, in a throwaway repository cut from a small fixture | The method is proven, and it never touches real work |
 | 7 | The docs moves follow one rule. Pages with engineering value move to `genie/_internal/`, including `concepts/byoa` and `release-process`. v4-only pages and the retired skills' pages (brain, learn, pm, trace, wizard) are deleted. `genie/hacks` and `genie/security/key-rotation` stay at their paths outside the nav, count as public pages, and are brought up to v6 | Design B, as amended |
 | 8 | Forge's 28 open issues and 6 open PRs are each closed with one approved comment pointing to genie. Forge is archived after that | Design D, as amended. PRs were included by owner decision on 2026-10-02 |
-| 9 | Felipe does these steps himself, from exact instructions: the org description (it needs an org owner with `admin:org`; automagik-genie is a member with `repo` scope); the 4 org pins and the namastex888 pins (GitHub has no API for pins); and every namastex888 write (bio, profile README, archives). The agent never switches the `gh` account to namastex888 | The token here is automagik-genie |
+| 9 | The owner does these steps himself, from exact instructions: the org description (it needs an org owner with `admin:org`; automagik-genie is a member with `repo` scope); the 4 org pins and the owner's profile pins (GitHub has no API for pins); and every write to the owner's account (bio, profile README, archives). The agent never switches the `gh` account to the owner's | The token here is automagik-genie |
 | 10 | G14 (genie) and G15 (docs) have no order between them. G17 starts only after G14's merge has been promoted to `main` and G15 has merged. G16 starts only after G15 has merged | Design Approach, as amended. Each validation checks the merge it waits on |
 | 11 | All docs work happens in one dedicated worktree, `scratchpad/wishrun/wt-docs`: a genie worktree detached at `origin/dev` whose `.docs-vendor` checks out `feat/genie-v6-launch`. Nothing is ever committed in that worktree's superproject. The docs groups run in sequence on that one branch | One docs branch, no `.docs-vendor` gitlink near the genie PR, and genie's docs lints run against the branch |
 | 12 | Numbers. Verbatim program output (captures, videos, the pasted CLI) and text moved verbatim into `UPGRADING.md` are exempt from the Allowed numbers list. All new copy follows the list. No figure on the not-allowed list appears anywhere, exempt output included, so no capture or paste of `genie wish report --summary` ships | Owner decision on 2026-10-02, recorded in the design |
@@ -109,7 +109,7 @@ These are the design's criteria as amended, each with its proof.
 - [ ] **SC8:** each of the six core skills has a card image and an SOP video labelled "simulated", each with its capture file. The GIF is at most 3 MB, and each MP4 at most 8 MB. **Proof:** `docs-checks.sh media` and `ffprobe`.
 - [ ] **SC9:** every figure in newly written copy is on the Allowed numbers list. No figure on the not-allowed list appears anywhere, exempt output and moved text included. **Proof:** the number listings from `readme-checks.sh` and `docs-checks.sh`, a not-allowed grep over everything shipped, and the reviewer's audit.
 - [ ] **SC10:** newly written copy passes a grep for `—`, `–`, spaced hyphens used as punctuation, hashtags and "não é/não era" rebuttals. Fenced code, pasted CLI output and verbatim `UPGRADING.md` blocks are excluded. **Proof:** the voice mode of both check scripts.
-- [ ] **SC11:** the org shows a description and 4 pins. Forge is archived with its open issues and pull requests closed, each with a pointer to genie. The namastex888 profile shows the new bio, pins and README. Felipe approved each write. **Proof:** G17's read-only validation, and the approvals recorded in this wish.
+- [ ] **SC11:** the org shows a description and 4 pins. Forge is archived with its open issues and pull requests closed, each with a pointer to genie. The owner's profile shows the new bio, pins and README. The owner approved each write. **Proof:** G17's read-only validation, and the approvals recorded in this wish.
 - [ ] **SC12:** no shipped capture file, and no frame data a video renders from, matches the scrub pattern once SGR escapes are stripped. Each video rendered from a capture shows its two-edit note. **Proof:** `redact.py --check` and `docs-checks.sh media`.
 - [ ] **SC13:** the README embeds the six `.github/assets/skill-<name>.svg` cards, and the docs Skills catalog embeds all 18 `/genie/images/skills/<name>.svg`. This was carried over from the skill-cards G5 review. **Proof:** the cards mode of both check scripts.
 
@@ -163,7 +163,7 @@ Groups 8, 9 and 10 run in sequence in `wt-docs`.
 | Group | Agent | Complexity | Model | Description |
 |-------|-------|------------|-------|-------------|
 | 16 | orchestrator | Low: one pointer commit after the docs merge | inherit | `.docs-vendor` bump |
-| 17 | orchestrator | Medium: outward writes, each approved, plus Felipe's steps as instructions | inherit | Org and profile pages |
+| 17 | orchestrator | Medium: outward writes, each approved, plus the owner's steps as instructions | inherit | Org and profile pages |
 
 **Global constraints:**
 
@@ -182,7 +182,7 @@ Groups 8, 9 and 10 run in sequence in `wt-docs`.
   - the agent launch line is cut;
   - the permission-mode status line stays visible;
   - scrub pattern: `sofia-agents|/scratchpad|-scratchpad-|/home/genie|khal|ghp_|sk-|Bearer|dangerously-skip-permissions`, run on SGR-stripped text;
-  - a hit on `sk-` inside an ordinary word (`task-`) is reported to Felipe, never exempted silently.
+  - a hit on `sk-` inside an ordinary word (`task-`) is reported to the owner, never exempted silently.
 - **Docs paths that stay:**
   - `genie/installation.mdx`, `genie/release-notes.mdx` and `genie/incident-response/canisterworm.mdx`;
   - the Install heading "The public command tracks `main`, not a release";
@@ -200,7 +200,7 @@ Groups 8, 9 and 10 run in sequence in `wt-docs`.
   - lint runs through `./node_modules/.bin/biome`, never a bare `bunx biome`;
   - conventional commits.
 - **Outward writes:**
-  - closing docs#84, and every G17 write, goes to Felipe through the question harness first;
+  - closing docs#84, and every G17 write, goes to the owner through the question harness first;
   - the agent never approves its own production gate, never merges into a `main`, and never switches the `gh` account.
 
 ## Execution Groups
@@ -286,7 +286,7 @@ S='<scratchpad>'/captures; for k in brainstorm wish work review council fix; do 
 - [ ] The loop is seamless: the mean pixel difference between the first and last frames is under 2%.
 - [ ] The wordmark is visible in every frame.
 - [ ] The eyes are closed in every frame of the contact sheet.
-- [ ] Felipe approves the contact sheet through the question harness.
+- [ ] The owner approves the contact sheet through the question harness.
 
 **Validation:**
 ```bash
@@ -318,7 +318,7 @@ M='<scratchpad>'/media; test "$(stat -c %s $M/genie-loop.gif)" -le 3145728 && te
 **Acceptance Criteria:**
 - [ ] SC8's video half and SC12 hold.
 - [ ] Each SOP runs 30 to 60 s.
-- [ ] Felipe approves the wish SOP and the Quickstart video through the question harness before the other five are rendered.
+- [ ] The owner approves the wish SOP and the Quickstart video through the question harness before the other five are rendered.
 
 **Validation:**
 ```bash
@@ -389,7 +389,7 @@ umask 022 && B=$(git merge-base origin/dev HEAD) && git diff --quiet HEAD && git
 **Acceptance Criteria:**
 - [ ] `readme-checks.sh` exits 0.
 - [ ] `bun run check` exits 0.
-- [ ] Felipe reads the rendered first screen through the question harness before the PR opens.
+- [ ] The owner reads the rendered first screen through the question harness before the PR opens.
 
 **Validation:**
 ```bash
@@ -618,7 +618,7 @@ bash '<scratchpad>'/docs-checks.sh all && bun run lint:docs-links && bun run lin
    - the comparison citations;
    - every removed README assertion, with its reason (none is planned);
    - the `package.json` description change.
-3. An independent PR review of the exact head. The merge stays with Felipe, or is done by me only on his explicit ask.
+3. An independent PR review of the exact head. The merge stays with the owner, or is done by me only on his explicit ask.
 
 **Interfaces:**
 - Consumes: G1, G5 and G6.
@@ -643,9 +643,9 @@ set -o pipefail; bun run check && test "$(git rev-parse HEAD)" = "$(gh pr view "
 **Goal:** one automagik-dev/docs PR carrying G7 to G13, merged, with docs#84 closed in its favour.
 
 **Deliverables:**
-1. Push `feat/genie-v6-launch` and open the PR to docs `main`. The body names the RLMX→mikro label change for Felipe's approval in the PR, and includes the exception file and the `docs-checks.sh` outputs.
-2. With Felipe's approval through the question harness, close docs#84 with one comment pointing to the new PR. Its branch stays.
-3. An independent review against SC3, SC5 to SC10, SC12 and SC13. Felipe merges.
+1. Push `feat/genie-v6-launch` and open the PR to docs `main`. The body names the RLMX→mikro label change for the owner's approval in the PR, and includes the exception file and the `docs-checks.sh` outputs.
+2. With the owner's approval through the question harness, close docs#84 with one comment pointing to the new PR. Its branch stays.
+3. An independent review against SC3, SC5 to SC10, SC12 and SC13. The owner merges.
 
 **Interfaces:**
 - Consumes: G7 to G13.
@@ -678,7 +678,7 @@ gh pr view 84 --repo automagik-dev/docs --json state,mergedAt --jq '.state=="CLO
 
 **Interfaces:**
 - Consumes: G15's merge commit.
-- Produces: the bump PR. Felipe merges it, or I do on his ask.
+- Produces: the bump PR. The owner merges it, or I do on his ask.
 
 **Acceptance Criteria:**
 - [ ] SC5 holds on the bump PR.
@@ -695,24 +695,24 @@ set -o pipefail; M=$(gh pr view "$DOCS" --repo automagik-dev/docs --json mergeCo
 
 ### Group 17: Org and profile pages
 
-**Goal:** the automagik-dev org and the namastex888 profile tell the v6 story, with every write approved by Felipe.
+**Goal:** the automagik-dev org and the owner's profile tell the v6 story, with every write approved by the owner.
 
 **Deliverables:**
 1. First, run the precondition and stop if it fails: `git fetch origin main && git merge-base --is-ancestor "$(gh pr view "$PR" --json mergeCommit --jq .mergeCommit.oid)" origin/main && gh pr view "$DOCS" --repo automagik-dev/docs --json state --jq .state | grep -qx MERGED`.
-2. Drafts in `scratchpad/org/`, each shown to Felipe through the question harness before any write. The files are `description.txt`, `profile-README.md`, `repos.json` (`{repo: {description, topics}}`), `forge-comment.md`, `n888-bio.txt`, `n888-README.md` and `n888-pins.txt`. The approved versions are what the validation compares against:
+2. Drafts in `scratchpad/org/`, each shown to the owner through the question harness before any write. The files are `description.txt`, `profile-README.md`, `repos.json` (`{repo: {description, topics}}`), `forge-comment.md`, `n888-bio.txt`, `n888-README.md` and `n888-pins.txt`. The approved versions are what the validation compares against:
    - the org description;
    - the org profile README (`automagik-dev/.github`, `profile/README.md`, replacing the current one);
    - descriptions and topics for genie, workit, autopg and mikro;
-   - the namastex888 bio and profile README (replacing the current ones);
+   - the owner's bio and profile README (replacing the current ones);
    - the one forge closing comment.
 3. Agent writes, each after its approval:
-   - the profile README, through a PR to `automagik-dev/.github` that Felipe merges;
+   - the profile README, through a PR to `automagik-dev/.github` that the owner merges;
    - the repo descriptions and topics, through `gh api`;
    - forge's 28 issues and 6 PRs, each closed with the approved comment (their numbers written to `scratchpad/org/forge-closed.txt`), then the forge archive.
-4. Felipe's own steps (Decision 9), handed over as exact instructions:
+4. The owner's own steps (Decision 9), handed over as exact instructions:
    - the org description;
    - the 4 org pins (genie, workit, autopg, mikro);
-   - the namastex888 bio, 6 pins and profile README;
+   - the owner's bio, 6 pins and profile README;
    - archiving `zetest`, and `smol` only if he says so.
 5. A read-only verification of every item, with each approval recorded in this wish.
 
@@ -740,7 +740,7 @@ O='<scratchpad>'/org; test "$(gh api orgs/automagik-dev --jq .description)" = "$
 **Deliverables:**
 1. Docs pages, on `feat/genie-v6-launch`: every `v6.261002.2` reference and every count read at the tag (Decision 2) moves to the new tag. Re-read the counts there. `genie/cli-reference.mdx` gets the new `genie --help`, pasted verbatim, and `S/docs-tag.txt` names the new tag.
 2. `genie/quickstart.mdx`: the gate prerequisite is rewritten from the new tag's `wish.js`.
-3. `README.md` on `wish/genie-launch`: any tag-bound line moves to the new tag. The "Weak checks" line is checked against the new gate. A changed sentence in approved copy goes to Felipe through the question harness before it is committed.
+3. `README.md` on `wish/genie-launch`: any tag-bound line moves to the new tag. The "Weak checks" line is checked against the new gate. A changed sentence in approved copy goes to the owner through the question harness before it is committed.
 
 **Interfaces:**
 - Consumes: G13's tree, the published `wish-gate-any-repo` stable, and the G6 README.
@@ -749,7 +749,7 @@ O='<scratchpad>'/org; test "$(gh api orgs/automagik-dev --jq .description)" = "$
 **Acceptance Criteria:**
 - [ ] No `v6.261002.2` remains in shipped copy, except in release notes that record history.
 - [ ] `docs-checks.sh all` and `readme-checks.sh` pass at the new tag.
-- [ ] Felipe approved every changed sentence of approved copy.
+- [ ] The owner approved every changed sentence of approved copy.
 
 **Validation:**
 ```bash
@@ -773,7 +773,7 @@ _What must be verified on dev after merge. The QA agent tests each criterion._
   `UPGRADING.md` renders, and its restore block still runs (the test passes).
 - [ ] After the bump merges, a fresh clone with `git submodule update --init` has the 15-page genie nav, the 18 cards, the seven videos and the six transcripts. A local `npx -y mint@4.2.970 dev` render of Introduction, Quickstart and one skill page plays its video.
 - [ ] `bun run check` and both CI legs stay green on `dev`, and no README assertion is lost.
-- [ ] The org page, forge and the namastex888 profile show the approved state.
+- [ ] The org page, forge and the owner's profile show the approved state.
 
 ---
 
@@ -781,12 +781,12 @@ _What must be verified on dev after merge. The QA agent tests each criterion._
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| A real run in G2 fails or produces an unusable capture | Medium | Re-run once on the same fixture. A second failure goes to Felipe, never to a made-up capture |
+| A real run in G2 fails or produces an unusable capture | Medium | Re-run once on the same fixture. A second failure goes to the owner, never to a made-up capture |
 | G2 exceeds the token estimate (~1 to 1.5M) | Low | Each run is one sample on a tiny fixture, and the total is reported after each run |
 | The README rewrite drops a pinned string | High | Decision 4 lists the strings, `readme-checks.sh` asserts them, and `bun run check` runs |
 | A docs move breaks a link the lints do not check (JSX cards) | Medium | G11 and G12 rewrite the pages that hold JSX cards. The reviewer greps `href="/genie/` targets against the files |
-| New docs pages 404 on `docs.automagik.dev` until the migration | Medium | Accepted by Felipe (design risk 8) |
-| An outward write cannot be undone cleanly | Medium | Every write goes to Felipe first. Archive and closes come last |
+| New docs pages 404 on `docs.automagik.dev` until the migration | Medium | Accepted by the owner (design risk 8) |
+| An outward write cannot be undone cleanly | Medium | Every write goes to the owner first. Archive and closes come last |
 | The comparison misstates Superpowers, spec-kit or GSD | Medium | Each claim is cited to that project's README at a pinned commit. A claim with no citation is dropped |
 | The rig change in G3 takes longer than a render | Medium | It is scratchpad only. If it slips, the README hero waits; nothing depends on it until G6 and G11 |
 
@@ -807,7 +807,7 @@ _The read-only reviewer returns evidence; the invoking orchestrator appends a ti
 - **MEDIUM-1:** T2 and T3 now read README and UPGRADING concatenated.
 - **MEDIUM-2:** comparisons use the merge base, and SC2 is bound to the G5 commit.
 - **MEDIUM-3:** the waves follow depends-on, with one dedicated docs worktree (Decision 11).
-- **MEDIUM-4:** the org description is now Felipe's step (Decision 9). G17's validation reads the pins, the profile README and the topics.
+- **MEDIUM-4:** the org description is now the owner's step (Decision 9). G17's validation reads the pins, the profile README and the topics.
 - **MEDIUM-5:** owner decision "Isentar saída e texto movido" (2026-10-02), recorded in the design and as Decision 12. A follow-up design review made the not-allowed list absolute, covering exempt output too.
 - **MEDIUM-6:** a card-placement check was added (SC13, in both check scripts).
 - **MEDIUM-7:** G3 now states the rig change.
@@ -861,7 +861,7 @@ _The read-only reviewer returns evidence; the invoking orchestrator appends a ti
 
 ### Owner approval — 2026-10-02
 
-- Felipe chose "Aprovado, executa" through the question harness after plan review 5 returned SHIP. The orchestrator persisted APPROVED and set IN_PROGRESS at the start of execution.
+- The owner chose "Aprovado, executa" through the question harness after plan review 5 returned SHIP. The orchestrator persisted APPROVED and set IN_PROGRESS at the start of execution.
 
 ### Group 5 review — 2026-10-02T14:43Z — SHIP
 
@@ -878,7 +878,7 @@ _The read-only reviewer returns evidence; the invoking orchestrator appends a ti
   - `genie-loop.mp4`: 1,250,535 B, 1080 px, 30 fps.
   - `loop-check.py` measures the first-to-last frame difference at 0.588%.
 - Eyes closed in all 120 frames (worker zoom check, and the orchestrator viewed the sheet). Wordmark in every frame.
-- Felipe approved the contact sheet through the question harness ("Aprovado").
+- The owner approved the contact sheet through the question harness ("Aprovado").
 - Ruling: no separate code reviewer. The rig change is scratchpad only, and the deliverable is media gated by the owner's visual approval plus the G3 validation (exit 0).
 
 ### Group 2 — captures recorded
@@ -910,7 +910,7 @@ _The read-only reviewer returns evidence; the invoking orchestrator appends a ti
 
 ### Group 6 — owner checkpoint
 
-- Felipe approved the rendered README first screen ("Aprovada") on 2026-10-02: mascote, thesis, the one-paragraph description, install, and the condensed real `/wish`. The G6 commit is `2504cfc4d`, and `bun run check` passed (3016 pass). `readme-checks.sh` passes, with 19 planted defects caught.
+- The owner approved the rendered README first screen ("Aprovada") on 2026-10-02: mascote, thesis, the one-paragraph description, install, and the condensed real `/wish`. The G6 commit is `2504cfc4d`, and `bun run check` passed (3016 pass). `readme-checks.sh` passes, with 19 planted defects caught.
 
 ### Groups 8–10 review — 2026-10-02T15:28Z — SHIP
 
@@ -932,7 +932,7 @@ _The read-only reviewer returns evidence; the invoking orchestrator appends a ti
 ### Group 2 review — 2026-10-02T15:31Z — FIX-FIRST → SHIP
 
 - Review 1 found the encoded `~/.claude/projects` path, a session-UUID path tail, the `council.js` placement against docs lint, and missing run samples. The repair re-ran `redact.py` (brainstorm 31 frames, council 24), made `--check` case-insensitive with a wider pattern, and wrote NOTES.md. Owner rulings: the report's session id stays, and transcripts move to `captures/genie/`. Re-review SHIP: 6689 files, 0 hits; the only UUID left is the ruled one.
-- LOW for Felipe: `brainstorm.capture.txt:56` names the Linear project "gtm - opensource".
+- LOW for the owner: `brainstorm.capture.txt:56` names the Linear project "gtm - opensource".
 - Condition for G4: render from `frames-redacted/` only.
 
 Run samples (from captures/NOTES.md, one sample each):
@@ -951,7 +951,7 @@ Run samples (from captures/NOTES.md, one sample each):
 
 ### Group 4 — owner checkpoint (2026-10-02)
 
-- Felipe approved `sop-wish` (42 s) and `quickstart-wish` (50 s) as the style for the rest, and ruled on three points:
+- The owner approved `sop-wish` (42 s) and `quickstart-wish` (50 s) as the style for the rest, and ruled on three points:
   - **Plan and quota:** the status-bar account plan and quota are hidden. This counts as part of the host-data edit. The caption now reads "Edited in two places: host details hidden (paths shown as ~/, account plan and quota), and the agent launch line removed."
   - **Badges:** both badges say replay. The SOPs read "simulated · replays a real run", and the Quickstart reads "time-lapsed replay of a real run".
   - **Brainstorm capture:** used as it ran, in Portuguese, naming the Linear project "gtm - opensource".
@@ -962,7 +962,7 @@ Run samples (from captures/NOTES.md, one sample each):
 - Review 1 was the combined criteria + voice/accuracy review (orchestrator ruling: a docs-only change, so one reviewer covers both lenses).
   - It returned FIX-FIRST on M1: README:7 said "every … verdict stays in your repository", which is false for `/wish`.
   - It also raised LOWs: the uninstall row, the skill homes, the review roles, Intel Mac support, where the CLI keeps plans, the Superpowers claim, the jargon line, the transcript wording, the per-agent clause, the orphan PNG, and gaps in the checker.
-- Felipe approved the new line 7 and the transcript restored to the V2 wording. Re-review on `a1318bec9`: SHIP.
+- The owner approved the new line 7 and the transcript restored to the V2 wording. Re-review on `a1318bec9`: SHIP.
 - Kept as noted: `.github/assets/genie-header.png` is now unreferenced (left for later cleanup). `NOT_ALLOWED_RE` is shared by `readme-checks.sh` and `docs-checks.sh`.
 
 ### Group 4 review 1 — 2026-10-02 — FIX-FIRST (repair 1/2)
@@ -1087,15 +1087,15 @@ Run samples (from captures/NOTES.md, one sample each):
 
 ### Owner decisions: the viral README (2026-10-02, late)
 
-- Felipe asked for a README model that is concise, dynamic and built to spread. It comes from analyzing the README form of recently viral repos (superpowers and others), and it extends the earlier distribution research.
+- The owner asked for a README model that is concise, dynamic and built to spread. It comes from analyzing the README form of recently viral repos (superpowers and others), and it extends the earlier distribution research.
 - Wait for the viral README: nothing goes to dev until it is approved. The current G6 README, `UPGRADING.md` and the test retargets go out together with it in one PR.
-- Format: an analysis plus three rendered first-screen variants, each taking a different stance, with a skeleton of the rest of the page. Felipe picks one, and then the full README is written.
-- Running alongside: the gate fix is merged to dev (#3097, `53f2186`), and dev release v6.261002.6 is published with 20 assets. Promotion PR #3094 (dev→main) is waiting for Felipe.
+- Format: an analysis plus three rendered first-screen variants, each taking a different stance, with a skeleton of the rest of the page. The owner picks one, and then the full README is written.
+- Running alongside: the gate fix is merged to dev (#3097, `53f2186`), and dev release v6.261002.6 is published with 20 assets. Promotion PR #3094 (dev→main) is waiting for the owner.
 
 ### Owner decisions: README model A (2026-10-03)
 
 - Analysis: 16 READMEs pinned and measured (`scratchpad/readme-viral/ANALYSIS.md`). Three first-screen variants were rendered: A demo-first, B thesis plus loop, C problem-first.
-- Felipe picked **A, demo first** over the recommended C. The first screen he approved from the preview:
+- The owner picked **A, demo first** over the recommended C. The first screen he approved from the preview:
   - a small mascot;
   - the thesis, verbatim;
   - the `/wish` run as the hero, labelled as one sample;
@@ -1123,7 +1123,7 @@ Run samples (from captures/NOTES.md, one sample each):
 
 ### G6b owner approval — 2026-10-03
 
-- Felipe approved README model A ("Aprovado") with these changes to approved copy, each listed for him first:
+- The owner approved README model A ("Aprovado") with these changes to approved copy, each listed for him first:
   - the caption was rewritten;
   - the loop line and the dogfood sentence were added;
   - a new "untrusted repositories / no integration branch" bullet;
@@ -1176,7 +1176,7 @@ genie/skills/{brainstorm,wish,work,review,council,fix}.mdx, videos/sop-*.mp4 + p
 
 # outward, approved one by one (G17)
 automagik-dev/.github profile/README.md (PR), repo descriptions and topics, forge issues/PRs closed and archive
-Felipe's own steps: org description, org pins, namastex888 bio, pins, profile README, archives
+The owner's own steps: org description, org pins, the owner's bio, pins, profile README, archives
 
 # scratchpad only (never committed)
 sop-fixture/, captures/ (+ redact.py), media/, org/, kv-rig looping-lockup mode, upgrading-diff.py, readme-checks.sh, docs-checks.sh, docs-current-exceptions.txt

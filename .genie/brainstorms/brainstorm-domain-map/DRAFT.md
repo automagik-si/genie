@@ -3,7 +3,7 @@
 **Parent:** genie-token-efficiency-program (umbrella deleted in the 2026-09-19 triage) · **Status:** Simmering
 
 ## KNOWN (evidence)
-- Felipe's critique: /brainstorm tracks readiness (WRS) but never maps context domains and gaps — "which is effectively what must be filled by brainstorming, having a professional flawless specification."
+- The owner's critique: /brainstorm tracks readiness (WRS) but never maps context domains and gaps — "which is effectively what must be filled by brainstorming, having a professional flawless specification."
 - Live proof ×2: the umbrella session had to improvise its domain map (A–F table); THIS very restructuring (ordering all context per domain with KNOWN/DECIDED/GAPS) is the missing discipline, done by hand.
 - LangWatch "skills"/PM-domain-experts docs = collaboration framing, nothing importable; we write our own lens prompts.
 - Two brainstorm skill copies exist (repo + global newer); both get the upgrade via the convergence track.
@@ -16,12 +16,12 @@
 5. Crystallize check #5: every mapped domain covered by Decisions/Criteria or explicitly OUT with rationale.
 
 ## GAPS
-- [x] **Felipe's "real software spec" bar** — resolved as executable specification compilation: stakeholder domain truth → requirement/oracle graph → bounded execution → proof packet → residual-risk review. The demand/roadmap/wish-sizing layer is split into [intent-to-wish-compiler](../intent-to-wish-compiler/DRAFT.md).
+- [x] **The owner's "real software spec" bar** — resolved as executable specification compilation: stakeholder domain truth → requirement/oracle graph → bounded execution → proof packet → residual-risk review. The demand/roadmap/wish-sizing layer is split into [intent-to-wish-compiler](../intent-to-wish-compiler/DRAFT.md).
 - [ ] KNOWN/DECIDED/GAPS as the standard DRAFT.md skeleton (what this restructuring used) — adopt formally?
 - [ ] Umbrella protocol: when a brainstorm goes umbrella-scale, standardize the split into child brainstorm tracks (exactly what we just did manually)?
 - [ ] Should the domain map feed /wish directly (wish inherits the map as its context section)?
 
-## Felipe's software-building thesis (2026-07-09)
+## The owner's software-building thesis (2026-07-09)
 
 - Traditional developer identity is not the prerequisite for building software. In the FDE system, PMs and business stakeholders must be able to author software through domain intent rather than implementation expertise.
 - The lifecycle exists so **anybody can build software**: Genie asks the questions the author did not know to ask and produces the minimum sufficient specification.

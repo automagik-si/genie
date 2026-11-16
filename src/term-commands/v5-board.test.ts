@@ -453,7 +453,7 @@ describe('lane-grouped render', () => {
     const db = openDb({ cwd: repo });
     const road = createBoard(db, 'roadmap', DEFAULT_LIFECYCLE_LANES);
     const t = createTask(db, { title: 'lane card', boardId: road.id, lane: 'Idea' });
-    moveTask(db, t.id, 'Brainstorm', { author: 'felipe', authorKind: 'human' });
+    moveTask(db, t.id, 'Brainstorm', { author: 'morgan', authorKind: 'human' });
     db.close();
 
     const r = await board(repo, '--board', 'roadmap');
@@ -514,8 +514,8 @@ describe('lane-grouped render', () => {
       assignedAgent: 'codex',
       assignedReason: 'declared routing',
     });
-    blockTask(db, held.id, 'parked until Q3', { author: 'felipe', authorKind: 'human' }, 'hold');
-    blockTask(db, broken.id, 'awaiting a decision', { author: 'felipe', authorKind: 'human' });
+    blockTask(db, held.id, 'parked until Q3', { author: 'morgan', authorKind: 'human' }, 'hold');
+    blockTask(db, broken.id, 'awaiting a decision', { author: 'morgan', authorKind: 'human' });
     // A heartbeat on an UNCLAIMED card is refused by the state API; the only
     // way that row state still exists is a legacy/imported db, so write it
     // directly here rather than through recordHeartbeat.
@@ -558,7 +558,7 @@ describe('lane-grouped render', () => {
       comments: [],
     });
     expect(cards.get('held card')).toMatchObject({
-      blockedBy: 'felipe',
+      blockedBy: 'morgan',
       blockedReason: 'parked until Q3',
       enforcedBlock: { reason: 'parked until Q3', kind: 'hold' },
       liveness: null,
@@ -642,7 +642,7 @@ describe('scoped board JSON aggregate v1', () => {
     db.query(
       `INSERT INTO task_events (id, task_id, kind, note, author_kind, author, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    ).run(90, 'a-card', 'comment', 'second comment', 'human', 'felipe', 20);
+    ).run(90, 'a-card', 'comment', 'second comment', 'human', 'morgan', 20);
     db.query(
       `INSERT INTO task_events (id, task_id, kind, note, author_kind, author, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -694,7 +694,7 @@ describe('scoped board JSON aggregate v1', () => {
         id: 90,
         note: 'second comment',
         authorKind: 'human',
-        author: 'felipe',
+        author: 'morgan',
         createdAt: 20,
       },
     ]);
@@ -840,7 +840,7 @@ describe('scoped board JSON aggregate v1', () => {
       const db = openDb({ cwd: repo });
       const roadmap = createBoard(db, 'roadmap', DEFAULT_LIFECYCLE_LANES);
       const task = createTask(db, { title: 'oddly blocked', boardId: roadmap.id, lane: 'Idea' });
-      blockTask(db, task.id, 'awaiting a decision', { author: 'felipe', authorKind: 'human' });
+      blockTask(db, task.id, 'awaiting a decision', { author: 'morgan', authorKind: 'human' });
       db.query('UPDATE tasks SET block_kind = ? WHERE id = ?').run(kind, task.id);
       db.close();
 
@@ -863,7 +863,7 @@ describe('scoped board JSON aggregate v1', () => {
     const db = openDb({ cwd: repo });
     const roadmap = createBoard(db, 'roadmap', DEFAULT_LIFECYCLE_LANES);
     const task = createTask(db, { title: 'parked', boardId: roadmap.id, lane: 'Idea' });
-    blockTask(db, task.id, 'parked until Q3', { author: 'felipe', authorKind: 'human' }, 'hold');
+    blockTask(db, task.id, 'parked until Q3', { author: 'morgan', authorKind: 'human' }, 'hold');
     db.close();
 
     const json = await board(repo, '--board', 'roadmap', '--json');
@@ -1035,7 +1035,7 @@ describe('scoped board JSON aggregate v1', () => {
         insertTask.run(id, boardId, `${title} ${index}`, lanes[index % lanes.length], 1000 + index, 1000 + index);
         for (let event = 0; event < eventsPerCard; event += 1) {
           const kind = event % 2 === 0 ? 'comment' : 'move';
-          insertEvent.run(id, kind, note, 'dsh:felipe@workstation-01', 2000 + event);
+          insertEvent.run(id, kind, note, 'dsh:morgan@workstation-01', 2000 + event);
         }
       }
     })();
@@ -1737,7 +1737,7 @@ describe('laneless board render is unchanged', () => {
     const db = openDb({ cwd: repo });
     const plain = createBoard(db, 'plain');
     const t = createTask(db, { title: 'plain task', boardId: plain.id });
-    blockTask(db, t.id, 'parked until Q3', { author: 'felipe', authorKind: 'human' }, 'hold');
+    blockTask(db, t.id, 'parked until Q3', { author: 'morgan', authorKind: 'human' }, 'hold');
     db.close();
 
     const r = await board(repo, '--board', 'plain', '--json');
@@ -1999,10 +1999,10 @@ describe('deterministic runtime badges (laneless render)', () => {
   test('a human-blocked card renders ⛔ with the human provenance + reason', async () => {
     const db = openDb({ cwd: repo });
     const t = createTask(db, { title: 'human blocked' });
-    blockTask(db, t.id, 'hold for release', { author: 'felipe', authorKind: 'human' });
+    blockTask(db, t.id, 'hold for release', { author: 'morgan', authorKind: 'human' });
     db.close();
     const r = await board(repo);
-    expect(r.stdout).toContain('⛔ felipe: hold for release');
+    expect(r.stdout).toContain('⛔ morgan: hold for release');
   });
 
   test('comment events render a 💬 count badge', async () => {

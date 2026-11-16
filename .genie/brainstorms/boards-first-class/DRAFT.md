@@ -17,7 +17,7 @@ any other problem-shaped kanban. Boards also cannot be created from the CLI at a
   `task checkout` claims, dependency recompute. It must remain the execution authority.
 - First consumer: the `roadmap` board seeded 2026-07-21 (13 macro cards, all stuck in "Ready").
 
-## Decision (RATIFIED by Felipe, 2026-07-21)
+## Decision (RATIFIED by the owner, 2026-07-21)
 
 Columns are **the genie lifecycle contract, not arbitrary labels**: the canonical stages are
 `Brainstorm → Wish → Work → Review` (the framework's own verbs), and new stages like `Idea` can be

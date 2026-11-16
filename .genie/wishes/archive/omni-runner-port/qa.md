@@ -3,7 +3,7 @@
 Group 5 close-out. Covers the live-QA attempt, the automated-vs-manual coverage
 split, and the known-open items handed forward.
 
-Machine: Felipe's macOS host. Date: 2026-07-02. Branch: `wish/omni-runner-port`.
+Machine: the owner's macOS host. Date: 2026-07-02. Branch: `wish/omni-runner-port`.
 
 ---
 
@@ -47,9 +47,9 @@ Error: Omni approvals are not enabled. Set omni.approvals.enabled=true and omni.
 | `claude` on PATH | present (`~/.local/bin/claude`) — the only precondition met |
 
 No Omni hub + WhatsApp instance is reachable from this machine, so the live
-round-trip is **deferred to Felipe** using the runbook below.
+round-trip is **deferred to the owner** using the runbook below.
 
-### Copy-paste runbook for Felipe to complete live QA himself
+### Copy-paste runbook for the owner to complete live QA himself
 
 Run against your real Omni instance. Secrets stay in env or `~/.genie/config.json`;
 do not paste them into git.
@@ -99,7 +99,7 @@ claude --permission-mode default -p "Run: echo hello via a Bash tool call"
 #        timeout→ask ✅/❌, inbound one-shot ✅/❌). ---
 ```
 
-### Live QA results (Felipe to fill in)
+### Live QA results (the owner to fill in)
 
 - [ ] Approval via text (`y`/`sim`) resolves allow
 - [ ] Deny via text (`n`/`nao`) resolves deny
@@ -133,7 +133,7 @@ claude --permission-mode default -p "Run: echo hello via a Bash tool call"
   only in `omni serve`). Backed by a static grep proving `nats` is a dynamic,
   not top-level, import.
 
-### Manual-only (needs Felipe's eyes / a real Omni hub) — see the runbook above
+### Manual-only (needs the owner's eyes / a real Omni hub) — see the runbook above
 
 - Real WhatsApp approve / deny / reaction from a phone.
 - Real inbound WhatsApp → one-shot `claude -p` reply.

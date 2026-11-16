@@ -39,14 +39,14 @@ _Rodada 1 (2026-08-25): proposta rev. 3 crua (deletar plugins, skills.sh, harnes
 
 **Unknowns**
 - Whether Claude Code accepts `hooks:` in SKILL.md frontmatter (skills.sh README hints some agents do) — would let `work` carry its own PreToolUse guard without `settings.json`.
-- Codex/Hermes/pi user count beyond Felipe (affects deprecation loudness only; architecture answer is the same).
-- Omni: Felipe silent. It is fully decoupled from the board (own db, own handler, own runner, own skill) — a keep/leave decision that does not block anything.
+- Codex/Hermes/pi user count beyond the owner (affects deprecation loudness only; architecture answer is the same).
+- Omni: the owner silent. It is fully decoupled from the board (own db, own handler, own runner, own skill) — a keep/leave decision that does not block anything.
 
 ### 2. LEAVES / STAYS / STAYS-RESCOPED per inventory area
 
 | Area | Call | Why / paths |
 |---|---|---|
-| `src/genie.ts` registrations | STAYS-RESCOPED | Keep `init, board, task, idea, context, mcp, hook dispatch, doctor, update, uninstall, shortcuts?`; drop `setup --codex`, `install --integrations`, `__install-promote`, `ui-bridge`, `update --post-delivery-converge/--publish-local-delivery/--sync-only`. `shortcuts` (tmux) is orthogonal — LEAVES unless Felipe uses it. |
+| `src/genie.ts` registrations | STAYS-RESCOPED | Keep `init, board, task, idea, context, mcp, hook dispatch, doctor, update, uninstall, shortcuts?`; drop `setup --codex`, `install --integrations`, `__install-promote`, `ui-bridge`, `update --post-delivery-converge/--publish-local-delivery/--sync-only`. `shortcuts` (tmux) is orthogonal — LEAVES unless the owner uses it. |
 | `src/genie-commands/` 31.6k | LEAVES (rewrite 3 files) | `codex-*`, `install-promote`, `legacy-v4`, `local-delivery-repair`, `update-integrations`, `auxiliary-trees`, `setup` leave. `doctor.ts` → new ~600-line v5 doctor (db health, index-lane, worktree residue). `install.ts/update.ts/uninstall.ts` → plain binary lifecycle. |
 | `src/lib/` 65.7k | LEAVES bulk | Leave: `agent-sync`, `runtime-integrations`, all `codex-*`, `hermes-*`, `install-promotion/transaction/link/version-marker`, `update-capabilities`, `ordered-lifecycle-leases`, `trusted-executable`? (**no — STAYS**: hooks handlers depend on it), `system-detect`, `claude-settings` (STAYS, needed for hook entry). Stay: `wish-status`, `term-format`, `version`, `genie-home`, `genie-config`, `defaults`, `interactivity`, `workspace` (rescope), `omni-*` (decision-pending). |
 | `src/lib/v5/` | STAYS | Minus `bridge-watcher.ts`, `UI-BRIDGE.md`, `hire_roster` table/migration in `genie-db.ts`. `global-db`/`omni-queue` follow the Omni decision. |
