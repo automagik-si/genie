@@ -258,12 +258,13 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
   const hook = join(ROOT, '.claude', 'hooks', 'git-safety.sh');
   // The merge rule reads the PR's base through `gh pr view`. A stub `gh` first on PATH answers it,
   // so no probe reaches the network: STUB_BASE is the base it prints (empty = the read fails), and
-  // every call is appended to STUB_LOG so a test can see what the guard asked.
+  // every call is appended to STUB_LOG so a test can see what the guard asked. The stub records its
+  // directory with the `pwd -P` builtin, so a base read starts no process beyond the stub itself.
   const stubDir = mkdtempSync(join(tmpdir(), 'git-safety-gh-'));
   const stubLog = join(stubDir, 'calls.log');
   writeFileSync(
     join(stubDir, 'gh'),
-    '#!/bin/bash\necho "$*" >> "$STUB_LOG"\nreadlink -f . > "$STUB_LOG.cwd"\n[ -n "$STUB_BASE" ] || exit 1\nprintf "%b\\n" "$STUB_BASE"\n',
+    '#!/bin/bash\necho "$*" >> "$STUB_LOG"\npwd -P > "$STUB_LOG.cwd"\n[ -n "$STUB_BASE" ] || exit 1\nprintf "%b\\n" "$STUB_BASE"\n',
     { mode: 0o755 },
   );
   afterAll(() => rmSync(stubDir, { recursive: true, force: true }));
@@ -283,6 +284,15 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
     return result.status ?? -1;
   };
 
+  // ONE bound for every test in this block: each passes 20_000 (a literal, because a named constant
+  // there makes the formatter re-wrap every test). A test is 1 to 28 probes, and each probe runs the
+  // hook once: about 55 processes, 29 of them programs (grep, sed, jq, tr, awk, cat), the rest its
+  // subshells. In 36 CI runs of 2026-11-15/16 (78 jobs per OS, bun 1.3.11 and 1.4.4) the whole block
+  // took 2.5-4.6 s on linux and 9.0-28.3 s on macos-latest, alike on both bun versions. The slowest
+  // darwin test was 5134 ms (run 43783141064, "blocks the spellings…", on its old 15 s bound); runs
+  // 43748585733 and 43777710605 were killed at bun's 5 s default. 3 x 5.134 s, rounded up to 5 s, is
+  // 20 s.
+
   /**
    * The operator's rule (2026-09-19): what is refused is a merge INTO a protected branch, not the
    * verb. Until then every merge was refused, including the dev merges the operator had asked for.
@@ -300,7 +310,7 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
       expect([command, probe(command, 'main')]).toEqual([command, 2]);
       expect([command, probe(command, 'master')]).toEqual([command, 2]);
     }
-  });
+  }, 20_000);
 
   test('the protected merge bases are the list the operator sets', () => {
     const env = { GIT_SAFETY_PROTECTED_BRANCHES: 'main release' };
@@ -308,13 +318,13 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
     expect(probe('gh pr merge 7 --merge', 'main', env)).toBe(2);
     expect(probe('gh pr merge 7 --merge', 'master', env)).toBe(0);
     expect(probe('gh pr merge 7 --merge', 'dev', env)).toBe(0);
-  });
+  }, 20_000);
 
   test('asks the remote for the base of the PR the command names, in the repository it names', () => {
     writeFileSync(stubLog, '');
     expect(probe('gh --repo o/r pr merge 41 --subject s --squash', 'dev')).toBe(0);
     expect(readFileSync(stubLog, 'utf8').trim()).toBe('pr view 41 --repo o/r --json baseRefName -q .baseRefName');
-  });
+  }, 20_000);
 
   /**
    * The independent review of this rule (2026-09-19) allowed each of these with a `dev` base: the
@@ -340,7 +350,7 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
     ]) {
       expect([command, probe(command, 'dev')]).toEqual([command, 2]);
     }
-  });
+  }, 20_000);
 
   test('a base that is not exactly one branch name is unread, and a blank protected list keeps the default', () => {
     expect(probe('gh pr merge 7 --merge', 'main\\r')).toBe(2);
@@ -353,7 +363,7 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
       expect(probe('gh pr merge 7 --merge', 'main', { GIT_SAFETY_PROTECTED_BRANCHES: blank })).toBe(2);
       expect(probe('gh pr merge 7 --merge', 'dev', { GIT_SAFETY_PROTECTED_BRANCHES: blank })).toBe(0);
     }
-  });
+  }, 20_000);
 
   test('the base is asked for from the directory the command will run in', () => {
     const elsewhere = mkdtempSync(join(tmpdir(), 'git-safety-cwd-'));
@@ -365,7 +375,7 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
     } finally {
       rmSync(elsewhere, { recursive: true, force: true });
     }
-  });
+  }, 20_000);
 
   test('still allows the value flags in their separated and = forms', () => {
     for (const command of [
@@ -378,7 +388,7 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
       expect([command, probe(command, 'dev')]).toEqual([command, 0]);
       expect([command, probe(command, 'main')]).toEqual([command, 2]);
     }
-  });
+  }, 20_000);
 
   test('a merge whose base cannot be read with certainty fails closed, even when the base would be dev', () => {
     for (const command of [
@@ -404,7 +414,7 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
     expect(probe('gh pr merge 2996 --merge', '')).toBe(2);
     expect(probe('gh pr merge 1 --merge; gh pr merge 2 --merge', 'dev')).toBe(0);
     expect(probe('gh pr merge 1 --merge; gh pr merge 2 --merge', 'main')).toBe(2);
-  });
+  }, 20_000);
 
   test('blocks merge, API mutations, hook bypasses and direct refspecs to protected branches', () => {
     for (const command of [
@@ -421,15 +431,12 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
     ]) {
       expect([command, probe(command)]).toEqual([command, 2]);
     }
-  });
+  }, 20_000);
 
   /**
    * Every spelling of the same act, because a guard that refuses one spelling and admits another
    * only teaches the next agent which spelling to use. Each of these walked through the guard when
    * PR #2935 was reviewed.
-   *
-   * 28 runs of the hook, each a few dozen grep/sed/jq children: up to 5.0 s on macos-latest, where it
-   * timed out at bun's 5 s default twice. 15 s is 3x the slowest run measured there.
    */
   test('blocks the spellings that used to walk through: flags first, quoted tokens, implicit POST', () => {
     for (const command of [
@@ -472,7 +479,7 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
     ]) {
       expect([command, probe(command)]).toEqual([command, 2]);
     }
-  }, 15_000);
+  }, 20_000);
 
   /**
    * What this guard is NOT. It matches text, so a determined spelling always gets past it — a bare
@@ -525,7 +532,7 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
     ]) {
       expect([command, probe(command)]).toEqual([command, 2]);
     }
-  });
+  }, 20_000);
 
   test('a newline is a separator, so the next line is not judged as the previous command', () => {
     for (const command of [
@@ -560,7 +567,7 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
     ]) {
       expect([command, probe(command)]).toEqual([command, 0]);
     }
-  });
+  }, 20_000);
 
   test('does not pretend to catch what only the pre-push hook can see', () => {
     for (const command of [
@@ -571,7 +578,7 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
     ]) {
       expect([command, probe(command)]).toEqual([command, 0]);
     }
-  });
+  }, 20_000);
 
   /**
    * A forbidden form quoted as DATA is text, not an act. Refusing these blocked read-only searches,
@@ -602,7 +609,7 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
     ]) {
       expect([command, probe(command)]).toEqual([command, 0]);
     }
-  });
+  }, 20_000);
 
   /**
    * The gate runs this one command, verbatim, in every repository with a hook system. A guard that
@@ -617,7 +624,7 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
     for (const spelled of [command, `cd /tmp/wt && ${command}`]) {
       expect([spelled, probe(spelled)]).toEqual([spelled, 0]);
     }
-  });
+  }, 20_000);
 
   test('allows the publisher allowlist and the read-only hooksPath query', () => {
     for (const command of [
@@ -636,5 +643,5 @@ describe('git-safety hook guards the surfaces the wish publisher is forbidden', 
     ]) {
       expect([command, probe(command)]).toEqual([command, 0]);
     }
-  });
+  }, 20_000);
 });
