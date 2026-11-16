@@ -26,6 +26,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, sep } from 'node:path';
+import { copyTreeBytes } from './byte-copy.js';
 import type { CommandRunner } from './runtime-integrations.js';
 import { SKILLS_CLI_AGENTS, agentSkillsHome } from './skills-agents.js';
 import {
@@ -138,7 +139,9 @@ function argvCopyRunner(record: { argv: string[][] } = { argv: [] }, targetHome 
       mkdirSync(target, { recursive: true });
       for (const skill of skills) {
         rmSync(join(target, skill), { recursive: true, force: true });
-        cpSync(join(source, skill), join(target, skill), { recursive: true });
+        // Bytes, never a clone: a reflink of just-written files can stall on a
+        // copy-on-write host under write load (#3320).
+        copyTreeBytes(join(source, skill), join(target, skill));
       }
     }
     return { exitCode: 0, stdout: '', stderr: '' };
@@ -2795,6 +2798,13 @@ describe('a host without Node (#3331)', () => {
     // The pre-spawn passes ran: `trace` archived from both homes, the
     // genie-created `~/.openclaw` handed back.
     const stamp = at.toISOString().replace(/[:.]/g, '-');
+    // The failure carries what those passes did, after the failure line.
+    expect(failed.lines.slice(1)).toEqual(
+      expect.arrayContaining([
+        'skills: retired trace from 2 agent dir(s)',
+        `skills: pruned 1 genie-created agent home(s) (backed up to ${join(twoRunsHost.genieHome, 'state-backups', `skills-prune-${stamp}`)}); genie installs to detected agents only`,
+      ]),
+    );
     const retirementRoot = join(twoRunsHost.genieHome, 'state-backups', `skills-retirement-${stamp}`);
     expect(existsSync(join(retirementRoot, '.claude', 'skills', 'trace', 'SKILL.md'))).toBe(true);
     expect(existsSync(join(twoRunsHost.home, '.claude', 'skills', 'trace'))).toBe(false);
