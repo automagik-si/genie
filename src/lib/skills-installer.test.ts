@@ -115,8 +115,9 @@ function deliveringOkRunner(
  * ONLY the `--skill` names (`'*'` is the whole delivered tree), replacing each
  * target wholesale the way `--copy` does (`rm -rf`, then copy). A runner that
  * ignores the argv cannot tell a skipped foreign dir from a replaced one.
+ * `targetHome` defaults to the fixture `home`.
  */
-function argvCopyRunner(record: { argv: string[][] } = { argv: [] }): CommandRunner {
+function argvCopyRunner(record: { argv: string[][] } = { argv: [] }, targetHome = home): CommandRunner {
   return (command, args) => {
     record.argv.push([command, ...args]);
     const source = args[args.indexOf('add') + 1] as string;
@@ -133,7 +134,7 @@ function argvCopyRunner(record: { argv: string[][] } = { argv: [] }): CommandRun
     for (const agent of listAfter('--agent')) {
       const spec = SKILLS_CLI_AGENTS.find((entry) => entry.agent === agent);
       if (spec === undefined) throw new Error(`unknown agent: ${agent}`);
-      const target = agentSkillsHome(home, spec);
+      const target = agentSkillsHome(targetHome, spec);
       mkdirSync(target, { recursive: true });
       for (const skill of skills) {
         rmSync(join(target, skill), { recursive: true, force: true });
@@ -2614,6 +2615,211 @@ describe('runSkillsChannelConvergence', () => {
       `skills: genie skill dir ${join(claudeSkills, 'work')} was modified locally — previous contents backed up to `,
     );
     expect(process.exitCode).toBe(1);
+  });
+});
+
+/**
+ * Issue #3331: the Node preflight used to run before agent detection, so a
+ * host with no Node and no agent failed the convergence (exit 1) while the
+ * same host with Node reported `skipped`. Detection now comes first; Node is
+ * required only once an agent is detected and the CLI must run.
+ */
+describe('a host without Node (#3331)', () => {
+  const noNode = () => null;
+  let previousExitCode: number | string | undefined;
+
+  beforeEach(() => {
+    previousExitCode = process.exitCode ?? undefined;
+    process.exitCode = 0;
+  });
+
+  afterEach(() => {
+    process.exitCode = previousExitCode ?? 0;
+  });
+
+  function countingRunner(counter: { spawned: number }): CommandRunner {
+    return () => {
+      counter.spawned += 1;
+      return { exitCode: 0, stdout: '', stderr: '' };
+    };
+  }
+
+  test('no Node and no agent home skips the channel with exit 0, exactly as with Node', () => {
+    const results: { lines: string[]; result: unknown; exitCode: unknown; spawned: number; entries: string[] }[] = [];
+    for (const which of [noNode, alwaysFound]) {
+      const bareHome = mkdtempSync(join(root, 'bare-home-'));
+      const bareGenieHome = join(bareHome, '.genie');
+      mkdirSync(join(bareGenieHome, 'skills', 'wish'), { recursive: true });
+      writeFileSync(join(bareGenieHome, 'skills', 'wish', 'SKILL.md'), '# wish\n', 'utf8');
+      const counter = { spawned: 0 };
+      const lines: string[] = [];
+      process.exitCode = 0;
+      const result = runSkillsChannelConvergence({
+        selection: 'auto',
+        version: VERSION_UNDER_TEST,
+        genieHome: bareGenieHome,
+        home: bareHome,
+        which,
+        spawn: countingRunner(counter),
+        log: (line) => lines.push(line),
+      });
+      results.push({
+        lines,
+        result,
+        exitCode: process.exitCode,
+        spawned: counter.spawned,
+        entries: readdirSync(bareHome),
+      });
+    }
+
+    const reason = 'no agent skill home detected (genie installs to detected agents only, and creates none)';
+    for (const run of results) {
+      expect(run.result).toEqual({ status: 'skipped', reason });
+      expect(run.lines).toEqual([`skills: skipped (${reason})`]);
+      expect(run.exitCode).toBe(0);
+      expect(run.spawned).toBe(0);
+      // No home invented, no record written.
+      expect(run.entries).toEqual(['.genie']);
+    }
+    expect(results[0]).toEqual(results[1] as (typeof results)[number]);
+  });
+
+  test('no Node with an agent home detected fails, naming Node and the detected agents', () => {
+    fixtureSkillsTree(['wish']);
+    const counter = { spawned: 0 };
+    const lines: string[] = [];
+    const result = runSkillsChannelConvergence({
+      selection: 'auto',
+      version: VERSION_UNDER_TEST,
+      genieHome,
+      home,
+      which: noNode,
+      spawn: countingRunner(counter),
+      log: (line) => lines.push(line),
+    });
+
+    const reason =
+      'node and npx not found on PATH (the skills CLI runs on Node); Node is needed to install skills for the detected agent(s): claude-code, codex';
+    expect(result).toEqual({ status: 'failed', reason });
+    expect(lines).toEqual([
+      `Skills install failed: ${reason}. ${skillsInstallRemedy(join(genieHome, 'skills'), ['claude-code', 'codex'])}`,
+    ]);
+    expect(process.exitCode).toBe(1);
+    expect(counter.spawned).toBe(0);
+    expect(existsSync(skillsInstallRecordPath(genieHome))).toBe(false);
+    expect(existsSync(join(genieHome, 'state-backups'))).toBe(false);
+  });
+
+  /**
+   * The trade the fix makes: with an agent detected and no Node, the Node-free
+   * pre-spawn passes (backup-first retirement, the handback prune and its
+   * record drop) now run before the failure. A failed run followed by a run
+   * with Node must leave the host exactly as one run with Node would.
+   */
+  test('a failed no-Node run followed by a run with Node ends where one run with Node does', () => {
+    const at = new Date('2026-11-16T00:00:00.000Z');
+    function seedHost(base: string): { home: string; genieHome: string } {
+      const hostHome = join(base, 'home');
+      const hostGenieHome = join(hostHome, '.genie');
+      mkdirSync(join(hostHome, '.claude'), { recursive: true });
+      writeFileSync(join(hostHome, '.claude', 'settings.json'), '{}\n', 'utf8');
+      mkdirSync(join(hostHome, '.codex'), { recursive: true });
+      // This release delivers `review` and `wish`; it drops `trace`.
+      for (const name of ['review', 'wish']) {
+        mkdirSync(join(hostGenieHome, 'skills', name), { recursive: true });
+        writeFileSync(join(hostGenieHome, 'skills', name, 'SKILL.md'), `# ${name}\n`, 'utf8');
+      }
+      // The previous `--all`-era install: `trace` and `wish` in the operator's
+      // Claude home and in a `~/.openclaw` home genie itself created.
+      const agentDirs = [join(hostHome, '.claude', 'skills'), join(hostHome, '.openclaw', 'skills')];
+      const dirDigests: Record<string, string> = {};
+      for (const dir of agentDirs) {
+        for (const name of ['trace', 'wish']) {
+          mkdirSync(join(dir, name), { recursive: true });
+          writeFileSync(join(dir, name, 'SKILL.md'), `# ${name}\n`, 'utf8');
+          dirDigests[join(dir, name)] = computeSkillDirDigest(join(dir, name)) as string;
+        }
+      }
+      writeSkillsInstallRecord(hostGenieHome, {
+        ref: 'v5.260914.1',
+        cliVersion: SKILLS_CLI_VERSION,
+        inventory: ['trace', 'wish'],
+        agentDirs,
+        dirDigests,
+        installedAt: '2026-09-14T00:00:00.000Z',
+      });
+      return { home: hostHome, genieHome: hostGenieHome };
+    }
+    /** Every path under `base` with its file content, `base` itself masked. */
+    function hostState(base: string): Record<string, string> {
+      const state: Record<string, string> = {};
+      const walk = (dir: string): void => {
+        for (const name of readdirSync(dir).sort()) {
+          const path = join(dir, name);
+          const key = path.slice(base.length);
+          if (statSync(path).isDirectory()) {
+            state[key] = '<dir>';
+            walk(path);
+          } else {
+            state[key] = readFileSync(path, 'utf8').replaceAll(base, '<base>');
+          }
+        }
+      };
+      walk(base);
+      return state;
+    }
+    const converge = (host: { home: string; genieHome: string }, which: (name: string) => string | null) => {
+      const lines: string[] = [];
+      process.exitCode = 0;
+      const result = runSkillsChannelConvergence({
+        selection: 'auto',
+        version: VERSION_UNDER_TEST,
+        genieHome: host.genieHome,
+        home: host.home,
+        which,
+        spawn: argvCopyRunner({ argv: [] }, host.home),
+        now: () => at,
+        log: (line) => lines.push(line),
+      });
+      return { result, lines, exitCode: process.exitCode };
+    };
+
+    const twoRuns = join(root, 'two-runs');
+    const twoRunsHost = seedHost(twoRuns);
+    const failed = converge(twoRunsHost, noNode);
+    expect(failed.result.status).toBe('failed');
+    expect(failed.exitCode).toBe(1);
+    expect(failed.lines[0]).toStartWith(
+      'Skills install failed: node and npx not found on PATH (the skills CLI runs on Node); Node is needed to install skills for the detected agent(s): claude-code, codex.',
+    );
+    // The pre-spawn passes ran: `trace` archived from both homes, the
+    // genie-created `~/.openclaw` handed back.
+    const stamp = at.toISOString().replace(/[:.]/g, '-');
+    const retirementRoot = join(twoRunsHost.genieHome, 'state-backups', `skills-retirement-${stamp}`);
+    expect(existsSync(join(retirementRoot, '.claude', 'skills', 'trace', 'SKILL.md'))).toBe(true);
+    expect(existsSync(join(twoRunsHost.home, '.claude', 'skills', 'trace'))).toBe(false);
+    expect(existsSync(join(twoRunsHost.home, '.openclaw'))).toBe(false);
+    expect(existsSync(join(twoRunsHost.genieHome, 'state-backups', `skills-prune-${stamp}`))).toBe(true);
+    const installed = converge(twoRunsHost, alwaysFound);
+    expect(installed.result.status).toBe('installed');
+    expect(installed.exitCode).toBe(0);
+
+    const oneRun = join(root, 'one-run');
+    const oneRunHost = seedHost(oneRun);
+    const single = converge(oneRunHost, alwaysFound);
+    expect(single.result.status).toBe('installed');
+    expect(single.exitCode).toBe(0);
+
+    const finalState = hostState(twoRuns);
+    expect(finalState).toEqual(hostState(oneRun));
+    // The comparison covers the record, the retirement and prune backups and
+    // the installed skills; each is present, so equality is not vacuous.
+    const record = readSkillsInstallRecord(twoRunsHost.genieHome) as SkillsInstallRecord;
+    expect(record.inventory).toEqual(['review', 'wish']);
+    expect(record.agentDirs).not.toContain(join(twoRunsHost.home, '.openclaw', 'skills'));
+    expect(finalState['/home/.claude/skills/review/SKILL.md']).toBe('# review\n');
+    expect(finalState['/home/.agents/skills/wish/SKILL.md']).toBe('# wish\n');
+    expect(Object.keys(finalState).some((key) => key.includes(`skills-prune-${stamp}/`))).toBe(true);
   });
 });
 
