@@ -1,34 +1,44 @@
-# Genie's plugin lane (scripts/plugin-lane.ts, plugin-lane/README.md): a genie-dsh version
-# that lands on dev is released on its own, with no Genie CLI release and no Automagik one.
-# The tarball goes on an immutable `genie-dsh-v<version>` release, never the Latest one, and
-# its tag does not match the `v*` CLI tags the release chain watches. The signed lane.json and
+# Genie's plugin lane (scripts/plugin-lane.ts, plugin-lane/README.md): a change to a plugin that
+# lands on dev is released on its own, with no Genie CLI release and no Automagik one. Each
+# tarball goes on an immutable `<plugin>-v<version>` release, never the Latest one, and its tag
+# does not match the `v*` CLI tags the release chain watches. The signed lane.json and
 # lane.json.sig are the only files of the `lane` branch, a new commit on it each time: this
 # repository's releases are immutable, so a rolling release cannot take new files.
-# A version already released keeps its tarball: a re-run only signs the lane again.
-name: genie-dsh plugin lane
+# A version already released keeps its tarball: a re-run only signs the lane again, after proving
+# the plugin tree has not changed under that version.
+#
+# Two jobs, because packing runs the board's prepare build (esbuild) while publishing holds
+# contents: write and the signing key. `pack` installs and builds with a read-only token and no
+# secret; `publish` installs nothing, builds nothing and runs only scripts/plugin-lane.ts, whose
+# imports are all node builtins.
+name: genie plugin lane
 
 on:
   push:
     branches: [dev]
     # The lane's own script and workflow too: a fix to either re-runs it, since a manual run
     # needs the workflow on the default branch (main), and this one lives on dev.
-    paths: ['plugins/genie-dsh/**', 'scripts/plugin-lane.ts', '.github/workflows/plugin-lane.yml']
+    paths:
+      - 'plugins/genie-dsh/**'
+      - 'plugins/dsh-genie-board/**'
+      - 'scripts/plugin-lane.ts'
+      - '.github/workflows/plugin-lane.yml'
   workflow_dispatch:
 
-permissions:
-  contents: write
+# Every job states its own token; the workflow default grants nothing.
+permissions: {}
 
 concurrency:
   group: plugin-lane
   cancel-in-progress: false
 
 jobs:
-  publish:
-    name: Publish genie-dsh to the plugin lane
+  pack:
+    name: Pack the plugin tarballs
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      GH_TOKEN: ${{ github.token }}
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
@@ -38,52 +48,157 @@ jobs:
         with:
           bun-version: 1.4.4
 
-      - name: Version
-        id: version
-        run: |
-          version="$(jq -r .version plugins/genie-dsh/package.json)"
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "tag=genie-dsh-v${version}" >> "$GITHUB_OUTPUT"
+      # npm pack runs the board's prepare build, which imports esbuild from the checkout's
+      # node_modules under plain node.
+      - name: Install
+        run: bun install --frozen-lockfile --ignore-scripts
 
-      - name: Tarball (released once per version)
-        env:
-          TAG: ${{ steps.version.outputs.tag }}
-          VERSION: ${{ steps.version.outputs.version }}
+      - name: Pack both packages
         run: |
           mkdir -p dist
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.tgz' --dir dist
-            bun scripts/plugin-lane.ts describe "dist/automagik-genie-dsh-${VERSION}.tgz" > dist/packed.json
+          bun scripts/plugin-lane.ts pack dist genie-dsh > dist/genie-dsh.json
+          bun scripts/plugin-lane.ts pack dist genie-dsh-board > dist/dsh-genie-board.json
+          cat dist/genie-dsh.json dist/dsh-genie-board.json
+
+      - name: Upload the tarballs and their packed JSON
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: plugin-lane
+          path: |
+            dist/*.tgz
+            dist/*.json
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Publish the lane
+    needs: pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          # The board's release check diffs its released target commit against HEAD.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.4
+
+      - name: Download the packed tarballs
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: plugin-lane
+          path: dist
+
+      - name: Versions
+        id: versions
+        run: |
+          dsh="$(jq -r .version plugins/genie-dsh/package.json)"
+          board="$(jq -r .version plugins/dsh-genie-board/package.json)"
+          echo "dsh=${dsh}" >> "$GITHUB_OUTPUT"
+          echo "dsh_tag=genie-dsh-v${dsh}" >> "$GITHUB_OUTPUT"
+          echo "board=${board}" >> "$GITHUB_OUTPUT"
+          echo "board_tag=genie-dsh-board-v${board}" >> "$GITHUB_OUTPUT"
+
+      - name: Tarballs (released once per version)
+        env:
+          DSH: ${{ steps.versions.outputs.dsh }}
+          DSH_TAG: ${{ steps.versions.outputs.dsh_tag }}
+          BOARD: ${{ steps.versions.outputs.board }}
+          BOARD_TAG: ${{ steps.versions.outputs.board_tag }}
+        run: |
+          # The pack job packed these bytes unaided; describe_checked proves the file is the one
+          # its packed JSON declared (integrity and sha256) before it is released.
+          describe_checked() {
+            local json="$1" tarball="$2" described field
+            described="$(bun scripts/plugin-lane.ts describe "$tarball")"
+            for field in integrity sha256; do
+              if [ "$(printf '%s' "$described" | jq -r ".${field}")" != "$(jq -r ".${field}" "$json")" ]; then
+                echo "::error ::plugin-lane.artifact_mismatch ${tarball} does not match ${json} on ${field}"
+                exit 1
+              fi
+            done
+            printf '%s\n' "$described" > "$json"
+          }
+          mkdir -p dist/released
+
+          if gh release view "$DSH_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release download "$DSH_TAG" --repo "$GITHUB_REPOSITORY" \
+              --pattern "automagik-genie-dsh-${DSH}.tgz" --dir dist/released
+            bun scripts/plugin-lane.ts describe "dist/released/automagik-genie-dsh-${DSH}.tgz" > dist/genie-dsh.json
           else
-            bun scripts/plugin-lane.ts pack dist > dist/packed.json
-            gh release create "$TAG" "dist/automagik-genie-dsh-${VERSION}.tgz" \
+            describe_checked dist/genie-dsh.json "dist/automagik-genie-dsh-${DSH}.tgz"
+            gh release create "$DSH_TAG" "dist/automagik-genie-dsh-${DSH}.tgz" \
               --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false \
-              --title "genie-dsh ${VERSION}" \
-              --notes "genie-dsh ${VERSION} for the Automagik Bot team, served through the plugin lane."
+              --title "genie-dsh ${DSH}" \
+              --notes "genie-dsh ${DSH} for the Automagik Bot team, served through the plugin lane."
           fi
+
+          # The board's version is bumped with the board, the genie-dsh convention. A released
+          # version is reused only while plugins/dsh-genie-board has not moved since its target
+          # commit: the prepare build embeds the checkout's Genie version, so comparing bytes
+          # would fail after any version bump, and a board change without its own bump would
+          # otherwise be re-signed silently.
+          if gh release view "$BOARD_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            target="$(gh release view "$BOARD_TAG" --repo "$GITHUB_REPOSITORY" --json targetCommitish --jq .targetCommitish)"
+            if ! git diff --quiet "$target" HEAD -- plugins/dsh-genie-board; then
+              echo "::error ::plugin-lane.board_bump_required plugins/dsh-genie-board changed since ${BOARD_TAG} (${target}); bump plugins/dsh-genie-board/package.json version"
+              exit 1
+            fi
+            gh release download "$BOARD_TAG" --repo "$GITHUB_REPOSITORY" \
+              --pattern "automagik-genie-dsh-board-${BOARD}.tgz" --dir dist/released
+            bun scripts/plugin-lane.ts describe "dist/released/automagik-genie-dsh-board-${BOARD}.tgz" > dist/dsh-genie-board.json
+          else
+            describe_checked dist/dsh-genie-board.json "dist/automagik-genie-dsh-board-${BOARD}.tgz"
+            gh release create "$BOARD_TAG" "dist/automagik-genie-dsh-board-${BOARD}.tgz" \
+              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false \
+              --title "genie-dsh-board ${BOARD}" \
+              --notes "The Genie board for DSH Web, served through the plugin lane."
+          fi
+
+          jq -s . dist/genie-dsh.json dist/dsh-genie-board.json > dist/packed.json
           cat dist/packed.json
 
-      - name: Sign the lane
-        env:
-          PLUGIN_LANE_KEY: ${{ secrets.PLUGIN_LANE_KEY }}
-        run: |
-          bun scripts/plugin-lane.ts manifest dist/packed.json "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/lane.json
-          bun scripts/plugin-lane.ts sign dist/lane.json > dist/lane.json.sig
-          bun scripts/plugin-lane.ts verify dist/lane.json dist/lane.json.sig
-
-      - name: Publish the lane
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
+      # The lane branch first: its lane is the only trusted ordering input, and only once its
+      # signature verifies against plugin-lane/keys.json. A branch that lost its lane fails here
+      # instead of minting a version that could repeat one a profile already marked bad.
+      - name: Lane branch
+        id: lane
         run: |
           remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           if git ls-remote --exit-code --heads "$remote" lane >/dev/null; then
             git clone -q --depth 1 --branch lane "$remote" lane
+            echo "previous=lane" >> "$GITHUB_OUTPUT"
           else
             git init -q -b lane lane
           fi
+
+      - name: Sign the lane
+        env:
+          PLUGIN_LANE_KEY: ${{ secrets.PLUGIN_LANE_KEY }}
+          PREVIOUS: ${{ steps.lane.outputs.previous }}
+        run: |
+          # The previous lane is passed as its branch checkout: manifest verifies lane.json
+          # against lane.json.sig before it reads the version, sequence or entries.
+          args=(dist/packed.json "$GITHUB_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)")
+          if [ -n "${PREVIOUS}" ]; then args+=("${PREVIOUS}"); fi
+          bun scripts/plugin-lane.ts manifest "${args[@]}" > dist/lane.json
+          bun scripts/plugin-lane.ts sign dist/lane.json > dist/lane.json.sig
+          bun scripts/plugin-lane.ts verify dist/lane.json dist/lane.json.sig
+
+      - name: Publish the lane
+        run: |
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          version="$(jq -r .version dist/lane.json)"
           cp dist/lane.json dist/lane.json.sig lane/
           cd lane
           git add lane.json lane.json.sig
           git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-            commit -q -m "lane: genie-dsh ${VERSION}"
+            commit -q -m "lane: genie plugins ${version}"
           git push -q "$remote" HEAD:refs/heads/lane
