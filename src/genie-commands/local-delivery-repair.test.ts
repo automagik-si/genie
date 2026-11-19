@@ -6,6 +6,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   rmSync,
   symlinkSync,
@@ -220,6 +221,22 @@ describe('local delivery request and physical-file boundary', () => {
         VERSION,
       ),
     ).toThrow('distinct physical files');
+  });
+
+  test('refuses a hard-linked alias before creating any snapshot file', () => {
+    const files = basicFiles('hardlink-preflight');
+    const alias = join(files.root, 'descriptor-alias.json');
+    linkSync(files.request.artifact, alias);
+    const stage = stageRoot(files.root);
+    expect(() =>
+      materializeLocalDeliveryRepair(
+        JSON.stringify({ ...files.request, descriptor: alias }),
+        stage,
+        files.platformId,
+        VERSION,
+      ),
+    ).toThrow('distinct physical files');
+    expect(readdirSync(stage)).toEqual([]);
   });
 
   test('rejects platform, manifest version, and exact manifest-schema drift', () => {
