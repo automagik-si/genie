@@ -2,11 +2,11 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { createHash } from 'node:crypto';
 import {
   chmodSync,
-  cpSync,
   linkSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   rmSync,
   symlinkSync,
@@ -14,6 +14,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
+import { copyTreeBytes } from '../lib/byte-copy.js';
 import type { DeliveryEvidencePlatformId } from '../lib/delivery-evidence-verify.js';
 import { buildTestDeliveryEvidencePack } from '../lib/delivery-evidence-verify.test-support.js';
 import { scanPhysicalTree } from '../lib/release-payload-proof.js';
@@ -222,6 +223,22 @@ describe('local delivery request and physical-file boundary', () => {
     ).toThrow('distinct physical files');
   });
 
+  test('refuses a hard-linked alias before creating any snapshot file', () => {
+    const files = basicFiles('hardlink-preflight');
+    const alias = join(files.root, 'descriptor-alias.json');
+    linkSync(files.request.artifact, alias);
+    const stage = stageRoot(files.root);
+    expect(() =>
+      materializeLocalDeliveryRepair(
+        JSON.stringify({ ...files.request, descriptor: alias }),
+        stage,
+        files.platformId,
+        VERSION,
+      ),
+    ).toThrow('distinct physical files');
+    expect(readdirSync(stage)).toEqual([]);
+  });
+
   test('rejects platform, manifest version, and exact manifest-schema drift', () => {
     const files = basicFiles('bindings');
     const otherPlatform = files.platformId === 'darwin-arm64' ? 'linux-arm64' : 'darwin-arm64';
@@ -329,6 +346,9 @@ describe('local delivery update-mode and trailer boundary', () => {
 });
 
 describe('local delivery embedded-trust command boundary', () => {
+  // Measured timeout (#3271): 0.17 s quiet; 0.48 s under the busy-CPU proof; 6.1 s on the loaded
+  // gate host. 3x the slowest run, rounded up to 5 s. The cost is process launches and I/O, not
+  // CPU: the genie CLI under test plus tar and the shell probes it runs.
   test('rejects descriptor tampering without invoking a network verifier or publishing a record', () => {
     const root = tempRoot('cli-tamper');
     const platform = platformId();
@@ -375,9 +395,11 @@ describe('local delivery embedded-trust command boundary', () => {
 
     const genieHome = join(root, 'genie-home');
     mkdirSync(join(genieHome, 'bin'), { recursive: true });
-    cpSync(payloadTree, join(genieHome, 'plugins', 'genie'), { recursive: true });
+    mkdirSync(join(genieHome, 'plugins'));
+    // Byte copies: a cpSync clone of these just-written files waited 30 s in a host I/O stall (#3323).
+    copyTreeBytes(payloadTree, join(genieHome, 'plugins', 'genie'));
     writeFileSync(join(genieHome, 'VERSION'), `${VERSION}\n`);
-    cpSync(binary, join(genieHome, 'bin', 'genie'));
+    copyTreeBytes(binary, join(genieHome, 'bin', 'genie'));
     chmodSync(join(genieHome, 'bin', 'genie'), 0o755);
 
     const fakeBin = join(root, 'fake-bin');
@@ -421,7 +443,7 @@ describe('local delivery embedded-trust command boundary', () => {
     expect(boundary).not.toContain('skipAttestation');
     expect(boundary).not.toContain('evidenceVerification');
     expect(boundary).not.toContain('GENIE_TEST');
-  });
+  }, 20_000);
 });
 
 function readFileIfPresent(path: string): string {

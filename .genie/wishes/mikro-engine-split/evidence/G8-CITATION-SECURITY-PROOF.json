@@ -36,7 +36,7 @@
     "bun",
     "-e",
     "import {verifyCitations} from './scripts/mikro/call.ts';const root=process.argv[1];const results=verifyCitations({plan:{files:[{path:'new-boundary.ts',reason:'NEW: introduce a boundary in the existing tracked root'}]},facts:[{evidence:['new-boundary.ts:1','marker.mjs:999999','marker.mjs:1']} ]},root);const proposal=results.find(row=>row.proposal===true&&row.path==='new-boundary.ts');const fabricated=results.find(row=>row.proposal!==true&&row.path==='new-boundary.ts');const outOfRange=results.find(row=>row.path==='marker.mjs'&&row.line===999999);const genuine=results.find(row=>row.path==='marker.mjs'&&row.line===1);console.log(JSON.stringify({kind:'unscored-real-public-citation-verifier',results,proposalAccepted:proposal?.ok===true,samePathOrdinaryEvidenceRefused:fabricated?.ok===false,outOfRangeRefused:outOfRange?.ok===false,realTrackedLineAccepted:genuine?.ok===true,modelCalls:0}));if(!(proposal?.ok&&fabricated?.ok===false&&outOfRange?.ok===false&&genuine?.ok))process.exitCode=1;",
-    "/home/genie/.local/share/mikro-engine-split/experiments-g8/canonical-cli-smoke/repository"
+    "<experiment workspace>/experiments-g8/canonical-cli-smoke/repository"
   ],
   "scored": false,
   "completedAt": "2026-10-06T04:15:33.177699Z"

@@ -215,7 +215,7 @@ async function* transcripts(dir) {
   }
 }
 
-/** `-home-namastex-prod-mikro` → the project slug the transcript belongs to. */
+/** `-path-to-prod-mikro` → the project slug the transcript belongs to. */
 function projectOf(path) {
   const rel = path.slice(ROOT.length + 1);
   const slug = rel.split("/")[0] ?? "?";

@@ -164,7 +164,7 @@
         "origin": "https://juice.labs.khal.ai",
         "literalAdvertisedModel": "deepseek-v4.1-flash-juiced",
         "api": "openai-responses",
-        "credentialReference": "/home/genie/.local/share/mikro-engine-split/juice/genie.key",
+        "credentialReference": "<experiment workspace>/juice/genie.key",
         "credentialResolution": "Compiled SDK per-invocation apiKeyFile",
         "text": "JUICE_GENIE_READY",
         "usage": {
@@ -198,7 +198,7 @@
         "origin": "https://juice.labs.khal.ai",
         "literalAdvertisedModel": "deepseek-v4.1-flash-juiced",
         "api": "openai-responses",
-        "credentialReference": "/home/genie/.local/share/mikro-engine-split/juice/brain.key",
+        "credentialReference": "<experiment workspace>/juice/brain.key",
         "credentialResolution": "Compiled SDK per-invocation apiKeyFile",
         "text": "JUICE_BRAIN_READY",
         "usage": {
@@ -1521,7 +1521,7 @@
         }
       },
       "sourceSnapshot": {
-        "sourceFile": "/home/genie/.local/share/mikro-engine-split/smokes/jev-public-input.json",
+        "sourceFile": "<experiment workspace>/smokes/jev-public-input.json",
         "contentSha256": "300833bc241f16ac40ef83d6d06937f8ce284e755e2bb8e88d4df220530a7767",
         "state": {
           "text": "RLM algorithm CLI for coding agents \u2014 prompt externalization, Python REPL with symbolic recursion, code-driven navigation."
@@ -1626,7 +1626,7 @@
         "boundary": "none",
         "phoenix": false,
         "ledger": false,
-        "nodeBinary": "/home/genie/.hermes/node/bin/node",
+        "nodeBinary": "~/.hermes/node/bin/node",
         "runtimeCli": "mikro/dist/src/cli.js",
         "stderr": "",
         "result": {
@@ -1634,7 +1634,7 @@
           "agent": "wish-context",
           "runId": "bb2f9b6e-1ef0-43c7-94b6-5798a0f88bb5",
           "traceId": "bb2f9b6e-1ef0-43c7-94b6-5798a0f88bb5",
-          "dir": "/home/genie/orca/workspaces/genie/mikro-engine-split",
+          "dir": "<orca workspace>",
           "answer": {
             "intent": "Clarify the existing documentation sentence in mikro/README.md:3 that identifies Mikro as an RLM algorithm CLI. This is a documentation-only wording objective, not implementation. Scope only that existing sentence; cite it and do not inspect unrelated files, home directories, GitHub, external services, or use recursive subagents. Do not edit anything. Return the exact wish-context JSON schema in one fenced json block.",
             "facts": [
@@ -1741,7 +1741,7 @@
         "boundary": "none",
         "phoenix": false,
         "ledger": false,
-        "nodeBinary": "/home/genie/.hermes/node/bin/node",
+        "nodeBinary": "~/.hermes/node/bin/node",
         "runtimeCli": "mikro/dist/src/cli.js",
         "stderr": "",
         "result": {
@@ -1749,7 +1749,7 @@
           "agent": "wish-context",
           "runId": "e03a4e8c-13af-4e55-8c82-b4558a9fae43",
           "traceId": "e03a4e8c-13af-4e55-8c82-b4558a9fae43",
-          "dir": "/home/genie/orca/workspaces/genie/mikro-engine-split",
+          "dir": "<orca workspace>",
           "elapsedMs": 1607,
           "costUsd": 0,
           "tags": {
@@ -1785,7 +1785,7 @@
       "boundary": "none",
       "phoenix": false,
       "ledger": false,
-      "nodeBinary": "/home/genie/.hermes/node/bin/node",
+      "nodeBinary": "~/.hermes/node/bin/node",
       "nodeVersion": "v26.7.0",
       "runtimeCli": "mikro/dist/src/cli.js",
       "disposablePublicRepo": true,
@@ -1844,7 +1844,7 @@
       "boundary": "none",
       "phoenix": false,
       "ledger": false,
-      "nodeBinary": "/home/genie/.hermes/node/bin/node",
+      "nodeBinary": "~/.hermes/node/bin/node",
       "nodeVersion": "v26.7.0",
       "runtimeCli": "mikro/dist/src/cli.js",
       "legacyToolsPresent": false,
@@ -1965,8 +1965,8 @@
   },
   "protectedOperatorReferences": {
     "beforeAndAfterSha256": {
-      "/home/genie/.mikro/settings.json": "379be5e12e7321362b776390cb9ff36d019e105aebff7b206014f795f777e1e4",
-      "/home/genie/.mikro/gate-env.sh": "15fa26c639dc5d7b81313be54ada4f0a8ce4c5035b29288684a86a8eaa2c77fd"
+      "~/.mikro/settings.json": "379be5e12e7321362b776390cb9ff36d019e105aebff7b206014f795f777e1e4",
+      "~/.mikro/gate-env.sh": "15fa26c639dc5d7b81313be54ada4f0a8ce4c5035b29288684a86a8eaa2c77fd"
     },
     "unchanged": true
   },

@@ -32,7 +32,7 @@ DELTAS (≤10 bullets): o que muda na sua posição da rodada 1 sob esta frontei
 OBJEÇÕES NOVAS (≤5): só o que a rodada 1 não cobriu. Cite arquivo:linha.
 CONFLITOS: para C1..C6 que tocam sua lente, responda À lente oposta pelo nome, com evidência.
 ACEITE: para cada critério (a)-(g) da Sofia: viável / inviável / precisa reformulação (1 linha cada).
-DEFAULT RECOMENDADO: para C1, C2, C3 — uma escolha concreta, não "depende". Só marque "pergunte ao Felipe" se nenhuma evidência decidir.
+DEFAULT RECOMENDADO: para C1, C2, C3 — uma escolha concreta, não "depende". Só marque "pergunte ao dono" se nenhuma evidência decidir.
 ```
 
 Máximo ~60 linhas. Sem repetir o relatório da rodada 1. Não modifique arquivo nenhum. Responda ao team-lead via SendMessage.

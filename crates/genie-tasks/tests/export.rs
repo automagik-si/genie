@@ -125,6 +125,11 @@ fn appender(i: usize) {
     }
 }
 
+// Under a host I/O stall, 320 `synchronous = FULL` commits from 16 processes queue behind stalled fsyncs.
+// The store's busy budget used to be six attempts (a 5 s `BUSY_TIMEOUT` each, about 31 s), and an appender
+// kept waiting longer got `database is locked` from `record`: seen at 67.5 s (#3309). Since #3315
+// `retry_busy` waits until `BUSY_DEADLINE` (120 s from the first attempt) instead, so a stall shorter than
+// that only slows this test down. The load and the assertions stay as they are.
 #[test]
 fn rebuild_while_sixteen_processes_append() {
     if let Ok(i) = std::env::var(ROLE) {
@@ -137,8 +142,11 @@ fn rebuild_while_sixteen_processes_append() {
     let exe = std::env::current_exe().unwrap();
     let mut children: Vec<_> = (0..APPENDERS)
         .map(|i| {
+            // `--nocapture`: libtest otherwise captures a child's panic message and prints it in its
+            // failure summary on STDOUT, which is discarded here, so a failed appender read as empty
+            // stderr (#3309). Uncaptured, the panic message lands on the stderr this test pipes.
             Command::new(&exe)
-                .args(["rebuild_while_sixteen_processes_append", "--exact", "--test-threads=1"])
+                .args(["rebuild_while_sixteen_processes_append", "--exact", "--test-threads=1", "--nocapture"])
                 .env(ROLE, i.to_string())
                 .env("GENIE_HOME", &home)
                 .env("T10_REPO", &a)
@@ -157,7 +165,8 @@ fn rebuild_while_sixteen_processes_append() {
     }
     for (i, child) in children.into_iter().enumerate() {
         let out = child.wait_with_output().unwrap();
-        assert!(out.status.success(), "appender {i} failed: {}", String::from_utf8_lossy(&out.stderr));
+        // The status names a death that writes nothing, such as a signal (#3309).
+        assert!(out.status.success(), "appender {i} failed ({}): {}", out.status, String::from_utf8_lossy(&out.stderr));
     }
 
     let store = open_store_at(&a, &home).unwrap();

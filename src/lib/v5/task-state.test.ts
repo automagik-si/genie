@@ -71,7 +71,7 @@ import {
   unblockTask,
 } from './task-state.js';
 
-const HUMAN = { author: 'felipe', authorKind: 'human' };
+const HUMAN = { author: 'morgan', authorKind: 'human' };
 
 let dir: string;
 let db: Database;
@@ -263,7 +263,7 @@ describe('lane moves + task_events timeline', () => {
     expect(events).toHaveLength(1);
     expect(events[0].kind).toBe('move');
     expect(events[0].note).toBe('Idea→Brainstorm');
-    expect(events[0].author).toBe('felipe');
+    expect(events[0].author).toBe('morgan');
     expect(events[0].authorKind).toBe('human');
   });
 
@@ -405,7 +405,7 @@ describe('setTaskWish — card identity without delete-and-recreate', () => {
     const events = getTaskEvents(db, task.id);
     expect(events.map((e) => e.kind)).toEqual(['claim', 'wish']);
     expect(events[1].note).toBe('(none)→remotty-board-asks#task-wish-verb');
-    expect(events[1].author).toBe('felipe');
+    expect(events[1].author).toBe('morgan');
     expect(events[1].authorKind).toBe('human');
   });
 
@@ -726,9 +726,9 @@ describe('runtime layer — liveness (pure, injected timestamps)', () => {
 describe('runtime layer — enforced blocks + carved checkout exception', () => {
   test('blockTask stores provenance + reason and appends a block event', () => {
     const a = createTask(db, { title: 'a' });
-    blockTask(db, a.id, 'waiting on design', { author: 'felipe', authorKind: 'human' });
+    blockTask(db, a.id, 'waiting on design', { author: 'morgan', authorKind: 'human' });
     const card = getTaskCard(db, a.id);
-    expect(card?.blockedBy).toBe('felipe');
+    expect(card?.blockedBy).toBe('morgan');
     expect(card?.blockedReason).toBe('waiting on design');
     const events = getTaskEvents(db, a.id);
     expect(events.at(-1)?.kind).toBe('block');
@@ -813,8 +813,8 @@ describe('block kinds — work vs hold', () => {
     const legacy = createTask(db, { title: 'legacy' });
     const garbage = createTask(db, { title: 'garbage' });
     // A row an older build blocked (no kind column) and a hand-merged roadmap.json.
-    db.query("UPDATE tasks SET blocked_by = 'felipe', blocked_reason = 'r' WHERE id = ?").run(legacy.id);
-    db.query("UPDATE tasks SET blocked_by = 'felipe', blocked_reason = 'r', block_kind = 'HOLD' WHERE id = ?").run(
+    db.query("UPDATE tasks SET blocked_by = 'morgan', blocked_reason = 'r' WHERE id = ?").run(legacy.id);
+    db.query("UPDATE tasks SET blocked_by = 'morgan', blocked_reason = 'r', block_kind = 'HOLD' WHERE id = ?").run(
       garbage.id,
     );
     expect(getTaskCard(db, legacy.id)?.enforcedBlock).toEqual({ reason: 'r', kind: 'work' });
@@ -823,7 +823,7 @@ describe('block kinds — work vs hold', () => {
 
   test('a block stored without a reason still projects a block (presence keys on blocked_by)', () => {
     const a = createTask(db, { title: 'a' });
-    db.query("UPDATE tasks SET blocked_by = 'felipe' WHERE id = ?").run(a.id);
+    db.query("UPDATE tasks SET blocked_by = 'morgan' WHERE id = ?").run(a.id);
     expect(getTaskCard(db, a.id)?.enforcedBlock).toEqual({ reason: '', kind: 'work' });
   });
 });
@@ -1115,7 +1115,7 @@ describe('declared routing — roster allowlist + assignment state API (W1)', ()
 
   test('assignTask sets the pair, bumps updated_at, and appends one assign event', () => {
     const task = createTask(db, { title: 't' });
-    const assigned = assignTask(db, task.id, 'pi', 'cost arbitrage', { author: 'felipe', authorKind: 'human' }, 5_000);
+    const assigned = assignTask(db, task.id, 'pi', 'cost arbitrage', { author: 'morgan', authorKind: 'human' }, 5_000);
     expect(assigned.assignedAgent).toBe('pi');
     expect(assigned.assignedReason).toBe('cost arbitrage');
     expect(assigned.updatedAt).toBe(5_000);
@@ -1123,13 +1123,13 @@ describe('declared routing — roster allowlist + assignment state API (W1)', ()
     const events = getTaskEvents(db, task.id);
     expect(events.map((e) => e.kind)).toEqual(['assign']);
     expect(events[0]?.note).toBe('assigned to pi: cost arbitrage');
-    expect(events[0]?.author).toBe('felipe');
+    expect(events[0]?.author).toBe('morgan');
     expect(events[0]?.authorKind).toBe('human');
   });
 
   test('assignTask overwrites a prior assignment with a fresh event', () => {
     const task = createTask(db, { title: 't', assignedAgent: 'codex', assignedReason: 'first opinion' });
-    const reassigned = assignTask(db, task.id, 'hermes', 'second opinion', { author: 'felipe', authorKind: 'human' });
+    const reassigned = assignTask(db, task.id, 'hermes', 'second opinion', { author: 'morgan', authorKind: 'human' });
     expect(reassigned.assignedAgent).toBe('hermes');
     expect(reassigned.assignedReason).toBe('second opinion');
     expect(getTaskEvents(db, task.id).map((e) => e.note)).toEqual(['assigned to hermes: second opinion']);
@@ -1137,9 +1137,9 @@ describe('declared routing — roster allowlist + assignment state API (W1)', ()
 
   test('re-assigning the exact stored pair is a silent no-op (set-wish precedent)', () => {
     const task = createTask(db, { title: 't' });
-    assignTask(db, task.id, 'codex', 'dissent', { author: 'felipe', authorKind: 'human' }, 9_000);
+    assignTask(db, task.id, 'codex', 'dissent', { author: 'morgan', authorKind: 'human' }, 9_000);
     const eventsAfterFirst = JSON.stringify(getTaskEvents(db, task.id));
-    const again = assignTask(db, task.id, 'codex', 'dissent', { author: 'felipe', authorKind: 'human' }, 10_000);
+    const again = assignTask(db, task.id, 'codex', 'dissent', { author: 'morgan', authorKind: 'human' }, 10_000);
     expect(again.updatedAt).toBe(9_000); // no row write
     expect(JSON.stringify(getTaskEvents(db, task.id))).toBe(eventsAfterFirst); // no new event
   });
@@ -1168,19 +1168,19 @@ describe('declared routing — roster allowlist + assignment state API (W1)', ()
 
   test('clearTaskAssignment nulls both halves and appends a clear event naming the prior pair', () => {
     const task = createTask(db, { title: 't', assignedAgent: 'codex', assignedReason: 'dissent on parser' });
-    const cleared = clearTaskAssignment(db, task.id, { author: 'felipe', authorKind: 'human' }, 7_000);
+    const cleared = clearTaskAssignment(db, task.id, { author: 'morgan', authorKind: 'human' }, 7_000);
     expect(cleared.assignedAgent).toBeNull();
     expect(cleared.assignedReason).toBeNull();
     expect(cleared.updatedAt).toBe(7_000);
     const events = getTaskEvents(db, task.id);
     expect(events.map((e) => e.kind)).toEqual(['clear']);
     expect(events[0]?.note).toBe('assignment cleared (was codex: dissent on parser)');
-    expect(events[0]?.author).toBe('felipe');
+    expect(events[0]?.author).toBe('morgan');
   });
 
   test('clearing an already-unassigned card is a silent no-op', () => {
     const task = createTask(db, { title: 't' });
-    const cleared = clearTaskAssignment(db, task.id, { author: 'felipe', authorKind: 'human' }, 5_000);
+    const cleared = clearTaskAssignment(db, task.id, { author: 'morgan', authorKind: 'human' }, 5_000);
     expect(cleared.updatedAt).not.toBe(5_000);
     expect(getTaskEvents(db, task.id)).toEqual([]);
   });

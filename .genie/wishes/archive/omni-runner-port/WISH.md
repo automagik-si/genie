@@ -27,7 +27,7 @@ Exit the omni-dark window: rebuild the WhatsApp/channel integration from the `or
 - **Approval end-to-end wiring — including dispatcher-layer changes:** the current dispatch pipeline drops/omits the PreToolUse permission-decision envelope on the omni path (PreToolUse deny ALREADY emits the correct permissionDecision envelope (`buildDenyResponse`); the real gap is that `executeBlockingChain` has NO path to emit a handler-driven ALLOW or ASK — G3 must add allow/ask emission + propagation. `{decision:"block"}` is only the non-PreToolUse branch.). Group 3 therefore includes: PreToolUse permission-decision response builders (proper `hookSpecificOutput.permissionDecision` envelope for allow AND deny), chain propagation of the decision, dispatcher tests — plus the omni handler itself, registered ONLY when omni is enabled via a config-gated registry build at dispatch boot (`setRegistry` on the existing frozen-registry structure — the literal cannot be edited conditionally). Zero behavior change when omni is off: handler absent from the registry entirely. Hook timeout guidance documented.
 - **NATS dependency returns, scoped:** `nats` re-added to package.json (pin v4's major: 2.29.x), dynamic-imported ONLY inside the runner module. NOTE: bun bundles the dep into dist regardless — the testable claim is runtime INITIALIZATION, not module absence: a transport-module marker/spy test asserts `genie --help`/`task`/`board` complete without initializing the transport, and README words it as "nats initializes only when the omni runner starts" (count 3 → 4).
 - **Command surface:** `omni` namespace registers top-level (12 commands total); README table + count updated; `omni` added to WORKSPACE_EXEMPT (global-scope command, no repo workspace needed — the launch lesson applied proactively).
-- **Tests:** queue lib unit tests (multi-process resolution race, expiry); runner integration tests with an injectable transport (fake NATS) + fake Omni HTTP endpoint — full round-trips: enqueue→outbound-send→simulated reply→resolve→hook returns allow; reaction path; deny path; timeout→ask path; inbound→store→(mocked) claude -p→reply. Real-WhatsApp manual QA recorded in qa.md with a needs-Felipe's-eyes checklist.
+- **Tests:** queue lib unit tests (multi-process resolution race, expiry); runner integration tests with an injectable transport (fake NATS) + fake Omni HTTP endpoint — full round-trips: enqueue→outbound-send→simulated reply→resolve→hook returns allow; reaction path; deny path; timeout→ask path; inbound→store→(mocked) claude -p→reply. Real-WhatsApp manual QA recorded in qa.md with a needs-the-owner's-eyes checklist.
 
 ### OUT
 - Rewriting `skills/omni/SKILL.md` (stays lint-ignored; its port is a follow-up once the runner API settles).
@@ -208,12 +208,12 @@ GENIE_TEST_SKIP_PGSERVE=1 bun test
 **Deliverables:**
 1. README: `omni` rows in the command table, the "11 CLI commands" claim bumped to 12, dependency count 3 → 4 worded "nats initializes only when the omni runner starts", a short honest Omni section (what works, what needs an Omni hub + WhatsApp instance), roadmap trimmed of the ported item.
 2. e2e: extend `tests/e2e/v5-lifecycle.sh` with a zero-omni guard — assert `genie --help`, `task`, `board` work with no omni config present and (cheaply, if provable) that the transport is not initialized on those paths.
-3. Real-WhatsApp manual QA on this machine against Felipe's Omni instance: runner up, real approval round-trip from a phone (approve, deny, reaction), inbound one-shot round-trip. Recorded in `.genie/wishes/omni-runner-port/qa.md` — what was proven live, what config was used (secrets redacted), what remains open.
+3. Real-WhatsApp manual QA on this machine against the owner's Omni instance: runner up, real approval round-trip from a phone (approve, deny, reaction), inbound one-shot round-trip. Recorded in `.genie/wishes/omni-runner-port/qa.md` — what was proven live, what config was used (secrets redacted), what remains open.
 
 **Acceptance Criteria:**
 - [x] README gates green (command-existence loop, stale-claims grep, dependency-count claim matches package.json).
 - [x] e2e + full `bun run check` green.
-- [x] qa.md records the live session honestly (or documents exactly why live QA was blocked and what Felipe must run).
+- [x] qa.md records the live session honestly (or documents exactly why live QA was blocked and what the owner must run).
 
 **Validation:**
 ```bash

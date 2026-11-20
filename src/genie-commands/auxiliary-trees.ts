@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
-import { chmodSync, copyFileSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync } from 'node:fs';
+import { chmodSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
+import { copyFileBytes } from '../lib/byte-copy.js';
 
 export type AuxiliaryTreeStage =
   | 'inspect'
@@ -391,7 +392,8 @@ function copyTree(source: string, destination: string, excludedEntryNames: Reado
     if (stat.isSymbolicLink()) throw new Error(`managed auxiliary tree contains a symlink: ${sourcePath}`);
     if (stat.isDirectory()) copyTree(sourcePath, destinationPath, excludedEntryNames);
     else if (stat.isFile()) {
-      copyFileSync(sourcePath, destinationPath);
+      // A byte copy, never an in-kernel clone: the source is usually the tree promotion just wrote (#3323).
+      copyFileBytes(sourcePath, destinationPath, { exclusive: false });
       chmodSync(destinationPath, stat.mode & 0o777);
     } else {
       throw new Error(`managed auxiliary tree contains an unsupported entry: ${sourcePath}`);

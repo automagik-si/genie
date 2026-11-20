@@ -2479,7 +2479,8 @@ function isUnderAnyPrunedDir(path: string, prunedDirs: ReadonlySet<string>): boo
 }
 
 /**
- * Preflight → archive the skills this release retires → skip foreign dirs in
+ * Archive the skills this release retires → hand back genie-created homes and
+ * detect agents (none: skipped) → Node preflight → skip foreign dirs in
  * selected homes → collision snapshot → spawn the pinned CLI (one `'*'` spawn,
  * plus one explicit-list spawn per home with a skip) → discovery scan → record.
  * Never throws: every failure is a returned reason plus the remedy command.
@@ -2496,8 +2497,6 @@ export function runSkillsInstall(options: SkillsInstallOptions): SkillsInstallOu
   if (options.version.trim() === '') {
     return { ok: false, reason: 'running binary version is unknown', remedy };
   }
-  const preflight = preflightNode({ which: options.which });
-  if (!preflight.ok) return { ok: false, reason: preflight.reason, remedy };
 
   const nowMs = options.nowMs ?? (() => Date.now());
   const now = options.now ?? (() => new Date());
@@ -2578,6 +2577,19 @@ export function runSkillsInstall(options: SkillsInstallOptions): SkillsInstallOu
       noAgents: true,
       reason: 'no agent skill home detected (genie installs to detected agents only, and creates none)',
       remedy: `Install an agent (or create its home, e.g. ${join(home, '.claude')}), then run: genie update`,
+      warnings,
+    };
+  }
+  // Node only now, once an agent is detected and the CLI must run: a host with
+  // no agent skips above whether Node is present or not (issue #3331). The
+  // passes before this point need no Node and are idempotent, so a failure
+  // here leaves the host where the next run with Node would take it anyway.
+  const preflight = preflightNode({ which: options.which });
+  if (!preflight.ok) {
+    return {
+      ok: false,
+      reason: `${preflight.reason}; Node is needed to install skills for the detected agent(s): ${selection.agents.join(', ')}`,
+      remedy,
       warnings,
     };
   }

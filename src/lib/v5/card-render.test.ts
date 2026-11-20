@@ -59,7 +59,7 @@ describe('blockBadge', () => {
     expect(blockBadge(card({ blockedBy: 'eng-B', blockedReason: 'awaiting design' }))).toBe(
       '⛔ eng-B: awaiting design',
     );
-    expect(blockBadge(card({ blockedBy: 'felipe', blockedReason: null }))).toBe('⛔ felipe');
+    expect(blockBadge(card({ blockedBy: 'morgan', blockedReason: null }))).toBe('⛔ morgan');
   });
 
   test('an unblocked, non-blocked card renders no ⛔', () => {
@@ -76,12 +76,12 @@ describe('commentBadge + cardBadges assembly', () => {
   test('cardBadges concatenates liveness, block, then comments; empty when none', () => {
     expect(cardBadges(card(), NOW, 0)).toBe('');
     const full = cardBadges(
-      card({ claimedBy: 'w', heartbeatAt: NOW, blockedBy: 'felipe', blockedReason: 'hold' }),
+      card({ claimedBy: 'w', heartbeatAt: NOW, blockedBy: 'morgan', blockedReason: 'hold' }),
       NOW,
       2,
     );
     expect(full).toContain('▶');
-    expect(full).toContain('⛔ felipe: hold');
+    expect(full).toContain('⛔ morgan: hold');
     expect(full).toContain('💬 2');
     // Liveness precedes the block, which precedes the comment count.
     expect(full.indexOf('▶')).toBeLessThan(full.indexOf('⛔'));

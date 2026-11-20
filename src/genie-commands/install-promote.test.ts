@@ -220,6 +220,9 @@ describe('hidden installer promoter command', () => {
     expect(JSON.parse(output[0] as string)).toMatchObject({ schemaVersion: 1, ok: true });
   });
 
+  // Measured timeout (#3271): 0.24 s quiet; 0.53 s under the busy-CPU proof; killed at Bun's 5 s
+  // default on the loaded gate host. 3x that 5 s floor. The cost is I/O, not CPU: two full
+  // promotions make 373 fsyncs on the temp filesystem.
   test('a second invocation converges idempotently with the existing canonical link', () => {
     const f = fixture();
     run(f);
@@ -232,7 +235,7 @@ describe('hidden installer promoter command', () => {
 
     expect(readFileSync(join(f.bin, 'VERSION'), 'utf8')).toBe('2.0.0\n');
     expect(readdirSync(join(f.bin, '.previous')).filter((name) => name.startsWith('genie-prior-'))).toHaveLength(2);
-  });
+  }, 15_000);
 
   test('the injected final-boundary seam runs before lease authority is rechecked', () => {
     const f = fixture();

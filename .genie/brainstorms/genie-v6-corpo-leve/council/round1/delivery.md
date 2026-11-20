@@ -142,4 +142,4 @@ Overlay mechanism as designed ("load base, apply deltas, this file wins") has **
 - PR-0 golden files: `genie --help` command list, `genie task --help`, `genie board --json` on a fixture, `genie mcp` tool names (`mcp-tools.ts` 17 tools), `task export` JSON shape, `roadmap.json` three-way sync behaviour (`.husky/pre-commit` path) — all diffed per PR.
 - `src/lib/v5/*.test.ts` + `src/term-commands/{v5-board,v5-task,init,context,mcp,idea}.test.ts` (~15.5k LOC) unchanged in PRs 3-6 (assert via `git diff --stat` in PR description).
 - `fresh-install-smoke.ts:279` (forbids `plugins/genie/references/`, `$GENIE_HOME/plugins/genie`) flips from "forbidden reference" to positive proof that no plugin path is ever written.
-- Host baseline caveat: ~14 env-conditioned failures pre-exist on Felipe's host (memory note) — compare against a pristine-HEAD worktree, not zero.
+- Host baseline caveat: ~14 env-conditioned failures pre-exist on the owner's host (memory note) — compare against a pristine-HEAD worktree, not zero.

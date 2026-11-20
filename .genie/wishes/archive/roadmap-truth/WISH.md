@@ -404,7 +404,7 @@ status on every `genie board --json`, so the board tracks reality unattended.
 # the earlier population-count assertion passed on the unmodified board and so
 # could not fail.
 cd ~/prod/genie && npm run check && \
-cd /Users/feliperosa/workspace/repos/remotty && \
+cd '<remotty checkout>' && \
   for w in .genie/wishes/*/; do
     s=$(sed -n "s/^| \*\*Status\*\* | \(.*\) |$/\1/p" "$w/WISH.md" | head -1)
     printf '%s\t%s\n' "$(basename "$w")" "$s"
@@ -501,10 +501,10 @@ destroyed and recreated.
 # "Task not found" and `genie board --board roadmap` answers "Board not found"
 # — the first draft never cd'd back and so could not pass (round 2 HIGH-3).
 # CAPTURE FIRST — before running the link verb:
-#   cd /Users/feliperosa/workspace/repos/remotty
+#   cd '<remotty checkout>'
 #   genie task status t_msf0mym5e7f7957f | sed -n 's/^  Created: *//p' > /tmp/ws-created-before.txt
 cd ~/prod/genie && npm run check && \
-cd /Users/feliperosa/workspace/repos/remotty && \
+cd '<remotty checkout>' && \
   genie task status t_msf0mym5e7f7957f > /tmp/ws-card.txt && \
   grep -q '^  Wish:' /tmp/ws-card.txt && \
   [ "$(sed -n 's/^  Created: *//p' /tmp/ws-card.txt)" = "$(cat /tmp/ws-created-before.txt)" ] && \
@@ -606,7 +606,7 @@ cd ~/prod/genie && npm run check
 # NOTE: `swift build` must run from `app/` — there is no root Package.swift,
 # so a bare root-level `swift build` aborts before testing anything
 # (plan review HIGH-1).
-cd /Users/feliperosa/workspace/repos/remotty && \
+cd '<remotty checkout>' && \
   (cd app && swift build && swift test) && \
   (cd linux && npm test) && \
   awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md \
@@ -670,7 +670,7 @@ cd /Users/feliperosa/workspace/repos/remotty && \
 # The previous `sed .. scanners/extras.sh | grep roadmap` check was replaced —
 # it passed before any edit, never opened DESIGN.md, and covered only one of
 # the two citation fixes (plan review MED-1).
-cd /Users/feliperosa/workspace/repos/remotty && \
+cd '<remotty checkout>' && \
   test -d app -a -d linux -a -d docs -a -d bin -a -d scripts -a -d scanners && \
   ! grep -rn "17 of 17" app linux docs bin scripts scanners && \
   D=.genie/brainstorms/roadmap-truth/DESIGN.md && \
@@ -755,7 +755,7 @@ of reconcile-on-read is measured rather than assumed.
 # from the right directory (:38) and the mockup gate (:54-55). The earlier command
 # re-ran both and appended a root-level `swift build` that aborts, failing a
 # green tree (plan review HIGH-1, LOW-2). Only the Linux suite is additional.
-cd /Users/feliperosa/workspace/repos/remotty && \
+cd '<remotty checkout>' && \
   F=app/Tests/RemottyCoreTests/Fixtures/state-fixture.json && \
   test -f "$F" && \
   scripts/smoke.sh && (cd linux && npm test) && \

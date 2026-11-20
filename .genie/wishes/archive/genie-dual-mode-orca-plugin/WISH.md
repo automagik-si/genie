@@ -434,7 +434,7 @@ done
   the promotion itself is what lands harness + candidate together; the first post-promotion dev tag publishes again. Per-group acceptance boxes remain the human promoter's to tick on merge; wish status moves to `SHIPPED`
   only after the authorized merge plus the on-host dogfood (`genie update --dev` to a published v5.260830.x on
   khal-labs — the old binary needs `(umask 022 && genie update --dev)` once).
-- **Decision (M14, recorded by the orchestrator):** Felipe's words to the fixing session on 2026-08-30 — *"theres no
+- **Decision (M14, recorded by the orchestrator):** the owner's words to the fixing session on 2026-08-30 — *"theres no
   more genie ui, only 'ui' is orca integration"*. `genie ui-bridge` and the MCP transport it kept alive are retired
   (#2834); INDEX entries for `genie-ui-bridge`, `genie-ui-dash` and `genie-boards-ui` now record the retirement.
 - **Current canonical plan — SHIP:** independent reviewer `term_6c98a3c8-7ac8-4274-a8e9-ade35e2d82dd` reviewed

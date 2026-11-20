@@ -42,7 +42,7 @@ _Rodada 1 (2026-08-25): proposta rev. 3 crua (deletar plugins, skills.sh, harnes
 
 **Unknowns**
 - skills.sh install contract (signature? scripts execution? auto-update?) — unverified; assessment assumes worst case.
-- Whether any non-Felipe Codex/Hermes host exists (affects R1 disclosure loudness only).
+- Whether any non-owner Codex/Hermes host exists (affects R1 disclosure loudness only).
 - Whether `omni serve` is still wanted; its approval half is hook-dependent.
 
 ### 2. LEAVES / STAYS / STAYS-RESCOPED
@@ -58,7 +58,7 @@ _Rodada 1 (2026-08-25): proposta rev. 3 crua (deletar plugins, skills.sh, harnes
 | `src/genie-commands/update.ts`, `install.ts`, `install.sh` | STAYS-RESCOPED | Keep manifest + cosign/attestation verify; drop `--post-delivery-converge`, delivery evidence, codex repair paths |
 | `src/genie-commands/setup.ts`, `codex-delivery*`, `codex-rollback`, `local-delivery-repair`, `update-integrations`, `legacy-v4` | LEAVES (legacy-v4: STAYS-RESCOPED as one-shot cleanup) | Codex activation owner; v4 residue cleanup is still incident-response hygiene |
 | `src/lib/agent-sync.ts`, `runtime-integrations.ts`, `hermes-*`, `claude-settings.ts` | LEAVES | Fan out role agents into runtimes; no runtime after cut |
-| `src/lib/omni-*.ts`, `omni-runner`, `global-db.ts`, `omni-queue.ts`, `hooks/handlers/omni-approval.ts` | STAYS-RESCOPED or LEAVES (Felipe decides) | Approval half needs PreToolUse hook → dead; inbox/handshake (ed25519) half is standalone. Half a feature is worse than none |
+| `src/lib/omni-*.ts`, `omni-runner`, `global-db.ts`, `omni-queue.ts`, `hooks/handlers/omni-approval.ts` | STAYS-RESCOPED or LEAVES (the owner decides) | Approval half needs PreToolUse hook → dead; inbox/handshake (ed25519) half is standalone. Half a feature is worse than none |
 | `src/lib/v5/{genie-db,task-state,roadmap-sync,mcp-tools,mcp-server,base-state,identity}` + `board/task/context/idea/mcp/init` | STAYS | Standalone mode; trust boundary = fs access to `.genie/genie.db`, unchanged |
 | `src/lib/v5/{bridge-watcher}`, `term-commands/ui-bridge.ts`, `hire_roster`, `UI-BRIDGE.md`, `packages/genie-ui` | LEAVES | Extra write surface (roster writes + push) with no consumer |
 | `skills/*` (base) | STAYS (source of truth) | Prose; publish prose-only |

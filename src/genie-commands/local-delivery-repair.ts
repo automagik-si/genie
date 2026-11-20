@@ -50,6 +50,7 @@ const PLATFORM_IDS = new Set<DeliveryEvidencePlatformId>([
   'darwin-arm64',
 ]);
 const REQUEST_KEYS = ['artifact', 'bundle', 'descriptor', 'manifest', 'platformId', 'schemaVersion'] as const;
+const INPUT_FIELDS = ['artifact', 'manifest', 'descriptor', 'bundle'] as const;
 const MANIFEST_KEYS = ['channel', 'platforms', 'released_at', 'schema_version', 'tarball_base', 'version'] as const;
 
 /**
@@ -142,6 +143,7 @@ export function materializeLocalDeliveryRepair(
     throw new Error(`local delivery platform ${request.platformId} differs from this runtime (${expectedPlatformId})`);
   }
 
+  assertDistinctPhysicalInputPaths(request);
   const manifestSnapshot = snapshotPhysicalFile(
     request.manifest,
     join(privateRoot, '.local-release-manifest.json'),
@@ -249,7 +251,31 @@ function parsePinnedManifest(bytes: Buffer, platformId: DeliveryEvidencePlatform
   };
 }
 
-function snapshotPhysicalFile(source: string, destination: string, maxBytes: number, label: string): SnapshottedFile {
+/**
+ * Refuse physically aliased inputs before any snapshot copies them. A hardlink
+ * alias used to be refused only after the files were staged, where an APFS
+ * inode whose times are still settling can trip the snapshot check first and
+ * report the wrong reason. `snapshotPhysicalFile` re-proves the identities from
+ * the held descriptors afterwards.
+ */
+function assertDistinctPhysicalInputPaths(request: LocalDeliveryRepairRequest): void {
+  const identities = INPUT_FIELDS.map((field) => {
+    const canonical = canonicalInputPath(request[field], field);
+    let visible: BigIntStats;
+    try {
+      visible = lstatSync(canonical, { bigint: true });
+    } catch (cause) {
+      throw new Error(`local delivery ${field} path is unreadable: ${errorText(cause)}`);
+    }
+    return `${visible.dev}:${visible.ino}`;
+  });
+  if (new Set(identities).size !== identities.length) {
+    throw new Error('local delivery request files must be distinct physical files');
+  }
+}
+
+/** The absolute canonical form of one caller-owned input, or the boundary's refusal. */
+function canonicalInputPath(source: string, label: string): string {
   let canonical: string;
   try {
     canonical = realpathSync(source);
@@ -259,6 +285,11 @@ function snapshotPhysicalFile(source: string, destination: string, maxBytes: num
   if (canonical !== source) {
     throw new Error(`local delivery ${label} path is not its absolute canonical physical path`);
   }
+  return canonical;
+}
+
+function snapshotPhysicalFile(source: string, destination: string, maxBytes: number, label: string): SnapshottedFile {
+  canonicalInputPath(source, label);
   let visible: BigIntStats;
   try {
     visible = lstatSync(source, { bigint: true });

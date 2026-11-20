@@ -59,7 +59,7 @@ function seedCard(comments: number, otherEvents: number) {
       kind: 'comment',
       note: `comment ${index + 1}`,
       authorKind: 'human',
-      author: 'felipe',
+      author: 'morgan',
       createdAt: 1_000 + events.length,
     });
   for (let index = 0; index < otherEvents; index++)

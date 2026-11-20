@@ -39,7 +39,7 @@
 
 | # | Decision | Rationale |
 |---|----------|-----------|
-| 1 | Internal phase, not a command | Felipe's hard requirement: one canonical verb (`genie update`); internal env `GENIE_UPDATE_SYNC_ONLY=1` is the only re-entry contract |
+| 1 | Internal phase, not a command | The owner's hard requirement: one canonical verb (`genie update`); internal env `GENIE_UPDATE_SYNC_ONLY=1` is the only re-entry contract |
 | 2 | Sync runs even on the short-circuit path | "Update = converge everything, not just the binary" — also what makes the hook-trigger cheap and the one-time delivery caveat a plain second `genie update` |
 | 3 | Auto-adopt-with-backup, no prompts | Zero-friction requirement; backups under state-backups/ make every replacement reversible; names genie never shipped are untouched |
 | 4 | Managed-orphan removal is v1-mandatory | Zombie `~/.claude/skills/council` would resurrect the skill-vs-workflow name collision council-workflow Decision 8 exists to prevent |
@@ -64,7 +64,7 @@ _Backfilled 2026-09-19 when this wish was archived and its legacy terminal statu
 - [x] `skills/review/SKILL.md` + `skills/brainstorm/SKILL.md` carry the `$GENIE_HOME/plugins/genie` lens-root anchor; `validate/g4-consumers.sh` asserts it; council-workflow gates still green
 - [x] doctor prints a per-agent freshness section; uninstall removes manifest-verified managed assets (unit-tested seams)
 - [x] `bun run check` green (baseline 725 pass / 1 skip → 806 pass / 1 skip with new tests)
-- [ ] **USER-GATED (post-release)** — Live (Felipe's ritual): `genie update` twice on the reference machine → `~/.claude/skills` current + `workflows/council.js` present, `~/.codex/skills/.curated/` populated, `~/.hermes/plugins/genie` linked; evidence in `qa/`
+- [ ] **USER-GATED (post-release)** — Live (the owner's ritual): `genie update` twice on the reference machine → `~/.claude/skills` current + `workflows/council.js` present, `~/.codex/skills/.curated/` populated, `~/.hermes/plugins/genie` linked; evidence in `qa/`
 
 ## Execution Strategy
 

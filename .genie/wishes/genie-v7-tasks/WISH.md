@@ -322,7 +322,7 @@ _The read-only reviewer returns evidence; the invoking orchestrator appends a ti
 - **Reviewer:** Fable 5.1 (`claude-fable-5-1`), independent and read-only
 - **Reviewed commit:** `306000217917c021b177c9afaa01507429ce1a74` (PR #3199, `docs/genie-v7-tasks-wish`)
 - **Evidence the reviewer ran:** `genie wish lint` on the tree at that commit, exit 0; `design-review-evidence.mjs verify` on DESIGN.md at that commit, exit 0 (digest `b28c3c09…`)
-- **Report:** `/private/tmp/claude-501/-Users-feliperosa-workspace-repos-genie/9d4a541c-6ac6-4956-82f6-028145d49704/scratchpad/plan-review-r1.md`
+- **Report:** `<scratchpad>/plan-review-r1.md`
 - **Dispositions** (each decided by t247, the orchestrator, and folded into this plan):
   - **MEDIUM-1** T6 could not run on CI in 1b, which has no cargo → 1b uses a stub `GENIE_RS_BIN` (argv echo + chosen exit code); the real-binary smoke moved to 1c (row 7, T6, Decision 13).
   - **MEDIUM-2** two PRs of Rust would land with no CI proof → the `ci.yml` cargo steps moved into 1a, the tarball build stays in 1c; t247 amendment of R1-28 (Decision 2, Decision 9; 1a is now 25 files).

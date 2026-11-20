@@ -15,7 +15,7 @@
 
 ## Summary
 
-Turn the audited wish jar (36 wishes; 3-scout evidence audit 2026-07-28) into the official genie roadmap: archive the 29 DONE-verified wishes with the link rewrites the move requires, seed the canonical `roadmap` board with the closed set of 19 lifecycle cards, and rewrite INDEX.md to match reality. Publishes the roadmap through `roadmap.json` — the prerequisite for Felipe's #1 axis (public-facing polish).
+Turn the audited wish jar (36 wishes; 3-scout evidence audit 2026-07-28) into the official genie roadmap: archive the 29 DONE-verified wishes with the link rewrites the move requires, seed the canonical `roadmap` board with the closed set of 19 lifecycle cards, and rewrite INDEX.md to match reality. Publishes the roadmap through `roadmap.json` — the prerequisite for the owner's #1 axis (public-facing polish).
 
 ## Scope
 
@@ -39,7 +39,7 @@ Turn the audited wish jar (36 wishes; 3-scout evidence audit 2026-07-28) into th
 
 | # | Decision | Rationale |
 |---|----------|-----------|
-| 1 | Inherit DESIGN D1–D7 unchanged (axes, archive dir, canonical board, work order, ritual bundle, polish brainstorm, closed 19-card set) | Felipe-ratified 2026-07-28; design review SHIP after 1 fix loop |
+| 1 | Inherit DESIGN D1–D7 unchanged (axes, archive dir, canonical board, work order, ritual bundle, polish brainstorm, closed 19-card set) | owner-ratified 2026-07-28; design review SHIP after 1 fix loop |
 | 2 | Three execution groups: archive+links, board seed, INDEX+brainstorm — INDEX last | INDEX links target archive paths (needs G1) and drift lint compares sections to lanes (needs G2) |
 | 3 | Link sweep is a throwaway script run in G1 and re-run in G3, evidence pasted into this wish dir | No existing lint covers INDEX.md/non-brainstorm links (reviewer HIGH-2) |
 
@@ -167,7 +167,7 @@ bun run check && genie doctor --json | bun -e 'const d=JSON.parse(await Bun.stdi
 
 - [ ] Fresh-clone ritual: clone, `genie task sync`, `genie board --board roadmap` shows the 19-card roadmap
 - [ ] `genie board` (all tasks) still shows the 29 historical group tasks + tombstones untouched
-- [ ] INDEX.md reads as the single roadmap of record (Felipe eyeball)
+- [ ] INDEX.md reads as the single roadmap of record (the owner's eyeball)
 
 ---
 

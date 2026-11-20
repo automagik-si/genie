@@ -626,7 +626,7 @@ _The read-only reviewer returns evidence; the invoking orchestrator appends a ti
   - (a) Accepting the repository's git directory is sound, proved by a probe.
   - (b) `blocks: none` with the edge in prose is sound.
   - (c) The nested sessions need `git-safety.sh` through `--settings` and an assert that `GH_REPO` and `GH_HOST` are empty.
-- **Owner answers (Felipe, 2026-10-02):**
+- **Owner answers (2026-10-02):**
   - husky 6 to 8 is covered;
   - Decision 5 is ratified as "the worktree or the repository's git directory";
   - the end-to-end runs are approved with both safeguards and kept out of the run ledger.
@@ -649,7 +649,7 @@ _The read-only reviewer returns evidence; the invoking orchestrator appends a ti
 
 ### Owner approval — 2026-10-02
 
-- Felipe approved execution through the question harness ("Aprovado, executa"). Status is APPROVED, then IN_PROGRESS when work starts.
+- The owner approved execution through the question harness ("Aprovado, executa"). Status is APPROVED, then IN_PROGRESS when work starts.
 
 ### Group 1 criteria review — 2026-10-02 — SHIP
 
@@ -735,7 +735,7 @@ Three real runs of `wish.js` (blob `a4412cfc7`, unchanged since `39a54a50c`) aga
 ### Delivery — 2026-10-03 — SHIPPED
 
 - PR #3097 merged into dev as `53f218610`. CI passed 19/19 at head `0fc2a6ad4`, including Unit on linux and darwin.
-- Promoted by #3094 (merged by Felipe) as `338f4b03f`. The Version run tagged **v6.261003.1**.
+- Promoted by #3094 (merged by the owner) as `338f4b03f`. The Version run tagged **v6.261003.1**.
 - The stable release ran as workflow run 37086848423. A maintainer other than the dispatcher approved it, and it completed with 28 assets. Release notes were applied and read back.
 - The host was updated to 6.261003.1. The installed `~/.claude/workflows/wish.js` equals the tag's file (sha256 prefix `db40d01c100cfecc`). `genie doctor` reports workflows 12/12 and skills 18/18 at v6.261003.1.
 - Follow-up issues: #3098 (the denylist does not yet cover the new gate definitions), #3099 (the validation command is still free text in no-check mode), #3100 (two log lines misstate what a run did).

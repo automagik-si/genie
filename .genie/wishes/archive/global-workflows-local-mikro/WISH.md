@@ -15,7 +15,7 @@
 
 ## Summary
 
-Observed 2026-09-18 from `/home/genie/workspace/repos/khal-base` on genie v5.260918.8: `Workflow name=council` answered `Workflow "council" not found. Available: deep-research`, because the workflow catalog exists only in this repository's project scope, and `wish.js` hardcodes `bun scripts/mikro/call.ts`, a path only genie has — so every other repository silently falls to the skills' by-hand path and the mikro offload never runs. This wish makes the workflow catalog and the mikro runtime global (shipped by the genie install, on PATH), while mikro agents stay local to the repository and specialize per repository behind a trust boundary that a PR cannot cross. The owner's direction, verbatim: "workflows and runtime global; mikro agents local, expanding specialized per repo".
+Observed 2026-09-18 from `<khal-base checkout>` on genie v5.260918.8: `Workflow name=council` answered `Workflow "council" not found. Available: deep-research`, because the workflow catalog exists only in this repository's project scope, and `wish.js` hardcodes `bun scripts/mikro/call.ts`, a path only genie has — so every other repository silently falls to the skills' by-hand path and the mikro offload never runs. This wish makes the workflow catalog and the mikro runtime global (shipped by the genie install, on PATH), while mikro agents stay local to the repository and specialize per repository behind a trust boundary that a PR cannot cross. The owner's direction, verbatim: "workflows and runtime global; mikro agents local, expanding specialized per repo".
 
 ## Scope
 
@@ -277,7 +277,7 @@ umask 022 && bun run check:fast && bun test scripts/mikro src/term-commands/mikr
 _What must be verified on dev after merge. The QA agent tests each criterion._
 
 - [ ] On the dogfood host after `genie update --dev`: `ls ~/.claude/workflows` lists the catalog, `genie doctor` prints a passing `workflows:` line, and hand-editing one file turns it into a `modified` warning.
-- [ ] From `/home/genie/workspace/repos/khal-base`: the `council` skill runs the saved workflow, and a `wish` run reports `Offload: wish-context ok`.
+- [ ] From `<khal-base checkout>`: the `council` skill runs the saved workflow, and a `wish` run reports `Offload: wish-context ok`.
 - [ ] `genie update` from the previous stable release to the release carrying this wish commits (hop), and `genie uninstall` on a scratch HOME removes the installed workflows.
 
 ---
