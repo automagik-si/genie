@@ -11,12 +11,13 @@
 // A follow-up wish may be scoped to branches an earlier wish made (`branches`), so it can
 // repair and publish exactly those and nothing else.
 import { createHash } from 'node:crypto';
-import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, writeSync } from 'node:fs';
+import { existsSync, mkdirSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import { defineTool } from '@deepseek-ai/dsh-tools';
 import { fetchBase, hasHttpUserinfo, remoteDisplay, resolveBinding } from './binding.js';
-import { claimCopy, removeCopy, stillClaimed } from './copy.js';
+import { readHistory, writeJson } from './copy-state.js';
+import { claimCopy as claimFolder, removeCopy, stillClaimed } from './copy.js';
 import {
   addPublishRemote,
   aheadOf,
@@ -24,13 +25,18 @@ import {
   cloneForWish,
   commitOf,
   currentBranch,
+  ensureStore,
   fetchWishBranch,
   gitProblem,
   gitRunner,
   grantBranches,
   initRepo,
+  storeFor,
+  storeProblem,
   topLevel,
 } from './git.js';
+import { canonicalPath, lstat } from './paths.js';
+import { createReaper } from './reap.js';
 import { WISH_VERSION, awaitsEnd, endedState, newEvidence, noteCommand, taskOutcome, turnOutcome } from './wishes.js';
 
 export const GENIE_KIND = 'genie';
@@ -203,26 +209,35 @@ export function install(rt) {
   const load = () => {
     if (data !== undefined) return data;
     try {
-      const parsed = JSON.parse(readFileSync(file(), 'utf8'));
-      data = { genieCreated: parsed.genieCreated === true, wishes: Array.isArray(parsed.wishes) ? parsed.wishes : [] };
+      data = readHistory(file());
     } catch {
-      data = { genieCreated: false, wishes: [] };
+      return { genieCreated: false, wishes: [] };
     }
     return data;
   };
-  // Written whole to a temp file, flushed to disk, then renamed over the old one, so a crash
-  // leaves either the old list or the new one.
   const save = () => {
-    const temp = `${file()}.tmp`;
-    const fd = openSync(temp, 'w');
-    try {
-      writeSync(fd, `${JSON.stringify(data, null, 2)}\n`);
-      fsyncSync(fd);
-    } finally {
-      closeSync(fd);
-    }
-    renameSync(temp, file());
+    // An unreadable file never becomes removal authority or gets overwritten.
+    readHistory(file());
+    writeJson(file(), data);
   };
+
+  const workspace = () => wishesRoot(rt.teamFolder?.());
+  const copyClaims = new Set();
+  let copies = Promise.resolve();
+  function withCopies(work) {
+    const next = copies.then(work);
+    copies = next.catch(() => {});
+    return next;
+  }
+
+  let sweeping;
+  function sweep(options) {
+    sweeping ??= withCopies(() => reaper.scan(options)).finally(() => {
+      sweeping = undefined;
+    });
+    return sweeping;
+  }
+  const reaper = createReaper(rt, { workspace, history: file, claims: copyClaims, retry: sweepSoon });
 
   const genieBots = () => Object.values(rt.state?.bots ?? {}).filter((bot) => bot.kind === GENIE_KIND);
 
@@ -336,6 +351,7 @@ export function install(rt) {
     }
     let top = await topLevel(folder);
     if (top === null) {
+      if (reaper.blocked()) return { error: grantUnavailable() };
       const own = basename(folder) === GENIE_PROJECT;
       if (!own) {
         return {
@@ -372,6 +388,8 @@ export function install(rt) {
     return scope;
   }
 
+  const grantUnavailable = () => rt.readOnly() ?? 'The wish did not start: Genie is unloading.';
+
   // After a failed startTask the wish's copy is removed for one failure only: the team's
   // refusal of a start whose permission level did not hold, an error whose own `levelNotSet` is
   // exactly true (not a truthy value, not a flag on its `cause`). The team throws it before the
@@ -391,132 +409,234 @@ export function install(rt) {
     return ` Its copy of the project was kept at ${folder}, because ${reason}. Tell the user; delete that folder by hand once nothing is working in it.`;
   }
 
-  async function grantWish({ bot, title, wish, branches }, left = {}) {
+  function grantWish(input, left = {}) {
+    return withCopies(async () => {
+      if (reaper.blocked()) return grantUnavailable();
+      const census = await reaper.scan();
+      if (census.stopped) return grantUnavailable();
+      if (census.historyUnreadable) return `The wish did not start: wish history is unreadable. See ${reaper.file}.`;
+      const refusal = reaper.refuse(census);
+      if (refusal !== null) return refusal;
+
+      const prepared = await prepareWish(input);
+      if (prepared.error) return prepared.error;
+      return startWish(input, prepared, left);
+    });
+  }
+
+  async function prepareWish({ bot, branches }) {
     const problem = await gitProblem();
-    if (problem !== null) return problem;
+    if (problem !== null) return { error: problem };
     const where = await repositoryFor(bot);
-    if (where.error) return where.error;
-    const { repo } = where;
+    if (where.error) return where;
+    const repo = realpathSync(where.repo);
     // Every git command the host runs for this wish from here on is in its evidence.
     const evidence = newEvidence();
     const gitOptions = { env: {}, note: (command) => noteCommand(evidence, command) };
     const g = gitRunner(gitOptions);
     const bound = await resolveBinding(repo, g);
-    if (bound.error !== undefined) return `The wish did not start: ${bound.error}`;
+    if (bound.error !== undefined) return { error: `The wish did not start: ${bound.error}` };
     gitOptions.env = bound.env;
     const { binding } = bound;
     const scope = await scopedBranches(repo, branches, binding.base, g);
-    if (typeof scope === 'string') return scope;
+    if (typeof scope === 'string') return { error: scope };
     // A scoped follow-up's copy gets the remote's URL as `publish` (#3184): one that carries
     // credentials in it would copy them there, so it is refused instead.
     if (scope.length > 0 && hasHttpUserinfo(bound.url)) {
       const display = remoteDisplay(bound.url);
-      return `The wish did not start: the URL of the remote ${binding.remote} has a user name or password written into it, and a follow-up that publishes would copy it into its copy. Remove it (git remote set-url ${binding.remote} ${display}) and let a credential helper keep it (git config credential.helper <helper>), then ask again.`;
+      return {
+        error: `The wish did not start: the URL of the remote ${binding.remote} has a user name or password written into it, and a follow-up that publishes would copy it into its copy. Remove it (git remote set-url ${binding.remote} ${display}) and let a credential helper keep it (git config credential.helper <helper>), then ask again.`,
+      };
     }
     let baseSha = bound.sha;
     if (binding.baseSource !== 'local') {
+      if (reaper.blocked()) return { error: grantUnavailable() };
       const fresh = await fetchBase(bound, g);
-      if (fresh.error !== undefined) return `The wish did not start: ${fresh.error}`;
+      if (fresh.error !== undefined) return { error: `The wish did not start: ${fresh.error}` };
       baseSha = fresh.sha;
     }
-    const root = join(wishesRoot(rt.teamFolder?.()), basename(repo));
-    let slug = slugOf(title);
-    for (
-      let n = 2;
-      (await branchExists(repo, `wish/${slug}`, g)) ||
-      load().wishes.some((w) => w.slug === slug) ||
-      existsSync(join(root, slug));
-      n++
-    ) {
-      slug = `${slugOf(title)}-${n}`;
+    return { repo, scope, binding, baseSha, g, evidence, publishTo: scope.length === 0 ? null : bound.url };
+  }
+
+  async function claimCopy(root, repo, title, g) {
+    const first = slugOf(title);
+    const recorded = new Set(load().wishes.map(({ slug }) => slug));
+    for (let n = 1; ; n++) {
+      const slug = n === 1 ? first : `${first}-${n}`;
+      const branch = `wish/${slug}`;
+      if (recorded.has(slug) || (await branchExists(repo, branch, g))) continue;
+      if (reaper.blocked()) throw new Error(rt.readOnly() ?? 'Genie is unloading.');
+      if (realpathSync(root) !== root) throw new Error(`the wishes folder ${root} changed`);
+      let claim;
+      try {
+        // Not recursive: a path something else already holds throws, and nothing is cleaned.
+        claim = claimFolder(root, slug);
+      } catch (error) {
+        if (error.code === 'EEXIST') continue;
+        throw error;
+      }
+      copyClaims.add(claim.folder);
+      return { ...claim, slug, branch };
     }
-    const branch = `wish/${slug}`;
-    // Claimed in the same tick as the last look above: a path that exists throws. The two
-    // set-up failures below remove their partial copy as they always did, now through the
-    // same check as every removal (copy.js): nothing has been handed to a task yet.
-    const copy = claimCopy(root, slug);
-    const { folder } = copy;
-    const made = await cloneForWish(repo, folder, branch, baseSha, { g, plain: scope.length === 0 });
-    if (!made.ok) {
-      const why = removeCopy(copy);
-      const note = why === 'removed' ? '' : keptNote({ folder, why });
-      return `The wish did not start: ${made.error}${note}`;
+  }
+
+  /** Removes a copy no task was given (copy.js checks it is still the claimed folder). */
+  function discardClaim(claim) {
+    if (reaper.blocked()) return 'failed';
+    const why = removeCopy(claim);
+    if (why !== 'removed') rt.warn?.('genie: wish copy %s was kept after setup failed (%s)', claim.folder, why);
+    return why;
+  }
+
+  /** A start that threw after the record was written: see keptNote for what is removed. */
+  function failedStart(entry, claim, error, left) {
+    let why = 'uncertain';
+    try {
+      if (error?.levelNotSet === true) why = removeCopy(claim);
+      else if (stillClaimed(claim)) why = 'ran';
+    } catch {}
+    if (why === 'removed') {
+      forgetWish(entry);
+      return;
     }
-    // The given branches become local branches in the wish's copy; the binding's remote
-    // becomes its `publish` remote, since the copy's origin is only the project folder.
-    const publishTo = scope.length === 0 ? null : bound.url;
+    Object.assign(left, { folder: claim.folder, why });
+    rt.warn?.('genie: the wish %s did not start and its copy was kept (%s): %s', entry.branch, why, claim.folder);
+  }
+
+  function forgetWish(entry) {
+    const state = load();
+    state.wishes = state.wishes.filter((wish) => wish !== entry);
+    try {
+      save();
+    } catch (error) {
+      rt.warn?.('genie: the record of the wish %s stays after its start failed: %s', entry.branch, error.message);
+    }
+  }
+
+  // A file system with no usable inodes cannot show a swap; such a copy is never removed.
+  const swapped = (claim) => claim.identified && !stillClaimed(claim);
+
+  async function makeCopy(plan, claim, store) {
+    const { repo, baseSha, g, scope, publishTo } = plan;
+    const { folder, branch } = claim;
+    const stored = await ensureStore(repo, store, baseSha, g);
+    if (!stored.ok) return stored;
+    if (reaper.blocked() || swapped(claim)) return { ok: false, error: 'the wish copy claim is no longer valid' };
+    const made = await cloneForWish(repo, folder, branch, baseSha, { g, plain: scope.length === 0, store });
+    if (!made.ok) return made;
+    if (reaper.blocked() || swapped(claim)) return { ok: false, error: 'the wish copy claim is no longer valid' };
     const starts = {};
     if (scope.length > 0) {
       const given = await grantBranches(folder, scope, g);
-      const published = publishTo === null ? { ok: true } : await addPublishRemote(folder, publishTo, g);
-      if (!given.ok || !published.ok) {
-        const why = removeCopy(copy);
-        const note = why === 'removed' ? '' : keptNote({ folder, why });
-        return `The wish did not start: ${given.error ?? published.error}${note}`;
+      if (!given.ok) return given;
+      if (publishTo !== null) {
+        const published = await addPublishRemote(folder, publishTo, g);
+        if (!published.ok) return published;
       }
       for (const name of scope) starts[name] = await commitOf(folder, `refs/heads/${name}`, g, 'given-start');
     }
-    evidence.baseSha = baseSha;
-    const text = wishBrief({
-      title,
-      wish,
-      folder,
-      branch,
-      base: baseSha,
-      branches: scope,
-      canPublish: publishTo !== null,
-    });
-    // bots-dsh with startTask's cwd (automagik PR #9) opens the thread in its folder with
-    // the Bots' preset; an older one ignores both and the brief's absolute path still holds.
-    let sessionId;
+    return { ok: true, starts };
+  }
+
+  async function startWish({ bot, title, wish }, plan, left) {
+    if (reaper.blocked()) return grantUnavailable();
+    const { repo, scope, binding, baseSha, g, evidence, publishTo } = plan;
+    const root = canonicalPath(workspace());
+    const project = join(root, basename(repo));
+    const store = storeFor(rt.home, repo);
+    const unsafe = storeProblem(store, root, project);
+    if (unsafe !== null) return `The wish did not start: ${unsafe}.`;
+    if (canonicalPath(project) !== project) return `The wish did not start: ${project} is a symlink.`;
+    mkdirSync(project, { recursive: true });
+
+    const claim = await claimCopy(project, repo, title, g);
+    const { folder, slug, branch } = claim;
+    // Settled once the claim is recorded or already discarded; the finally discards the rest.
+    let settled = false;
+    const fail = (message) => {
+      settled = true;
+      const why = discardClaim(claim);
+      return `The wish did not start: ${message}${why === 'removed' ? '' : keptNote({ folder, why })}`;
+    };
     try {
-      sessionId = await rt.startTask({
-        title: `Wish: ${title}`,
-        text,
-        from: bot.id,
-        cwd: folder,
-        agentPreset: 'standard',
+      const made = await makeCopy(plan, claim, store);
+      if (!made.ok) return fail(made.error);
+      const storeMoved = storeProblem(store, root, folder);
+      if (swapped(claim)) return fail('the wish copy claim is no longer valid.');
+      if (storeMoved !== null) return fail(`${storeMoved}.`);
+      if (reaper.blocked()) return grantUnavailable();
+      evidence.baseSha = baseSha;
+      const entry = {
+        v: WISH_VERSION,
+        slug,
+        title,
+        branch,
+        branches: scope,
+        starts: made.starts,
+        folder,
+        repo,
+        binding,
+        baseSha,
+        botId: bot.id,
+        at: Date.now(),
+        state: 'working',
+        evidence,
+      };
+      // Record ownership before starting a task. If startTask fails after handing off, the
+      // sessionless entry remains busy and accounts for the copy on the next start.
+      rememberWish(entry);
+      settled = true;
+      const text = wishBrief({
+        title,
+        wish,
+        folder,
+        branch,
+        base: baseSha,
+        branches: scope,
+        canPublish: publishTo !== null,
       });
-    } catch (error) {
-      // The error thrown is always the start's own, whatever becomes of the copy.
-      let why = 'uncertain';
       try {
-        if (error?.levelNotSet === true) why = removeCopy(copy);
-        else if (stillClaimed(copy)) why = 'ran';
-      } catch {}
-      if (why !== 'removed') {
-        Object.assign(left, { folder, why });
-        rt.warn?.('genie: the wish %s did not start and its copy was kept (%s): %s', branch, why, folder);
+        entry.sessionId = await rt.startTask({
+          title: `Wish: ${title}`,
+          text,
+          from: bot.id,
+          cwd: folder,
+          agentPreset: 'standard',
+        });
+      } catch (error) {
+        // The error thrown is always the start's own, whatever becomes of the copy.
+        failedStart(entry, claim, error, left);
+        throw error;
       }
+      save();
+      const early = taskOutcome(rt.state?.tasks?.[entry.sessionId]?.status);
+      if (early !== undefined) void settle(entry, early);
+      await rt.save();
+      return `Wish "${title}" is granted as a thread on branch ${branch}. Its report comes back to you as a message when it ends; do not wait or poll.`;
+    } finally {
+      copyClaims.delete(folder);
+      if (!settled) discardClaim(claim);
+    }
+  }
+
+  function rememberWish(entry) {
+    const state = load();
+    const previous = state.wishes;
+    let missing = 0;
+    state.wishes = [entry, ...previous].filter((wish) => {
+      try {
+        if (typeof wish.folder === 'string' && lstat(wish.folder)) return true;
+      } catch {
+        return true;
+      }
+      return missing++ < WISHES_KEPT;
+    });
+    try {
+      save();
+    } catch (error) {
+      state.wishes = previous;
       throw error;
     }
-    const entry = {
-      v: WISH_VERSION,
-      slug,
-      title,
-      branch,
-      branches: scope,
-      starts,
-      folder,
-      repo,
-      binding,
-      baseSha,
-      sessionId,
-      botId: bot.id,
-      at: Date.now(),
-      state: 'working',
-      evidence,
-    };
-    const list = load().wishes;
-    list.unshift(entry);
-    list.splice(WISHES_KEPT);
-    save();
-    // A first turn can end before the entry above was saved, while no listener knew the
-    // wish: the team's own record says so, and the wish is settled now, not at a restart.
-    const early = taskOutcome(rt.state?.tasks?.[sessionId]?.status);
-    if (early !== undefined) void settle(entry, early);
-    await rt.save();
-    return `Wish "${title}" is granted as a thread on branch ${branch}. Its report comes back to you as a message when it ends; do not wait or poll.`;
   }
 
   // A wish's turn ends with an outcome (wishes.js: done, stopped, failed, lost). In its copy,
@@ -582,9 +702,10 @@ export function install(rt) {
   function settle(entry, outcome) {
     const prior = claims.get(entry.sessionId);
     if (prior !== undefined && (prior.outcome !== 'lost' || outcome === 'lost')) return prior.done;
-    const done = (prior?.done ?? Promise.resolve())
-      .then(() => classify(entry, outcome))
-      .catch((error) => rt.warn?.('genie: wish %s: %s', entry.branch, error?.message ?? error));
+    const done = withCopies(async () => {
+      if (!reaper.blocked()) await classify(entry, outcome);
+    }).catch((error) => rt.warn?.('genie: wish %s: %s', entry.branch, error?.message ?? error));
+    void done.then(sweepSoon);
     claims.set(entry.sessionId, { outcome, done });
     return done;
   }
@@ -593,33 +714,50 @@ export function install(rt) {
   // no end (the team resumes it), nor is a blocked one (it goes on in a fresh part). The
   // team's task record is not read here, so the order of the listeners does not matter.
   ctx.on?.('session/event', (session, event) => {
-    if (event?.type !== 'turn/end' || rt.cutByRestart?.(event.data?.reason)) return;
+    const entry = load().wishes.find((wish) => wish.sessionId && wish.sessionId === session?.id);
+    if (!entry || !event) return;
+    reaper.observe(session.id, event);
+    if (event.type === 'approval/decided' && !awaitsEnd(entry)) void sweepSoon();
+    if (event.type !== 'turn/end' || rt.cutByRestart?.(event.data?.reason)) return;
     const outcome = turnOutcome(event.data?.reason);
     if (outcome === undefined) return;
-    const wish = load().wishes.find((entry) => entry.sessionId === session?.id && awaitsEnd(entry));
-    if (wish !== undefined) void settle(wish, outcome);
+    if (awaitsEnd(entry)) void settle(entry, outcome);
+    else void sweepSoon();
   });
 
   // Startup: a wish whose task ended while this plugin was not listening takes the team's
   // recorded status, once the team's resume pass is over. Only on a host that writes the
   // team, and only from a tasks record that was read: a wish missing from it is `lost`
   // (the team keeps its newest 60 tasks), never done.
-  const reconciled = (async () => {
+  async function reconcile() {
     await rt.load();
     if (typeof rt.resumesDone?.then !== 'function') return;
     const resumes = await rt.resumesDone;
-    if (rt.readOnly() !== undefined || resumes === null || typeof resumes !== 'object') return;
+    if (reaper.blocked() || resumes === null || typeof resumes !== 'object') return;
     if (Object.hasOwn(resumes, 'readOnly') || Object.hasOwn(resumes, 'failed')) return;
     const tasks = rt.state?.tasks;
     if (tasks === null || typeof tasks !== 'object') return;
+    readHistory(file());
     const settling = [];
     for (const entry of load().wishes) {
-      if (entry.v !== WISH_VERSION || entry.state !== 'working') continue;
+      if (entry.v !== WISH_VERSION || entry.state !== 'working' || !entry.sessionId) continue;
       const outcome = Object.hasOwn(tasks, entry.sessionId) ? taskOutcome(tasks[entry.sessionId]?.status) : 'lost';
       if (outcome !== undefined) settling.push(settle(entry, outcome));
     }
     await Promise.all(settling);
-  })().catch((error) => rt.warn?.('genie: the wishes were not reconciled: %s', error?.message ?? error));
+  }
+  const reconciled = ready
+    .then(reconcile)
+    .catch((error) => rt.warn?.('genie: the wishes were not reconciled: %s', error?.message ?? error))
+    .then(sweepSoon);
+
+  async function sweepSoon() {
+    try {
+      await sweep();
+    } catch (error) {
+      rt.warn?.('genie: wish copies were not swept: %s', error?.message ?? error);
+    }
+  }
 
   // Every answer to a browser's state request, right after the team took that browser's locale
   // (bots-dsh channel.js): the first moment the team can know the language.
@@ -644,15 +782,17 @@ export function install(rt) {
           colors: GENIE_COLORS,
           taken: genieBots().map(genieColorOf),
           // A v2 wish carries its state (wishes.js), which the row shows instead of the task status.
-          wishes: load().wishes.map(({ slug, title, branch, sessionId, botId, at, state }) => ({
-            slug,
-            title,
-            branch,
-            sessionId,
-            botId,
-            at,
-            ...(state === undefined ? {} : { state }),
-          })),
+          wishes: load()
+            .wishes.slice(0, WISHES_KEPT)
+            .map(({ slug, title, branch, sessionId, botId, at, state }) => ({
+              slug,
+              title,
+              branch,
+              sessionId,
+              botId,
+              at,
+              ...(state === undefined ? {} : { state }),
+            })),
         },
       })),
     'genie: wishes in the team view',
@@ -707,5 +847,7 @@ export function install(rt) {
     genieWishes: () => load().wishes,
     genieReady: ready,
     genieReconciled: reconciled,
+    genieSweep: sweep,
+    genieCopiesFile: reaper.file,
   });
 }

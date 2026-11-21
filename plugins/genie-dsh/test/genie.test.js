@@ -2,10 +2,9 @@
 // folders: what the Bot team provides (createBot, startTask, the view hook) is recorded,
 // and what git does is checked on disk.
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, beforeEach, test } from 'node:test';
+import { afterEach, beforeEach, mock, test } from 'node:test';
 import { runInThisContext } from 'node:vm';
 import { GENIE_SUGGESTIONS, registerSuggestions } from '../src/client/suggestions.js';
 import { endedWishesOf, markOf, outcomeOf } from '../src/client/wishes.js';
@@ -23,12 +22,14 @@ import {
 import { MISSING_GIT, MISSING_TOOLS_MAC, gitProblem } from '../src/host/git.js';
 import { compose, gitIn, grant, guarded, hostContract, fakeTeam as makeTeam, savedWishes, until } from './team.js';
 
+import { scratch } from './wish-fixture.js';
+
 let dir;
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), 'genie-dsh-'));
-  process.env.GENIE_WISHES_DIR = join(dir, 'wishes');
+  dir = scratch('genie-dsh-');
 });
 afterEach(() => {
+  mock.restoreAll();
   Reflect.deleteProperty(process.env, 'GENIE_WISHES_DIR');
   rmSync(dir, { recursive: true, force: true });
 });
@@ -578,6 +579,13 @@ test('missing git is named with its one-line fix, and a Mac never starts git wit
   assert.match(MISSING_TOOLS_MAC, /xcode-select --install/);
   assert.equal(await gitProblem({ platform: 'linux', exec: exec((c) => c !== 'git') }), MISSING_GIT);
   assert.equal(await gitProblem({ platform: 'darwin', exec: exec(() => true) }), null);
+  const version = (stdout) => async () => ({ ok: true, stdout });
+  assert.match(
+    await gitProblem({ platform: 'linux', exec: version('git version 2.30.9') }),
+    /git 2\.31 or later.*2\.30/,
+  );
+  assert.equal(await gitProblem({ platform: 'linux', exec: version('git version 2.31.0') }), null);
+  assert.equal(await gitProblem({ platform: 'linux', exec: version('git version 3.0.0') }), null);
 });
 
 test('slugs are branch-safe and the brief tells the thread where and how to finish', () => {

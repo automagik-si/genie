@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import childProcess from 'node:child_process';
 import fs from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
-import { tmpdir } from 'node:os';
+import os, { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { git, initRepo } from '../src/host/git.js';
@@ -23,6 +23,8 @@ for (const stage of ['clone', 'branch']) {
         fs.rmSync(dir, { recursive: true, force: true });
       });
 
+      // The team home is under the test's temp root; model a host whose system temp is elsewhere.
+      t.mock.method(os, 'tmpdir', () => '/tmp');
       const team = fakeTeam(dir);
       const { rt, tools } = compose(team);
       await rt.genieReady;
@@ -33,7 +35,7 @@ for (const stage of ['clone', 'branch']) {
       const error = `${stage} setup failed`;
       const execFile = childProcess.execFile;
       t.mock.method(childProcess, 'execFile', (command, args, options, callback) => {
-        if (command === 'git' && args[0] === stage) {
+        if (command === 'git' && args[0] === (stage === 'clone' ? 'checkout' : stage)) {
           fs.writeFileSync(join(folder, 'partial.txt'), 'partial copy');
           callback(Object.assign(new Error(error), { code: 1 }), '', error);
           return undefined;
