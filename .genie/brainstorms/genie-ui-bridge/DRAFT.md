@@ -2,7 +2,7 @@
 
 **Started:** 2026-07-21 · **WRS:** 100/100 (Problem ✅ Scope ✅ Decisions ✅ Risks ✅ Criteria ✅) — crystallized to [DESIGN.md](DESIGN.md)
 
-**Resolved 2026-07-21 (Felipe, explicit picker choices):** channel = (c) UI-owned stdio bridge (MCP); home = sibling `genie ui-bridge` command, `genie mcp` stays read-only; timing = adopt now (amend genie-ui-dash G4/G5 before work starts).
+**Resolved 2026-07-21 (the owner, explicit picker choices):** channel = (c) UI-owned stdio bridge (MCP); home = sibling `genie ui-bridge` command, `genie mcp` stays read-only; timing = adopt now (amend genie-ui-dash G4/G5 before work starts).
 
 ## Problem
 
@@ -44,7 +44,7 @@ Genie's "backend" is two separable things: **state storage** (SQLite + wish mark
 ### (e) Hybrid — direct SQLite reads + bridge/CLI writes
 - ❌ Two contracts to maintain (schema for reads AND protocol for writes); inherits (a)'s skew problem for the read half. Only justified if bridge read perf proves insufficient — board data is tiny, so it won't.
 
-## Leaning / recommendation (not yet decided — Felipe's call)
+## Leaning / recommendation (not yet decided — the owner's call)
 
 **(c)**, concretely as an extension of the existing `genie mcp`: add two write tools + update notifications, UI spawns and owns the child. Protocol-as-API keeps the schema private, keeps genie the sole writer, keeps zero-daemon intact (child ≤ UI lifetime), and the same protocol goes over a socket later if a remote UI ever matters. **Consequence if chosen:** amend genie-ui-dash G4 (GenieStateService → MCP client) and G5 (HireRosterService → calls hire tools; the write path moves INTO genie) — a simplification of the "single write path" story, done before work starts.
 
@@ -57,6 +57,6 @@ Genie's "backend" is two separable things: **state storage** (SQLite + wish mark
 
 ## Open questions (blocking Decisions/Criteria)
 
-1. **The channel choice itself** — (a)/(b)/(c) (d,e effectively eliminated above unless Felipe disagrees).
+1. **The channel choice itself** — (a)/(b)/(c) (d,e effectively eliminated above unless the owner disagrees).
 2. If (c): extend `genie mcp` in place vs a sibling `genie ui-bridge` command (same plumbing, keeps `mcp` read-only).
 3. Does the initial dash-fork version (genie-ui-dash wish, same-machine, currently effectively same-roof) adopt the chosen channel NOW, or ship (a) as-is and migrate when the repo actually splits?

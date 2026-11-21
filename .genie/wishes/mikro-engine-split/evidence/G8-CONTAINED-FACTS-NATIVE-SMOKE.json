@@ -4,12 +4,12 @@
   "actualExitCode": 0,
   "actualDurationSeconds": 292.8,
   "nativeInput": {
-    "path": "/home/genie/.local/share/mikro-engine-split/experiments-g8/frozen-inputs/native-manifest-contained-facts.json",
+    "path": "<experiment workspace>/experiments-g8/frozen-inputs/native-manifest-contained-facts.json",
     "kind": "file",
     "sha256": "12d07cc27533b5d7831886523104814a4c240aacaa2ceb65b1d1ab2d4bef9957"
   },
   "canonicalReceipt": {
-    "path": "/home/genie/.local/share/mikro-engine-split/experiments-g8/native-contained-facts-runs/g8-native-smoke/receipt.json",
+    "path": "<experiment workspace>/experiments-g8/native-contained-facts-runs/g8-native-smoke/receipt.json",
     "kind": "file",
     "sha256": "d709b4478b009a381bdc6e88a41400349758671e4028ed52a99b958a567250fb"
   },
@@ -83,7 +83,7 @@
         "version": 4,
         "id": "cb84aaa1-a84a-46e2-9e94-a0bcbe6ea0ed",
         "createdAt": 1791302653397,
-        "cwd": "/home/genie/.local/share/mikro-engine-split/experiments-g8/native-contained-facts/g8-native-smoke",
+        "cwd": "<experiment workspace>/experiments-g8/native-contained-facts/g8-native-smoke",
         "parentSession": "f33499b7-da08-41df-ab8c-6a5c43414e0e",
         "isSeeded": false,
         "origin": "subagent",
@@ -99,7 +99,7 @@
         "version": 4,
         "id": "f33499b7-da08-41df-ab8c-6a5c43414e0e",
         "createdAt": 1791302652926,
-        "cwd": "/home/genie/.local/share/mikro-engine-split/experiments-g8/native-contained-facts/g8-native-smoke",
+        "cwd": "<experiment workspace>/experiments-g8/native-contained-facts/g8-native-smoke",
         "isSeeded": false,
         "delegationDepth": 0
       },
@@ -113,7 +113,7 @@
         "version": 4,
         "id": "f9927c51-6f5d-4e2d-a8c5-b6c2204040ec",
         "createdAt": 1791302829175,
-        "cwd": "/home/genie/.local/share/mikro-engine-split/experiments-g8/native-contained-facts/g8-native-smoke",
+        "cwd": "<experiment workspace>/experiments-g8/native-contained-facts/g8-native-smoke",
         "parentSession": "f33499b7-da08-41df-ab8c-6a5c43414e0e",
         "isSeeded": false,
         "origin": "subagent",

@@ -39,7 +39,7 @@ The `src/host/` and `src/client/` abbreviations in row 1 mean paths inside `plug
 
 ## Decisions
 
-The authoritative decision source is the live, gitignored `/Users/feliperosa/workspace/repos/genie/.genie/brainstorms/dsh-herdr-handoff/QUESTIONS.md`, read on 2026-11-09. Owner words below are verbatim; these decisions are closed. The source notes are not files pinned by the repository SHA.
+The authoritative decision source is the live, gitignored `<genie checkout>/.genie/brainstorms/dsh-herdr-handoff/QUESTIONS.md`, read on 2026-11-09. Owner words below are verbatim; these decisions are closed. The source notes are not files pinned by the repository SHA.
 
 R1-30, from the same checkout's `.genie/brainstorms/genie-v7-tasks/DRAFT.md:115-119`:
 
@@ -155,11 +155,11 @@ The view ships in the cutover. It refreshes only while visible, batches reads fo
 | Display | Authority and meaning |
 |---|---|
 | Task, title, lane, lead, project, branch, worktree, PR link | Structured `genie-rs list --json` fields, joined to the saved receipt (`crates/genie-rs/src/lib.rs:158-180`). |
-| Worker status and progress text | Structured hc status for the exact recorded worker; prose only from the worker's report. No screen scrape or invented percentage. Installed hc guidance describes `get` and status separately from `read` (`/Users/feliperosa/.agents/skills/hc/SKILL.md:60-68,158-159`); actual integration needs proof. |
+| Worker status and progress text | Structured hc status for the exact recorded worker; prose only from the worker's report. No screen scrape or invented percentage. Installed hc guidance describes `get` and status separately from `read` (`~/.agents/skills/hc/SKILL.md:60-68,158-159`); actual integration needs proof. |
 | Task age | `age_min`, now minus first-created; not coding minutes (`crates/genie-tasks/src/store.rs:684-687`). |
 | PR open/lead time | `pr_open_min` only while Opened; `pr_lead_min` for Merged/Closed, otherwise null (`crates/genie-tasks/src/store.rs:688-698`). |
 | Worker elapsed | From the verified launch timestamp, separately labelled. Unknown if no timestamp is proven; no inference from task age. |
-| Cost | “unknown” until verified M3 task attribution, never $0 or branch estimate. M3 and unknown/null semantics are defined in live `/Users/feliperosa/workspace/repos/genie/.genie/brainstorms/genie-v7-tasks/METER-DESIGN.md:64-66,80-83`. No meter daemon, price fetch or log scan on view refresh. |
+| Cost | “unknown” until verified M3 task attribution, never $0 or branch estimate. M3 and unknown/null semantics are defined in live `<genie checkout>/.genie/brainstorms/genie-v7-tasks/METER-DESIGN.md:64-66,80-83`. No meter daemon, price fetch or log scan on view refresh. |
 | Result | Worker report/evidence and PR link if present; agent turn completion alone is not delivery. |
 
 ### Trust boundaries
@@ -208,7 +208,7 @@ All are **OPEN**, not tests completed by this documentation task:
 1. **Human-only Start:** pin DSH/Host/bots versions and prove in an attended chat that a human click on the exact recap invokes its Host action once, while model tools, forged/replayed events, synthetic clicks and changed recaps cannot invoke it. Use a harmless action witness for this primitive proof before implementing launch; Group 3 separately proves the real task/worker effect. Host rendering alone is not proof. This is Group 1's gate.
 2. **Per-bot composition:** identify the effective Genie preset, creation/update lever and source owner; prove both loader row and native delegation group absent for Genie, including after reload, while another user retains the loader. Repository rows/README do not establish that lever. If unsupported, report the blocker; do not substitute instructions or global retirement.
 3. **Transport/return binding:** pin trusted data root, read/return endpoint shapes/authentication, same-machine reachability and actual main-bot attachment. Confirm only the fixed ID ping reaches terminal input; record what survives hc/Host restart. Do not claim a durable hc inbox.
-4. **Launch/correlation:** pin and inspect `/Users/feliperosa/.config/herdr-app/mods/am-sidebar/bin/automagik-herdr.mjs` or its authoritative source, actual worker command, identity and timestamp format. This installed file remains unverified here. Prove one authorized request yields one tracked task and worker; repeated click/ping/report, wrong callers and effect-boundary crashes yield no duplicate. Preserve fresh base/push lockout.
+4. **Launch/correlation:** pin and inspect `~/.config/herdr-app/mods/am-sidebar/bin/automagik-herdr.mjs` or its authoritative source, actual worker command, identity and timestamp format. This installed file remains unverified here. Prove one authorized request yields one tracked task and worker; repeated click/ping/report, wrong callers and effect-boundary crashes yield no duplicate. Preserve fresh base/push lockout.
 5. **Live view and cutover:** prove visible-only refresh, structured provenance and unknown cost, then collect the Q5 manual inventory immediately before merging the same PR that removes the old coding path. No live inventory was collected for these documents.
 
 ## Success Criteria
@@ -226,7 +226,7 @@ The orchestrator obtains independent design/plan review, records its real verdic
 ## Design Review Evidence
 
 - **Verdict:** SHIP
-- **Reviewed content SHA-256:** `3ed279c7dfdbdb2d2112041342fdebd1a1861ec1f87cb98cfd88f42e39af54c5`
-- **Reviewer:** Codex / GPT-6 (deployment variant not exposed), independent design reviewer for gn-9
-- **Reviewed at:** 2026-11-09T03:11:09Z
+- **Reviewed content SHA-256:** `761af0f25eb02ca443c7a10e27b6634f4192d826b17910769830005d547f4a79`
+- **Reviewer:** Reviewer 2, independent reviewer bot, Claude Opus 5.5
+- **Reviewed at:** 2026-11-15T23:26:12.000Z
 <!-- genie-design-review:end -->

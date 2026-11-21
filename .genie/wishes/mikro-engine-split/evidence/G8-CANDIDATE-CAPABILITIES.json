@@ -13,7 +13,7 @@
       "requested": "GLM 5.3",
       "advertisedId": "glm-5.3-juiced",
       "project": "genie",
-      "keyFileReference": "/home/genie/.local/share/mikro-engine-split/juice/genie.key",
+      "keyFileReference": "<experiment workspace>/juice/genie.key",
       "startedAt": "2026-10-06T03:33:58.407Z",
       "completedAt": "2026-10-06T03:34:00.899Z",
       "actualExternalSdkRequests": 1,
@@ -81,7 +81,7 @@
       "requested": "GLM 5.3-flash",
       "advertisedId": "glm-5.3-flash-juiced",
       "project": "genie",
-      "keyFileReference": "/home/genie/.local/share/mikro-engine-split/juice/genie.key",
+      "keyFileReference": "<experiment workspace>/juice/genie.key",
       "startedAt": "2026-10-06T03:34:00.900Z",
       "completedAt": "2026-10-06T03:34:01.996Z",
       "actualExternalSdkRequests": 1,
@@ -149,7 +149,7 @@
       "requested": "GPT-6 Luna fast",
       "advertisedId": "gpt-6-luna",
       "project": "genie",
-      "keyFileReference": "/home/genie/.local/share/mikro-engine-split/juice/genie.key",
+      "keyFileReference": "<experiment workspace>/juice/genie.key",
       "startedAt": "2026-10-06T03:34:01.996Z",
       "completedAt": "2026-10-06T03:34:03.315Z",
       "actualExternalSdkRequests": 1,
@@ -267,7 +267,7 @@
       "requested": "Xiaomi MiMo 2.6",
       "advertisedId": "mimo-v2.6-flash",
       "project": "genie",
-      "keyFileReference": "/home/genie/.local/share/mikro-engine-split/juice/genie.key",
+      "keyFileReference": "<experiment workspace>/juice/genie.key",
       "startedAt": "2026-10-06T03:34:03.315Z",
       "completedAt": "2026-10-06T03:34:07.638Z",
       "actualExternalSdkRequests": 1,
@@ -335,7 +335,7 @@
       "requested": "GLM 5.3",
       "advertisedId": "glm-5.3-juiced",
       "project": "brain",
-      "keyFileReference": "/home/genie/.local/share/mikro-engine-split/juice/brain.key",
+      "keyFileReference": "<experiment workspace>/juice/brain.key",
       "startedAt": "2026-10-06T03:34:07.638Z",
       "completedAt": "2026-10-06T03:34:09.348Z",
       "actualExternalSdkRequests": 1,
@@ -403,7 +403,7 @@
       "requested": "GLM 5.3-flash",
       "advertisedId": "glm-5.3-flash-juiced",
       "project": "brain",
-      "keyFileReference": "/home/genie/.local/share/mikro-engine-split/juice/brain.key",
+      "keyFileReference": "<experiment workspace>/juice/brain.key",
       "startedAt": "2026-10-06T03:34:09.348Z",
       "completedAt": "2026-10-06T03:34:11.086Z",
       "actualExternalSdkRequests": 1,
@@ -471,7 +471,7 @@
       "requested": "GPT-6 Luna fast",
       "advertisedId": "gpt-6-luna",
       "project": "brain",
-      "keyFileReference": "/home/genie/.local/share/mikro-engine-split/juice/brain.key",
+      "keyFileReference": "<experiment workspace>/juice/brain.key",
       "startedAt": "2026-10-06T03:34:11.086Z",
       "completedAt": "2026-10-06T03:34:12.093Z",
       "actualExternalSdkRequests": 1,
@@ -589,7 +589,7 @@
       "requested": "Xiaomi MiMo 2.6",
       "advertisedId": "mimo-v2.6-flash",
       "project": "brain",
-      "keyFileReference": "/home/genie/.local/share/mikro-engine-split/juice/brain.key",
+      "keyFileReference": "<experiment workspace>/juice/brain.key",
       "startedAt": "2026-10-06T03:34:12.093Z",
       "completedAt": "2026-10-06T03:34:16.490Z",
       "actualExternalSdkRequests": 1,
@@ -658,7 +658,7 @@
     "content": "import { readFileSync, writeFileSync } from 'node:fs';\nimport { pathToFileURL } from 'node:url';\nconst spec = JSON.parse(readFileSync(process.argv[2], 'utf8'));\nconst { stream } = await import(pathToFileURL(spec.sdkResponses).href);\nconst secrets = spec.projects.map(project => readFileSync(project.keyFile, 'utf8').trim());\nconst redact = value => secrets.reduce((text, secret) => text.replaceAll(secret, '[redacted]'), String(value));\nconst results = [];\nfor (const [index, project] of spec.projects.entries()) {\n  for (const candidate of spec.models) {\n    const model = { ...candidate.sdkReferenceModel, provider: 'juice', id: candidate.advertisedId,\n      api: 'openai-responses', baseUrl: 'https://juice.labs.khal.ai/v1' };\n    delete model.compat;\n    const expected = `CAPABILITY_${project.name}_${candidate.candidateId}`;\n    const packets = [];\n    const startedAt = new Date().toISOString();\n    const signal = AbortSignal.timeout(90000);\n    let terminal = null;\n    let failure = null;\n    try {\n      const response = stream(model, { messages: [{ role: 'user', content: [{ type: 'text', text: `Reply exactly ${expected}. No tools or additional explanation.` }], timestamp: Date.now() }] }, {\n        apiKey: secrets[index], maxTokens: 2048, maxRetries: 0, reasoningEffort: 'low', signal,\n        ...(candidate.requested === 'GPT-6 Luna fast' ? { serviceTier: 'fast' } : {}),\n        onProviderStreamEvent(event) {\n          if (event?.type === 'response.completed') packets.push({ type: event.type,\n            servedTier: event.response?.service_tier ?? null, model: event.response?.model ?? null,\n            usage: event.response?.usage ?? null });\n        },\n      });\n      for await (const event of response) {\n        if (event.type === 'done') terminal = event.message;\n        if (event.type === 'error') { terminal = event.error; failure = redact(event.error?.errorMessage ?? 'SDK terminal error'); }\n      }\n    } catch (error) { failure = redact(error instanceof Error ? error.message : error); }\n    const text = redact(terminal?.content?.filter(part => part.type === 'text').map(part => part.text).join('') ?? '');\n    const usagePacketComplete = packets.some(packet => Number.isFinite(packet.usage?.input_tokens) && Number.isFinite(packet.usage?.output_tokens));\n    const servedTier = packets.at(-1)?.servedTier ?? null;\n    const result = { candidateId: candidate.candidateId, requested: candidate.requested, advertisedId: candidate.advertisedId,\n      project: project.name, keyFileReference: project.keyFile, startedAt, completedAt: new Date().toISOString(),\n      actualExternalSdkRequests: 1, outerRetries: 0, actualPrivateCatalogOwnedBy: candidate.privateCatalogOwnedBy,\n      requestedTier: candidate.requested === 'GPT-6 Luna fast' ? 'fast' : null, servedTier,\n      sdkNominalQuote: model.cost, quoteBasis: candidate.priceBasis, actualInvoice: null,\n      text, expectedMatched: text.trim() === expected, providerPackets: packets,\n      actualUsagePacketComplete: usagePacketComplete, sdkUsage: terminal?.usage ?? null,\n      stopReason: terminal?.stopReason ?? null, failure,\n      ok: !failure && terminal?.stopReason === 'stop' && text.trim() === expected && usagePacketComplete &&\n        (candidate.requested !== 'GPT-6 Luna fast' || servedTier === 'fast'),\n      scored: false, nativeWorkflowCredit: false, modelOptions: { maxTokens: 2048, maxRetries: 0, reasoningEffort: 'low' },\n    };\n    results.push(result);\n    console.log(JSON.stringify({ project: result.project, candidateId: result.candidateId, ok: result.ok,\n      expectedMatched: result.expectedMatched, servedTier: result.servedTier, actualUsagePacketComplete: usagePacketComplete,\n      failure: result.failure }));\n  }\n}\nwriteFileSync(spec.output, redact(JSON.stringify({ schemaVersion: 1, scope: 'unscored actual direct SDK capability; not scored engine or native workflow', results }, null, 2) + '\\n'), { flag: 'wx', mode: 0o600 });\n"
   },
   "probeInputs": {
-    "sdkResponses": "/home/genie/orca/workspaces/genie/mikro-engine-split/mikro/node_modules/@earendil-works/pi-ai/dist/api/openai-responses.js",
+    "sdkResponses": "<orca workspace>/mikro/node_modules/@earendil-works/pi-ai/dist/api/openai-responses.js",
     "models": [
       {
         "candidateId": "glm-5-3",
@@ -870,14 +870,14 @@
     "projects": [
       {
         "name": "genie",
-        "keyFile": "/home/genie/.local/share/mikro-engine-split/juice/genie.key"
+        "keyFile": "<experiment workspace>/juice/genie.key"
       },
       {
         "name": "brain",
-        "keyFile": "/home/genie/.local/share/mikro-engine-split/juice/brain.key"
+        "keyFile": "<experiment workspace>/juice/brain.key"
       }
     ],
-    "output": "/home/genie/.local/share/mikro-engine-split/experiments-g8/candidate-preflight/actual-sdk-receipts.json"
+    "output": "<experiment workspace>/experiments-g8/candidate-preflight/actual-sdk-receipts.json"
   },
   "networkRequestCount": "SDK calls and completed packets observed; no separate HTTP transport counter; maxRetries0 explicitly requested",
   "excludedFastReason": "Actual FullSDK requested serviceTierfast; both project responses service_tierdefault. No fast alias or standard-tier replacement."

@@ -1,6 +1,6 @@
-# Council brief — genie v6 "corpo leve", rev. 3 simplification (Felipe, 2026-08-25)
+# Council brief — genie v6 "corpo leve", rev. 3 simplification (the owner, 2026-08-25)
 
-Repo: /home/namastex/workspace/repos/genie (branch v6/corpo-leve). READ-ONLY: assess, do not mutate.
+Repo: <genie checkout> (branch v6/corpo-leve). READ-ONLY: assess, do not mutate.
 
 ## Decision statement
 Simplify genie by:
@@ -12,7 +12,7 @@ Simplify genie by:
 6. **genie has NO UI and NO khal/desktop surface** — `packages/genie-ui`, `genie ui-bridge` command (`src/term-commands/ui-bridge.ts`, `src/lib/v5/bridge-watcher.ts`, `hire_roster` table + `UI-BRIDGE.md`), desktop-related docs (`docs/_internal/genie-ui-two-faces.mdx`, `design-system.mdx`, `tui-host`) are candidates to leave.
 
 ## Constraints
-- Felipe is a solo maintainer; no second-approver gates.
+- The owner is a solo maintainer; no second-approver gates.
 - Standalone mode must keep working for existing repos (board, roadmap.json sync, wish lifecycle statuses DRAFT/FIX-FIRST/APPROVED/IN_PROGRESS/BLOCKED/SHIPPED).
 - The first real orca-mode wish (`caio-cria-ds-tokens-hapvida`, in another repo) is v5-shaped and enters orca mode only by explicit amendment (Dispatch plan).
 - Model rule: no haiku/sonnet in dispatch plans; coordinator on Fable; heavy load `codex gpt-5.6-terra --effort xhigh`.
@@ -35,8 +35,8 @@ Simplify genie by:
 ## Explicit unknowns
 - What skills.sh actually provides for install/detect across runtimes (hooks? agents? only SKILL.md dirs?). If it only ships SKILL.md directories, everything that today rides in the plugin besides skills (hooks, agents/role profiles, workflows, rules, references) needs a new home or dies.
 - Whether the SessionStart context injection (`session-context.ts`: wish/task/session context + the planned `mode=` token) survives without a plugin-installed hook — the base skills may have to read state themselves.
-- Whether Codex/Hermes users exist beyond Felipe's own machines (affects how loudly the plugin removal must be deprecated).
-- Omni runner (`genie omni serve`, NATS bridge, approval queue in global genie.db): not mentioned by Felipe either way.
+- Whether Codex/Hermes users exist beyond the owner's own machines (affects how loudly the plugin removal must be deprecated).
+- Omni runner (`genie omni serve`, NATS bridge, approval queue in global genie.db): not mentioned by the owner either way.
 - What the `orca` install mode concretely disables: only board/task/mcp verbs, or also the sync git hooks, `genie init` scaffolding of `.genie/`, `context`?
 
 ## What each lens must return

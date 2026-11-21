@@ -1022,7 +1022,7 @@ describe('the committed fixture (Decision 8)', () => {
     }
     expect(settled['R1-1'].answer).toStartWith('WRS returns as it was');
     expect(settled['R2-4'].answer).toStartWith('Spine fixed, inside free');
-    expect(settled['R2-5'].answer).toStartWith("The council is Felipe's Socratic pattern");
+    expect(settled['R2-5'].answer).toStartWith("The council is the owner's Socratic pattern");
     expect(settled['R1-3'].reopenedBy).toBe('R3-council');
     expect(block.councils[0].decided).toEqual(Array.from({ length: 16 }, (_, index) => `P${index + 1}`));
     expect(block.reviews[0].findings).toContain('C11');

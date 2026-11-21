@@ -16,7 +16,7 @@ juice:
   project: genie
   key-alias: genie-engine-experiment
   key-epoch: epoch-1
-  key-file: /home/genie/.local/share/mikro-engine-split/juice/genie.key
+  key-file: /path/to/juice/genie.key
 ```
 
 Use a separate key file and identity for each project (for example, brain).

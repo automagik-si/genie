@@ -1,6 +1,6 @@
 # agent-sync — live ritual evidence (reference machine, 2026-07-10)
 
-Executed under Felipe's `/goal` directive ("update an dogfood, if anything goes wrong, fix and repeat"), dev channel. Three iterations; the third fully clean.
+Executed under the owner's `/goal` directive ("update an dogfood, if anything goes wrong, fix and repeat"), dev channel. Three iterations; the third fully clean.
 
 ## Iteration 1 — first live convergence (v5.260710.10)
 
@@ -90,4 +90,4 @@ by github-actions[bot]); close/reopen re-triggers them under a human actor.
 - One-hop aux-tree staleness: a pre-`.agents`-contract binary syncs only plugins/skills/templates on
   its last swap; the marketplace manifests arrive on the following swap (this machine was healed by
   extracting them from the verified 5.260711.3 tarball).
-- council-workflow qa/ (deliberation + audit runs) remains Felipe's own ritual.
+- council-workflow qa/ (deliberation + audit runs) remains the owner's own ritual.

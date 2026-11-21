@@ -2,7 +2,7 @@
 
 Publication copy: private host capture, telemetry, billing and run-activity observations are omitted below. The complete original remains machine-local; source SHA256 `8c8ee9e3ae2cd1daa6030afdf35e68400fc5c36a144724442767f5ce8bd7376b`.
 
-Written 2026-10-04 by genie-af (Claude Code) for Felipe. Status: starting point for a brainstorm/wish, nothing implemented.
+Written 2026-10-04 by genie-af (Claude Code) for the owner. Status: starting point for a brainstorm/wish, nothing implemented.
 
 ## The goal (owner's words, distilled)
 
@@ -13,8 +13,8 @@ Written 2026-10-04 by genie-af (Claude Code) for Felipe. Status: starting point 
 ## What is true today (verified 2026-10-04)
 
 **Where things are**
-- **Working checkout:** `/home/genie/workspace/repos/mikro`, branch `dev` at `62894e4`.
-- **Installed copy:** `/home/genie/.mikro/mikro`, `main`, v1.260909.1, MIT, `automagik-dev/mikro`. Owner-only users.
+- **Working checkout:** `<mikro checkout>`, branch `dev` at `62894e4`.
+- **Installed copy:** `~/.mikro/mikro`, `main`, v1.260909.1, MIT, `automagik-dev/mikro`. Owner-only users.
 
 **One engine runs every genie agent**
 - The RLM loop: `rlmLoop` (`src/rlm.ts`), driven from `src/mcp/server.ts`. No genie agent sets `backend:`.
@@ -41,8 +41,8 @@ Written 2026-10-04 by genie-af (Claude Code) for Felipe. Status: starting point 
 ## Production evidence: what is failing and why
 
 Sources:
-- `/home/genie/workspace/repos/mikro/.genie/brainstorms/mikro-engine-split/evidence/mikro-eval/` (560 runs, per agent)
-- `/home/genie/workspace/repos/mikro/.genie/brainstorms/mikro-engine-split/evidence/mikro-diag/FINDINGS.txt` (root causes, file:line)
+- `<mikro checkout>/.genie/brainstorms/mikro-engine-split/evidence/mikro-eval/` (560 runs, per agent)
+- `<mikro checkout>/.genie/brainstorms/mikro-engine-split/evidence/mikro-diag/FINDINGS.txt` (root causes, file:line)
 
 Copied here from the session scratchpad.
 
@@ -156,7 +156,7 @@ Recommendation: (2) if its SDK can run read-only with no TUI; otherwise (1).
 ## Suggested next commands
 
 ```bash
-cd /home/genie/workspace/repos/mikro            # dev @ 62894e4
+cd '<mikro checkout>'            # dev @ 62894e4
 genie mikro bench wish-context --reps 3 --tag round=baseline-2026-10-04   # from a genie checkout; record the baseline first
 # then: /brainstorm mikro-engine-split   (seed: this file + mikro-diag/FINDINGS.txt + mikro-eval/)
 ```
@@ -170,7 +170,7 @@ Related records:
 
 **Ownership**
 - genie-af owns nothing in mikro.
-- The dirty `CHANGELOG.md`, `bin/install-state.mjs`, `scripts/install.sh`, `src/cli.ts`, `dist/*` and install tests in `/home/genie/workspace/repos/mikro` are **not genie-af's**. Treat them as someone else's unfinished work: don't commit them.
+- The dirty `CHANGELOG.md`, `bin/install-state.mjs`, `scripts/install.sh`, `src/cli.ts`, `dist/*` and install tests in `<mikro checkout>` are **not genie-af's**. Treat them as someone else's unfinished work: don't commit them.
 - On the genie side, genie-af shipped #3116–#3124 to dev. Released as v6.261004.15, which is the installed version (`genie --version`).
   - Frozen there: capture/export/`wish report` v3 / offload accounting.
 - There is no newer engine plan; this file is the latest.

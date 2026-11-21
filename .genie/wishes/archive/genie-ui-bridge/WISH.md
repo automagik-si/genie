@@ -38,7 +38,7 @@ Give the separate-repo genie UI (the dash fork) a sanctioned channel into CLI-on
 
 | # | Decision | Rationale |
 |---|----------|-----------|
-| 1 | All six design decisions (channel = UI-owned stdio MCP child; sibling command; adopt-now; data_version push; roster-only write surface; handshake skew policy) are inherited verbatim from the SHIP-stamped [DESIGN.md](../../../brainstorms/genie-ui-bridge/DESIGN.md). | Digest-bound design review (SHIP, re-reviewed after fixes); Felipe ratified the three governing choices via explicit picker 2026-07-21. Not re-litigated here. |
+| 1 | All six design decisions (channel = UI-owned stdio MCP child; sibling command; adopt-now; data_version push; roster-only write surface; handshake skew policy) are inherited verbatim from the SHIP-stamped [DESIGN.md](../../../brainstorms/genie-ui-bridge/DESIGN.md). | Digest-bound design review (SHIP, re-reviewed after fixes); the owner ratified the three governing choices via explicit picker 2026-07-21. Not re-litigated here. |
 | 2 | Shared server plumbing is extracted from `src/term-commands/mcp.ts` into a reusable module both commands import — `mcp` keeps its exact current wire behavior. | "Sibling sharing plumbing" without copy-paste drift; the `genie mcp` surface is protected by an explicit no-write-tools test. |
 | 3 | The roster substrate (G1) lands before the bridge command (G2) — the write tools are built on real state code, never inline SQL in the command layer. | Writer invariants live in `task-state.ts` where every other state transition lives. |
 
@@ -103,7 +103,7 @@ model and effort in runtime session/agent configuration, never skill frontmatter
 
 **Validation:**
 ```bash
-cd /home/namastex/workspace/repos/genie && bun test src/lib/v5/ && bun run check
+cd '<genie checkout>' && bun test src/lib/v5/ && bun run check
 ```
 
 **depends-on:** none
@@ -127,7 +127,7 @@ cd /home/namastex/workspace/repos/genie && bun test src/lib/v5/ && bun run check
 
 **Validation:**
 ```bash
-cd /home/namastex/workspace/repos/genie && bun test src/term-commands/ src/lib/v5/ && bun run check
+cd '<genie checkout>' && bun test src/term-commands/ src/lib/v5/ && bun run check
 ```
 
 **depends-on:** Group 1

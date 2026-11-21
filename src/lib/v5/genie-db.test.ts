@@ -21,6 +21,7 @@ import {
   resolveDbPath,
   resolveRepoRoot,
 } from './genie-db.js';
+import { BUSY_DEADLINE_MS } from './sqlite-open.js';
 import { exportState } from './task-state.js';
 
 let dir: string;
@@ -748,7 +749,7 @@ describe('busy classification', () => {
   });
 
   test('BusyDbError is a GenieDbError distinct from MalformedDbError', () => {
-    const busy = new BusyDbError('/tmp/genie.db', new Error('database is locked'));
+    const busy = new BusyDbError('/tmp/genie.db', new Error('database is locked'), 120_000);
     expect(busy).toBeInstanceOf(GenieDbError);
     expect(busy).not.toBeInstanceOf(MalformedDbError);
     expect(busy.name).toBe('BusyDbError');
@@ -759,7 +760,16 @@ describe('busy classification', () => {
     expect(busy.message.toLowerCase()).not.toContain('malformed');
   });
 
+  // Budget 180 s. The open below normally wins outright: the schema is current,
+  // so it needs no write lock, and WAL lets it read past the EXCLUSIVE holder.
+  // If it ever contends, it retries until the 120 s deadline and then finishes
+  // its last attempt, whose few lock-waiting statements wait at most
+  // busy_timeout (5 s) each; 60 s above the deadline covers that attempt, so a
+  // busy open fails on its own error, never on the test budget.
   test('a real EXCLUSIVE-locked DB opens as BusyDbError, never MalformedDbError', () => {
+    expect(BUSY_DEADLINE_MS + 60_000, 'the 180 s budget no longer covers the busy deadline').toBeLessThanOrEqual(
+      180_000,
+    );
     const path = join(dir, 'contended.db');
     // Seed a healthy, current genie DB, then hold an EXCLUSIVE write lock on it.
     openDb({ path }).close();
@@ -786,7 +796,7 @@ describe('busy classification', () => {
       holder.exec('ROLLBACK');
       holder.close();
     }
-  }, 60_000);
+  }, 180_000);
 });
 
 // ---------------------------------------------------------------------------

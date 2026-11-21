@@ -22,11 +22,11 @@ TOTAL=8
 
 # Load API key from tools/.env if not already set
 if [ -z "${GEMINI_API_KEY:-}" ]; then
-  if [ -f /home/genie/tools/.env ]; then
+  if [ -f "$HOME/tools/.env" ]; then
     while IFS='=' read -r key value; do
       [[ -z "$key" || "$key" =~ ^# ]] && continue
       export "$key=$value"
-    done < /home/genie/tools/.env
+    done < "$HOME/tools/.env"
   fi
 fi
 

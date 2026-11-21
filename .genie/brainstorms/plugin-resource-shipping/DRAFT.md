@@ -6,7 +6,7 @@
 - `plugins/genie/skills` is a relative symlink → `../../skills`. It RESOLVES in shipped artifacts: marketplace install = full repo clone; CC's runtime cache (`~/.claude/plugins/cache/automagik/genie/<ver>/skills/`) materializes real dirs; dist platform builds materialize too. **Skills ship fine.**
 - **The wish skill's runtime resources do NOT ship**: shipped SKILL.md instructs `cp templates/wish-template.md` (repo-ROOT templates/, not in the plugin) and `bun run wishes:lint` (`scripts/wishes-lint.ts` + package.json script, genie-repo-only). Both run in the USER'S cwd on a fresh install → fail. Observed live: fresh-install Claude hunting for template/design with searches + shell probes.
 - Same class of issue latent elsewhere: brainstorm repo copy referenced nonexistent `.genie/brainstorm.md`; fix references dead `genie task comment/block`. Pattern = skills assume genie-repo working tree.
-- Global ~/.claude/skills rewrites (template INLINED, lint checklist INLINED, native Task fallback) exist ONLY on Felipe's machine — fresh installs never get them. Confirms convergence direction: the dual-backend/inline pattern must land in the REPO skills that actually ship.
+- Global ~/.claude/skills rewrites (template INLINED, lint checklist INLINED, native Task fallback) exist ONLY on the owner's machine — fresh installs never get them. Confirms convergence direction: the dual-backend/inline pattern must land in the REPO skills that actually ship.
 - Installed cache pinned at `5.260703.5` (2026-07-03, pre-fable5-revamp) — plugin updates ride releases, not dev; stale-skill window is real.
 - Bonus: `scripts/uninstall.js` references `~/.agents/skills/genie` — an existing Codex skills symlink surface (feeds cross-agent-delegate).
 
@@ -30,6 +30,6 @@
 5. Release-lag: docs note on `/plugin update` cadence only (auto-update machinery OUT).
 
 ## GAPS
-- [x] **Sequencing — DECIDED (Felipe 2026-07-09): own fast wish**, cross-wish dep on routing-matrix G3 for the template move; convergence builds on the shipped baseline.
+- [x] **Sequencing — DECIDED (the owner 2026-07-09): own fast wish**, cross-wish dep on routing-matrix G3 for the template move; convergence builds on the shipped baseline.
 
 ## STATUS: WISH-READY (all gaps closed 2026-07-09)

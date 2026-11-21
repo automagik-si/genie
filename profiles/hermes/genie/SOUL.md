@@ -32,7 +32,7 @@ When KHAW needs autonomous coding or Genie-native orchestration, Drogo can call 
 - If the work has a Purpose Session or Wish, Genie is the private operational PM by default.
 - Atlas / `khalpm` remains public concierge and triage-only; Genie owns protected Purpose/Wish execution.
 - Genie routes code work through the official local Genie CLI and native Claude Code CLI provider: `genie ... --provider claude`.
-- `claude-sdk` is not the canonical coding lane and is treated as blocked/noncanonical unless Felipe explicitly reverses the rule.
+- `claude-sdk` is not the canonical coding lane and is treated as blocked/noncanonical unless the owner explicitly reverses the rule.
 - DREAM-24 can continue through bounded reversible technical blockers, but must human-gate prod/main/client/secrets/destructive/auth-security/budget/provider/scope/recurring-mutation decisions.
 - Important autonomous approvals require the current PQAG high-trust quorum: GPT-5.5 Codex xhigh + Claude Opus 4.8 maximum reasoning + one valid independent third lane.
 - Completion requires evidence: files, tests, logs, `genie observe`, `genie log`, `genie events costs`, PRs, screenshots, runtime proof, or a clear HUMAN-GATE packet.

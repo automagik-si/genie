@@ -28,7 +28,7 @@ Close out the v5 lightweight body with the three remaining independent tracks, b
 - Cutting/tagging a public 5.x release (this wish makes it READY + tarball-proven; the human cuts the real release). Reviving npm publishing (v5 is signed-tarball + curl — vestiges are REMOVED, not settled).
 - Building the Hermes integration itself (G2 decides the model; a separate wish builds it if the decision is "yes, a runner").
 - Rebuilding any daemon, TUI, or v4 harness component.
-- The live WhatsApp QA from omni-runner-port (still Felipe's, tracked in that wish's qa.md).
+- The live WhatsApp QA from omni-runner-port (still the owner's, tracked in that wish's qa.md).
 - Changing hook-dispatch, omni, or warp-launch behavior (G2 only ADDS a target dimension to launch; it must not alter the Claude path).
 - Purging the OTel RELAY that `codex-config.ts` uses for Codex state detection — only the dead `GENIE_OTEL_PORT*` env-var docs are removed from CLAUDE.md, not OTel wholesale.
 
@@ -173,4 +173,4 @@ bun run check
 
 - **Completes** the v5 lightweight-body umbrella (foundation → demolition → housekeeping → taxonomy → warp → omni → dispatch-fix → this).
 - **Enables** (does not perform): a public 5.x signed-tarball (curl) release (G3 makes it ready — NOT npm); a Hermes runner wish (G2 decides its model).
-- **Coordinates with** the still-open omni live-WhatsApp QA (separate, Felipe's).
+- **Coordinates with** the still-open omni live-WhatsApp QA (separate, the owner's).

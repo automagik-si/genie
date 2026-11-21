@@ -1096,7 +1096,7 @@ describe('Group E release and documentation contracts', () => {
     // skills.sh channel.
     expect(docs).toContain('Genie ships exactly two surfaces');
     for (const statement of [
-      'npx skills add automagik-dev/genie',
+      'npx skills add automagik-si/genie',
       'skills-install.json',
       '~/.agents/skills',
       'MCP retirement',
@@ -1109,13 +1109,16 @@ describe('Group E release and documentation contracts', () => {
     const readme = read('README.md');
     for (const statement of [
       'Genie ships exactly two surfaces',
-      'npx skills add automagik-dev/genie',
+      'npx skills add automagik-si/genie',
       'skills-install.json',
       '~/.agents/skills',
       'skills: skipped (consent: none)',
     ]) {
       expect(readme).toContain(statement);
     }
+    // The repository moved to automagik-si/genie. A skills CLI before 1.8.0 reports an install under the name it is
+    // given, so the README never offers the pre-rename command (UPGRADING.md names it once, for existing installs).
+    expect(readme).not.toContain('npx skills add automagik-dev/genie');
     // The retired CLI-managed-fallback promise must be gone from operator docs.
     expect(docs).not.toContain('synchronizes up to 23 digest-managed product-skill fallbacks');
     expect(docs).not.toContain('CLI-managed product skills');
@@ -1157,7 +1160,8 @@ describe('Group E release and documentation contracts', () => {
     // overview names it, keeps the default-branch caveat on the manual command,
     // and no longer promises a plugin/user-tier fallback of any kind.
     const skillsOverview = read('skills/README.md');
-    expect(skillsOverview).toContain('npx skills add automagik-dev/genie');
+    expect(skillsOverview).toContain('npx skills add automagik-si/genie');
+    expect(skillsOverview).not.toContain('npx skills add automagik-dev/genie');
     expect(skillsOverview).toContain("repository's default branch");
     expect(skillsOverview).toContain('`genie update` installs the exact delivered');
     expect(skillsOverview).toContain('separately installed personal copy of a skill is');
@@ -1296,7 +1300,7 @@ describe('Group E release and documentation contracts', () => {
 
   test('refine accepts sonnet, opus and fable after --for claude, each loading its own overlay', () => {
     const refine = read('skills/refine/SKILL.md');
-    const overlays = { sonnet: 'claude-sonnet-5-5.md', opus: 'claude-opus-5-5.md', fable: 'claude-fable-5-1.md' };
+    const overlays = { sonnet: 'claude-sonnet-5-5.md', opus: 'claude-opus-5-5.md', fable: 'claude-fable-5-2.md' };
     for (const [target, file] of Object.entries(overlays)) {
       expect(refine).toContain(`| \`--for claude --target ${target}\` | \`prompts/claude.md\` + \`prompts/${file}\` |`);
       expect(read(`skills/refine/prompts/${file}`)).toContain(`(\`--target ${target}\`)`);

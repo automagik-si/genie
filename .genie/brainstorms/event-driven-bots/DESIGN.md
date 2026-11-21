@@ -1,7 +1,7 @@
 # Design: durable wake-ups for the Bot team, slice one
 
 Status: DESIGN, written 2026-10-26 by Genie (the reviewer of record moved to Genie automagik, see the last section).
-Decisions: Felipe, 2026-10-26, delegated by the user ("decide between the both of you"), with Genie's corrections folded in.
+Decisions: the owner, 2026-10-26, delegated by the user ("decide between the both of you"), with Genie's corrections folded in.
 Evidence: [EVENT-SURFACE.md](EVENT-SURFACE.md), [BOT-WISH-EVIDENCE.md](BOT-WISH-EVIDENCE.md), [OMNI-EVIDENCE.md](OMNI-EVIDENCE.md).
 Code read: `automagik` at `879f53b` (`apps/bots-dsh/src/host/*`), installed `@automagik/genie-dsh` 0.1.4, installed dsh 0.2.1-rc.3.
 
@@ -133,7 +133,7 @@ Compose the text, then `await rt.wake(...)` with `deliveryId = report:<roomId>:<
   3. Mark the wish `delivered` and save.
 
   A crash during the fetch is covered by re-derivation (catch-up step 2): the wish is still `delivered !== true`, and the fetch is idempotent (`git.js:108-112` fetches a named ref into itself).
-- The Genie still gets its own task-done report through the task path. The dispatcher gets a separate `wish-done` message, so Felipe is woken directly.
+- The Genie still gets its own task-done report through the task path. The dispatcher gets a separate `wish-done` message, so the owner is woken directly.
 - **Compatibility**: genie-dsh checks `typeof rt.wake === 'function'`. On an older bots-dsh it keeps today's behaviour, the same pattern as the `startTask` cwd note at `genie.js:247-248`.
 
 ## Bounds and the history/live split
@@ -180,5 +180,5 @@ Before the PR is called ready, A and B are also run once with a real `kill -9` a
 ## Build and review
 
 - Builder: Genie automagik, on **one** branch in `automagik`. The five `wish/*event*` branches there hold zero commits past `main` as of 21:40, so nothing needs adopting.
-- Reviewer of this design: Genie automagik (Felipe's split, 2026-10-26). The build starts on SHIP.
+- Reviewer of this design: Genie automagik (the owner's split, 2026-10-26). The build starts on SHIP.
 - Merge, deploy and live-session shutdown stay out of scope.

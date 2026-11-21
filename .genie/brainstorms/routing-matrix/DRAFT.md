@@ -9,13 +9,13 @@
 - Pricing: Fable $10/$50 · Opus 4.8 $5/$25 · Haiku $1/$5 /MTok. Effort = second cost axis.
 
 ## DECIDED (umbrella D1–D6)
-- Matrix: Fable-high = /brainstorm+/wish sessions + final plan gate + final execution review. Opus-xhigh = /work orchestrator (default), plan-review loops, per-group execution reviews. Engineers: Opus ladder by complexity score (0-1→Opus-low; Haiku only for pure mechanical chores with deterministic acceptance; 2-3→med/high; 4-6→xhigh; 7+→xhigh+Fable gate). Fixers Opus-med/high. Scouts/chores Haiku. **No Sonnet 5** (Felipe: 2× tokens/time observed; revisit only via LangWatch A/B).
+- Matrix: Fable-high = /brainstorm+/wish sessions + final plan gate + final execution review. Opus-xhigh = /work orchestrator (default), plan-review loops, per-group execution reviews. Engineers: Opus ladder by complexity score (0-1→Opus-low; Haiku only for pure mechanical chores with deterministic acceptance; 2-3→med/high; 4-6→xhigh; 7+→xhigh+Fable gate). Fixers Opus-med/high. Scouts/chores Haiku. **No Sonnet 5** (the owner: 2× tokens/time observed; revisit only via LangWatch A/B).
 - Encoding: plugin `agents/` by capability profile (engineer-trivial/standard/complex, fixer, reviewer, final-gate, scout) + local config override.
 - Complexity score rubric (Hermes): +2 orchestration/routing/stateful/subjective-acceptance; +1 coupling signals. /wish assigns, plan review validates.
 - Escalation discipline: cause classification mandatory (env/tool/spec failures NEVER escalate the model); no escalation without new evidence; caps per group/wish; reviewer↔gate disagreement = logged appeal.
 - WISH template gains complexity + model columns; `genie doctor` checks CLAUDE_CODE_SUBAGENT_MODEL unset.
 
-## GAPS (need Felipe / further refinement)
+## GAPS (need the owner / further refinement)
 - [x] **Main-session UX — DECIDED (2026-07-09): skill pins + pane flags.** /brainstorm + /wish pin `model: fable` + `effort: high`, /work pins `model: opus` + `effort: xhigh` in skill frontmatter (applies while skill active; one cache flip at stage boundary, stable after). genie launch opens Warp panes with per-stage `--model` flags. Manual /model always overrides. No hard guard hook (rejected as too annoying); the state inject may still note a mismatch informationally.
 - [x] **Budgets — DECIDED (2026-07-09): hybrid.** HARD now: max Fable calls/wish = 3 (plan gate, final gate, +1 appeal) and max 2 escalations/group — exceeding requires an explicit logged override. ADVISORY: $/wish, promoted to hard once genie-spend phase 2 makes it measurable.
 - [x] **Max effort — DECIDED (2026-07-09): auto-routing caps at xhigh, EXCEPT the Fable gate on complexity-7+ groups runs at max automatically** (the one structural correctness-over-cost point). Manual /effort or explicit WISH.md annotation can always request max. Regular final gates stay Fable-high.

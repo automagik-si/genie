@@ -16,7 +16,7 @@ Genie v5 is task-backed and zero-daemon by default:
 
 Check `genie --help` or the relevant subcommand help before relying on remembered syntax. Never use the obsolete
 top-level `genie serve`, `genie omni`, `ls`, `task board`, `spawn`, or `--no-tui` surfaces, and never assume the
-retired `/home/genie/workspace/agents` path.
+retired `~/workspace/agents` path.
 
 ## Operating law
 

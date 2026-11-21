@@ -13,7 +13,7 @@
 - **R1-2** (round 1, decision): DRAFT Settled #2, round 1 (question text not recorded) — owner answered through the question harness; the DRAFT recorded: "One round per run; DRAFT.md carries state; `/brainstorm` collects the answers and re-invokes."
 - **R1-3** (round 1, decision): DRAFT Settled #3, round 1 (question text not recorded) — owner answered through the question harness; the DRAFT recorded: "One council per round answers every open decision at once (recommended answer + dissent)." · reopened by R3-council
 - **R2-4** (round 2, decision): DRAFT Settled #4, round 2 (question text not recorded) — owner answered through the question harness; the DRAFT recorded: "Spine fixed, inside free: the script fixes only the auditable parts (WRS in DRAFT.md, the human round, the design-review stamp); a lead agent decides scouts (0..n), tier, effort and whether to convene the council; the script runs the lead's plan and returns it."
-- **R2-5** (round 2, decision): DRAFT Settled #5, round 2 (question text not recorded) — owner answered through the question harness; the DRAFT recorded: "The council is Felipe's Socratic pattern (Lenses → Elenchus by Socrates on Fable 5.1 high → Answers → Proposal that writes AskUserQuestion-ready rounds), as run in his sessions since 2026-09-28; it is not in the catalog's `council.js`."
+- **R2-5** (round 2, decision): DRAFT Settled #5, round 2 (question text not recorded) — owner answered through the question harness; the DRAFT recorded: "The council is the owner's Socratic pattern (Lenses → Elenchus by Socrates on Fable 5.1 high → Answers → Proposal that writes AskUserQuestion-ready rounds), as run in his sessions since 2026-09-28; it is not in the catalog's `council.js`."
 - **R3-agents** (round 3, decision): DRAFT round 3, R3-agents (question text not recorded) — owner picked "PR pequeno separado (Recommended)"; the DRAFT recorded: the per-question rule also goes to AGENTS.md in its own small PR.
 - **R3-council** (round 3, decision): DRAFT round 3, R3-council (question text not recorded; per the DRAFT it quoted Settled #3 against #4: old "one council per round answers every open decision at once" → new "lead's judgment, none by default") — owner picked "Julgamento do líder, nenhum por padrão (Recommended)"; the DRAFT recorded: no council unless asked or a decision is contested and hard to reverse; reason and spend in the plan; tighten-only ceiling in budgets.*. · reopens R1-3
 - **R4-delivery** (round 4, decision): DRAFT round 4, R4-delivery (question text not recorded) — owner picked "Wish com grupos (Recommended)"; the DRAFT recorded: one WISH.md in groups (G1 ledger, G2 routing, G3 brainstorm.js, G4 front door/template/anchors), plan reviewed, one PR to dev.
@@ -82,9 +82,9 @@ _No IN items yet._
       "id": "R2-5",
       "kind": "decision",
       "question": "DRAFT Settled #5, round 2 (question text not recorded)",
-      "answer": "The council is Felipe's Socratic pattern (Lenses → Elenchus by Socrates on Fable 5.1 high → Answers → Proposal that writes AskUserQuestion-ready rounds), as run in his sessions since 2026-09-28; it is not in the catalog's `council.js`.",
+      "answer": "The council is the owner's Socratic pattern (Lenses → Elenchus by Socrates on Fable 5.1 high → Answers → Proposal that writes AskUserQuestion-ready rounds), as run in his sessions since 2026-09-28; it is not in the catalog's `council.js`.",
       "value": null,
-      "provenance": "owner answered through the question harness; the DRAFT recorded: \"The council is Felipe's Socratic pattern (Lenses → Elenchus by Socrates on Fable 5.1 high → Answers → Proposal that writes AskUserQuestion-ready rounds), as run in his sessions since 2026-09-28; it is not in the catalog's `council.js`.\"",
+      "provenance": "owner answered through the question harness; the DRAFT recorded: \"The council is the owner's Socratic pattern (Lenses → Elenchus by Socrates on Fable 5.1 high → Answers → Proposal that writes AskUserQuestion-ready rounds), as run in his sessions since 2026-09-28; it is not in the catalog's `council.js`.\"",
       "round": 2
     },
     {

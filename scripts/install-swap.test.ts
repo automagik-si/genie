@@ -181,6 +181,9 @@ describe('install.sh .steal lifecycle-lock protocol (F42/F45–F47/F50 — must 
 // ---------------------------------------------------------------------------
 
 describe('install.sh transactional binary promotion (F31a)', () => {
+  // Measured timeout (#3271): 0.24 s quiet; 5.16 s under the busy-CPU proof, killed at Bun's 5 s
+  // default; no gate figure. 3x the slowest run, rounded up to 5 s. The cost is I/O, not CPU:
+  // 152 fsyncs on the temp filesystem, plus bash, tar and one bun promoter.
   test('happy path delegates to the verified promoter, preserves the prior binary, and wires PATH', () => {
     const root = mkroot();
     const layout = scaffold(root, { liveVersion: '5.260713.1' });
@@ -200,7 +203,7 @@ describe('install.sh transactional binary promotion (F31a)', () => {
     expect(readlinkSync(canonical)).toBe(layout.liveBinary);
     const retained = readdirSync(layout.bin).filter((entry) => entry.startsWith('.install-staging-'));
     expect(retained).toEqual([]);
-  });
+  }, 20_000);
 
   test('first install promotes every physical release member without manufacturing a backup', () => {
     const root = mkroot();
@@ -286,6 +289,9 @@ describe('install.sh transactional binary promotion (F31a)', () => {
     expect(readdirSync(victim)).toEqual(['sentinel']);
   });
 
+  // Measured timeout (#3271): 0.45 s quiet; 1.12 s under the busy-CPU proof; killed at Bun's 5 s
+  // default on the loaded gate host. 3x that 5 s floor. The cost is I/O, not CPU: two full
+  // promotions, 334 fsyncs on the temp filesystem, plus bash, tar and two bun promoters.
   test('a second install converges without clobbering the existing canonical link', () => {
     const root = mkroot();
     const layout = scaffold(root, { liveVersion: '5.260713.1' });
@@ -302,7 +308,7 @@ describe('install.sh transactional binary promotion (F31a)', () => {
     expect(readdirSync(join(layout.bin, '.previous')).filter((name) => name.startsWith('genie-prior-'))).toHaveLength(
       2,
     );
-  });
+  }, 15_000);
 
   test('extract_and_link contains no shell live-swap, clobber-link, or staging-delete primitive', () => {
     const source = readFileSync(INSTALL_SH, 'utf8');

@@ -535,6 +535,9 @@ describe('install.sh — download_and_verify', () => {
     expect(result.stdout.trim()).toEndWith('genie-6.261111.1-linux-x64-glibc.tar.gz');
   });
 
+  // Measured timeout (#3271): 0.10 s quiet; 0.22 s under the busy-CPU proof; killed at Bun's 5 s
+  // default on the loaded gate host. 3x that 5 s floor. The cost is process launches, not CPU:
+  // install.sh sourced in bash runs 39 short-lived processes (the shims and coreutils).
   test('exits 4 when cosign accepts a certificate carrying another repository id', () => {
     const dir = workDir();
     const bundle = bundleWithCertificate(
@@ -549,8 +552,11 @@ describe('install.sh — download_and_verify', () => {
     expect(result.stderr).toContain(`Source Repository Identifier is not ${REPOSITORY_ID}`);
     expect(result.stderr).toContain('refuse to install');
     expect(result.stderr).toContain(`repository id ${REPOSITORY_ID} and owner id ${OWNER_ID}`);
-  });
+  }, 15_000);
 
+  // Measured timeout (#3271): 0.09 s quiet; 0.11 s under the busy-CPU proof; killed at Bun's 5 s
+  // default on the loaded gate host. 3x that 5 s floor. The cost is process launches, not CPU:
+  // install.sh sourced in bash runs 39 short-lived processes (the shims and coreutils).
   test('exits 4 when the certificate carries no owner id', () => {
     const dir = workDir();
     const bundle = bundleWithCertificate(
@@ -562,7 +568,7 @@ describe('install.sh — download_and_verify', () => {
     const result = downloadAndVerify({ bundle, cosignAccepts: CURRENT_IDENTITY });
     expect(result.exitCode).toBe(4);
     expect(result.stderr).toContain('no single Source Repository Owner Identifier');
-  });
+  }, 15_000);
 
   test('exits 4 when cosign verifies under neither identity', () => {
     const result = downloadAndVerify({ bundle: POST_RENAME });
