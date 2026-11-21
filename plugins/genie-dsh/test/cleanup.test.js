@@ -7,7 +7,6 @@ import {
   existsSync,
   lstatSync,
   mkdirSync,
-  mkdtempSync,
   readFileSync,
   readdirSync,
   renameSync,
@@ -15,18 +14,18 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, test } from 'node:test';
+import { afterEach, beforeEach, mock, test } from 'node:test';
 import { claimCopy, removeCopy, stillClaimed } from '../src/host/copy.js';
 import { compose, gitIn, grant, fakeTeam as makeTeam } from './team.js';
+import { scratch } from './wish-fixture.js';
 
 let dir;
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), 'genie-dsh-'));
-  process.env.GENIE_WISHES_DIR = join(dir, 'wishes');
+  dir = scratch('genie-dsh-');
 });
 afterEach(() => {
+  mock.restoreAll();
   Reflect.deleteProperty(process.env, 'GENIE_WISHES_DIR');
   rmSync(dir, { recursive: true, force: true });
 });
@@ -50,6 +49,11 @@ const noWishSaved = (team) => {
   const file = join(team.home, 'genie.json');
   return !existsSync(file) || JSON.parse(readFileSync(file, 'utf8')).wishes.length === 0;
 };
+// A kept copy keeps its record (written before the start), so the cleanup and the cap see it.
+const keptRecord = (team, folder) =>
+  JSON.parse(readFileSync(join(team.home, 'genie.json'), 'utf8')).wishes.some(
+    (wish) => wish.folder === folder && wish.state === 'working' && wish.sessionId === undefined,
+  );
 
 const KEPT =
   /^The wish did not start: (.+?) Its copy of the project was kept at (\S+?), because work may have run there\. /;
@@ -82,7 +86,7 @@ test('any other failed start keeps the copy, also when the team has no task for 
   const answer = await grant(tools, genie.id, WISH);
   assert.deepEqual(answer.match(KEPT)?.slice(1), ['no session for you', copyOf()]);
   assert.ok(existsSync(join(copyOf(), '.git', 'HEAD')));
-  assert.ok(noWishSaved(team));
+  assert.ok(keptRecord(team, copyOf()));
 });
 
 test('only the refusal’s own flag, exactly true, removes: a truthy value or a flag on the cause keeps the copy', async () => {
@@ -163,7 +167,7 @@ test('a turn that ran before the start threw keeps its work: an ended task of th
     assert.match(answer, KEPT, status);
     assert.ok(answer.includes(copy), status);
     assert.equal(readFileSync(join(copy, 'work.txt'), 'utf8'), 'made by the turn', status);
-    assert.ok(noWishSaved(team));
+    assert.ok(keptRecord(team, copy), status);
   }
 });
 
@@ -180,16 +184,15 @@ test('a folder that was already there is never removed: the wish takes the next 
   assert.deepEqual(readdirSync(root()), ['add-a-readme']);
 });
 
-test('a path the look missed (a dangling link) is not claimed: the wish does not start and the link stays', async () => {
+test('a path the look missed (a dangling link) is not claimed: the wish takes the next slug and the link stays', async () => {
   const { team, tools, genie } = await genieOn();
   mkdirSync(root(), { recursive: true });
   symlinkSync(join(dir, 'nowhere'), copyOf());
   const answer = await grant(tools, genie.id, WISH);
-  assert.match(answer, /^The wish did not start: EEXIST/);
-  assert.ok(!answer.includes('was kept'));
+  assert.match(answer, /granted as a thread on branch wish\/add-a-readme-2\./);
   assert.ok(lstatSync(copyOf()).isSymbolicLink());
   assert.equal(existsSync(join(dir, 'nowhere')), false);
-  assert.equal(team.record.tasks.length, 0);
+  assert.equal(team.record.tasks.length, 1);
 });
 
 test('two wishes of one title granted at once each get their own copy', async () => {

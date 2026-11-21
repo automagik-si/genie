@@ -11,8 +11,8 @@
   ],
   "project": ["src/**/*.ts", "plugins/dsh-genie-board/src/**/*.{ts,tsx}"],
   "ignore": [".docs-vendor/**", "crates/**", "target/**"],
-  "ignoreBinaries": ["ldd"],
+  "ignoreBinaries": ["ldd", "du"],
   "ignoreExportsUsedInFile": true,
-  "ignoreDependencies": ["react"],
+  "ignoreDependencies": ["react", "@deepseek-ai/cordis", "@deepseek-ai/dsh-sandbox-local"],
   "ignoreWorkspaces": ["mikro"]
 }

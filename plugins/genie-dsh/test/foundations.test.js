@@ -3,19 +3,9 @@
 // and the plugin runs against the stand-in team (test/team.js).
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  realpathSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { afterEach, beforeEach, test } from 'node:test';
+import { afterEach, beforeEach, mock, test } from 'node:test';
 import {
   baseFromFetchHead,
   fetchBase,
@@ -31,14 +21,16 @@ import { NO_PUSH_URL, gitRunner } from '../src/host/git.js';
 import { publishAllowed } from '../src/host/wishes.js';
 import { compose, fakeTeam, gitIn, grant, savedWishes, until } from './team.js';
 
+import { scratch } from './wish-fixture.js';
+
 const GENIE_CLI = join(import.meta.dirname, '..', '..', '..', 'src', 'genie.ts');
 
 let dir;
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), 'genie-dsh-foundations-'));
-  process.env.GENIE_WISHES_DIR = join(dir, 'wishes');
+  dir = scratch('genie-dsh-foundations-');
 });
 afterEach(() => {
+  mock.restoreAll();
   Reflect.deleteProperty(process.env, 'GENIE_WISHES_DIR');
   rmSync(dir, { recursive: true, force: true });
 });
