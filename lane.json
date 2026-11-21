@@ -3,10 +3,10 @@
   "publisher": "genie",
   "keyId": "genie-2026-10",
   "sequence": 20002,
-  "issuedAt": "2026-11-21T22:57:56Z",
+  "issuedAt": "2026-11-21T23:16:00Z",
   "repository": "https://github.com/automagik-si/genie",
   "version": "0.2.2",
-  "commit": "98625a5ef5264ac5dbfa530871822d82da51ebc8",
+  "commit": "27ba0a26aff63adf26520fbe810950f9426449c1",
   "base": "3.3.0",
   "plugins": [
     {
