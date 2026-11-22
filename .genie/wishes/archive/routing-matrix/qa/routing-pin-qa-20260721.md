@@ -1,6 +1,6 @@
 # Routing-Matrix Pin — Day-3 QA rerun (2026-07-21)
 
-**Runner:** team-lead orchestrator, Felipe-authorized ("do the still open yourself", 2026-07-21).
+**Runner:** team-lead orchestrator, owner-authorized ("do the still open yourself", 2026-07-21).
 **Host state:** Claude Code logged in (`claude.ai` auth) — the sole blocker of the
 [2026-07-14 FAIL](routing-pin-qa-2026-07-14.md) is cleared. Installed genie `5.260721.8`;
 role files `~/.claude/agents/*` remain the seven genie-managed pins.
@@ -32,7 +32,7 @@ completed with the correct resolved model in `modelUsage` — the fingerprint so
 
 The 07-14 methodology's LangWatch pull (shared-project key, `https://langwatch.khal.ai`) would
 add per-trace **effort** resolution. No `LANGWATCH_API_KEY` is available in this session's
-environment or config; per standing policy the key is supplied only by Felipe at run time. The
+environment or config; per standing policy the key is supplied only by the owner at run time. The
 effort leg is therefore recorded as **not observed**, not failed. Prior legs already PASS:
 mechanical delivery, fresh-client discovery, doctor contract (07-14), shared-project auth (07-14).
 

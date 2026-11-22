@@ -12,7 +12,7 @@ changed to CLOSED.
 
 ## Mechanical delivery — PASS
 
-Commands were run from `/Users/feliperosa/workspace/genie` through RTK.
+Commands were run from `<genie checkout>` through RTK.
 
 ```text
 rtk genie --version

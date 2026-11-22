@@ -57,7 +57,7 @@
         "install",
         "--frozen-lockfile"
       ],
-      "cwd": "/home/genie/.local/share/mikro-engine-split/experiments-g8/final-local-smokes/history-only-reword-6qjyzwas/tree",
+      "cwd": "<experiment workspace>/experiments-g8/final-local-smokes/history-only-reword-6qjyzwas/tree",
       "exitCode": 0,
       "seconds": 0.584
     },
@@ -69,7 +69,7 @@
         "run",
         "deps:ci"
       ],
-      "cwd": "/home/genie/.local/share/mikro-engine-split/experiments-g8/final-local-smokes/history-only-reword-6qjyzwas/tree/mikro",
+      "cwd": "<experiment workspace>/experiments-g8/final-local-smokes/history-only-reword-6qjyzwas/tree/mikro",
       "exitCode": 0,
       "seconds": 34.467
     },
@@ -79,7 +79,7 @@
         "run",
         "build"
       ],
-      "cwd": "/home/genie/.local/share/mikro-engine-split/experiments-g8/final-local-smokes/history-only-reword-6qjyzwas/tree",
+      "cwd": "<experiment workspace>/experiments-g8/final-local-smokes/history-only-reword-6qjyzwas/tree",
       "exitCode": 0,
       "seconds": 0.189
     },

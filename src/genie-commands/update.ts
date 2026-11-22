@@ -707,13 +707,13 @@ export interface DownloadedDeliveryAssets {
  * call returns in 3-8s; under load 10-20s is realistic. 60s gives generous
  * headroom while still catching genuine network failures rather than
  * hanging forever. Empirical: PR #2421 release v4.260512.2 verify timed
- * out at 4000ms on a healthy connection (Felipe, 2026-05-12).
+ * out at 4000ms on a healthy connection (the owner, 2026-05-12).
  */
 const ATTESTATION_VERIFY_TIMEOUT_MS = 60_000;
 /**
  * The tarball download moves ~37MB+ per platform and outgrew runCommandSilent's
  * 4s default the same way the verify steps did: genie update v5.260714.8 timed
- * out at 4000ms on a healthy connection (Felipe, 2026-07-14). 5 minutes bounds
+ * out at 4000ms on a healthy connection (the owner, 2026-07-14). 5 minutes bounds
  * a genuinely slow link without hanging forever.
  */
 const RELEASE_DOWNLOAD_TIMEOUT_MS = 300_000;

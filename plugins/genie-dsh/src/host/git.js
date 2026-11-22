@@ -1,31 +1,41 @@
 // The git a wish needs, run as argv (never through a shell) with no prompt: is git here,
 // is the folder a repository with a commit, and a clone on a new branch for the wish.
 import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { lstatSync, mkdirSync, mkdtempSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
+import { dirname, join } from 'node:path';
 import { redact } from './binding.js';
+import { canonicalPath, within } from './paths.js';
 
 const TIMEOUT_MS = 30_000;
+const STORE_TIMEOUT_MS = 10 * 60_000;
 
 /**
  * One git (or other) command; never throws, so callers decide what a failure means. `env`
  * adds to the environment (binding.js hostGitEnv); GIT_TERMINAL_PROMPT=0 always holds.
  */
-export function run(command, args, { cwd, env } = {}) {
+export function run(
+  command,
+  args,
+  { cwd, env, timeout = TIMEOUT_MS, replaceEnv = false, maxBuffer = 4 * 1024 * 1024 } = {},
+) {
   return new Promise((resolve) => {
     execFile(
       command,
       args,
       {
         cwd,
-        timeout: TIMEOUT_MS,
-        env: { ...process.env, ...env, GIT_TERMINAL_PROMPT: '0' },
-        maxBuffer: 4 * 1024 * 1024,
+        timeout,
+        env: { ...(replaceEnv ? {} : process.env), ...env, GIT_TERMINAL_PROMPT: '0' },
+        maxBuffer,
       },
       (error, stdout, stderr) => {
         resolve({
           ok: !error,
           code: error ? (error.code ?? 1) : 0,
           stdout: String(stdout ?? '').trim(),
-          stderr: String(stderr ?? '').trim(),
+          stderr: String(stderr || error?.message || '').trim(),
         });
       },
     );
@@ -48,8 +58,13 @@ export async function gitProblem({ platform = process.platform, exec = run } = {
     if (!tools.ok) return MISSING_TOOLS_MAC;
   }
   const git = await exec('git', ['--version']);
-  if (git.ok) return null;
-  return platform === 'darwin' ? MISSING_TOOLS_MAC : MISSING_GIT;
+  if (!git.ok) return platform === 'darwin' ? MISSING_TOOLS_MAC : MISSING_GIT;
+  // Wish copies use `init --object-format` (2.29) and the cleanup `rev-parse --path-format` (2.31).
+  const [, major, minor] = /git version (\d+)\.(\d+)/.exec(git.stdout ?? '') ?? [];
+  if (major !== undefined && Number(major) * 1000 + Number(minor) < 2031) {
+    return `Genie needs git 2.31 or later, and this computer has ${major}.${minor}. Update git, then ask Genie again.`;
+  }
+  return null;
 }
 
 export const git = (args, cwd) => run('git', args, { cwd });
@@ -60,9 +75,9 @@ export const git = (args, cwd) => run('git', args, { cwd });
  * `{ step, argv, code, ms }` with every http(s) URL in argv written without its userinfo.
  */
 export function gitRunner(options = {}) {
-  return async (step, args, cwd) => {
+  return async (step, args, cwd, timeout) => {
     const started = Date.now();
-    const result = await run('git', args, { cwd, env: options.env });
+    const result = await run('git', args, { cwd, env: options.env, timeout });
     options.note?.({ step, argv: ['git', ...args].map(redact), code: result.code, ms: Date.now() - started });
     return result;
   };
@@ -105,21 +120,117 @@ export async function initRepo(dir) {
   return { ok: true };
 }
 
+export function storeFor(home, repo) {
+  const key = createHash('sha256').update(realpathSync(repo)).digest('hex').slice(0, 16);
+  return join(canonicalPath(home), 'genie-objects', `${key}.git`);
+}
+
+export function storeProblem(store, wishesRoot, folder) {
+  const path = canonicalPath(store);
+  const tempRoots = ['/tmp', os.tmpdir()].map(canonicalPath);
+  if (tempRoots.some((root) => within(root, path))) return `the object store ${path} is in a masked temp directory`;
+  if (within(canonicalPath(wishesRoot), path) || within(canonicalPath(folder), path)) {
+    return `the object store ${path} is inside the writable wishes root`;
+  }
+  return null;
+}
+
+const headRefs = '+refs/heads/*:refs/heads/*';
+const tagRefs = '+refs/tags/*:refs/tags/*';
+// The tags a copy borrowed at its grant, so the cleanup can tell them from tags the wish made.
+export const BORROWED_TAGS = 'refs/genie-borrowed/tags/';
+const fetchFlags = ['fetch', '--quiet', '--no-tags', '--no-recurse-submodules', '--no-auto-gc'];
+const gitFailure = (result, fallback) => ({ ok: false, error: redact(result.stderr) || fallback });
+
+async function refreshStore(repo, dir, base, g) {
+  const refs = await g('store-refs', [...fetchFlags, '--prune', '--', repo, headRefs, tagRefs], dir, STORE_TIMEOUT_MS);
+  if (!refs.ok) return gitFailure(refs, 'git could not refresh the object store');
+  if (await commitOf(dir, base, g, 'store-base')) return { ok: true };
+  const fetched = await g('store-fetch-base', [...fetchFlags, '--', repo, base], dir, STORE_TIMEOUT_MS);
+  if (!fetched.ok) return gitFailure(fetched, 'git could not fetch the base into the object store');
+  if (await commitOf(dir, base, g, 'store-base')) return { ok: true };
+  return { ok: false, error: `the object store does not have base commit ${base}` };
+}
+
+function checkStore(store) {
+  if (!lstatSync(store).isDirectory() || realpathSync(store) !== store) {
+    return `the object store ${store} is not a standalone directory`;
+  }
+  try {
+    lstatSync(join(store, 'objects', 'info', 'alternates'));
+    return `the object store ${store} depends on another repository`;
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    return null;
+  }
+}
+
+/** Populate by transport so the store owns its objects even when the project uses alternates. */
+export async function ensureStore(repo, store, base, g = plainGit) {
+  let temp;
+  try {
+    try {
+      const problem = checkStore(store);
+      if (problem !== null) return { ok: false, error: problem };
+      return await refreshStore(repo, store, base, g);
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+    const format = await g('store-format', ['rev-parse', '--show-object-format'], repo);
+    if (!format.ok) return gitFailure(format, 'git could not read the project object format');
+    mkdirSync(dirname(store), { recursive: true });
+    temp = mkdtempSync(join(dirname(store), '.initializing-'));
+    const init = await g(
+      'store-init',
+      ['init', '--bare', '--quiet', '--template=', `--object-format=${format.stdout}`],
+      temp,
+    );
+    if (!init.ok) return gitFailure(init, 'git could not initialize the object store');
+    for (const [key, value] of [
+      ['gc.pruneExpire', 'never'],
+      ['gc.auto', '0'],
+    ]) {
+      const config = await g('store-config', ['config', key, value], temp);
+      if (!config.ok) return gitFailure(config, `git could not set ${key} in the object store`);
+    }
+    const refreshed = await refreshStore(repo, temp, base, g);
+    if (!refreshed.ok) return refreshed;
+    const problem = checkStore(temp);
+    if (problem !== null) return { ok: false, error: problem };
+    renameSync(temp, store);
+    temp = undefined;
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: redact(error.message) };
+  } finally {
+    if (temp !== undefined) rmSync(temp, { recursive: true, force: true });
+  }
+}
+
 /**
- * A wish's own copy of the project at `dir`, on a new `branch` made from `base` (a commit).
- * A clone rather than a worktree: DSH's sandbox lets a session write only under its folder,
- * and a worktree's commits land in the project's own .git, outside it. `--local` copies the
- * project's objects, so a base fetched into it but on no branch there is in the copy too.
- * The clone gets the project's git identity, or Genie's when the machine has none.
+ * The wish owns its Git directory, index, refs and new objects so DSH can confine writes to
+ * the wish folder. It borrows existing objects through an alternate in the team home.
  *
  * Its origin is the project folder, which no wish pushes into, so origin's push URL goes
  * nowhere. A plain wish (`plain`) also gets an empty credential helper: nothing the host
  * does in its copy needs credentials, so the default routes to a push are gone in code, not
  * only in the brief's words. A scoped follow-up keeps the user's helper for its `publish`.
  */
-export async function cloneForWish(repo, dir, branch, base, { g = plainGit, plain = true } = {}) {
-  const clone = await g('clone', ['clone', '--quiet', '--local', '--no-checkout', repo, dir]);
-  if (!clone.ok) return { ok: false, error: redact(clone.stderr) || 'git clone failed' };
+export async function cloneForWish(repo, dir, branch, base, { g = plainGit, plain = true, store } = {}) {
+  const format = await g('copy-format', ['rev-parse', '--show-object-format'], store);
+  if (!format.ok) return gitFailure(format, 'git could not read the object store format');
+  const init = await g('copy-init', ['init', '--quiet', '--template=', `--object-format=${format.stdout}`, dir]);
+  if (!init.ok) return gitFailure(init, 'git could not initialize the wish copy');
+  writeFileSync(join(dir, '.git', 'objects', 'info', 'alternates'), `${join(store, 'objects')}\n`, { flag: 'wx' });
+  const origin = await g('copy-origin', ['remote', 'add', 'origin', repo], dir);
+  if (!origin.ok) return gitFailure(origin, 'git could not set the wish origin');
+  const borrowed = `+refs/tags/*:${BORROWED_TAGS}*`;
+  const refs = await g(
+    'copy-refs',
+    [...fetchFlags, '--', store, '+refs/heads/*:refs/remotes/origin/*', tagRefs, borrowed],
+    dir,
+  );
+  if (!refs.ok) return gitFailure(refs, 'git could not load refs from the object store');
   const checkout = await g('checkout', ['checkout', '--quiet', '-b', branch, base], dir);
   if (!checkout.ok) return { ok: false, error: redact(checkout.stderr) || 'git checkout failed' };
   for (const [key, fallback] of [

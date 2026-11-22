@@ -5,7 +5,6 @@ import {
   constants,
   type BigIntStats,
   closeSync,
-  cpSync,
   fchmodSync,
   fstatSync,
   fsyncSync,
@@ -19,6 +18,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
+import { copyTreeBytes } from './byte-copy.js';
 import {
   type NativeNoReplaceDependencies,
   type PhysicalPathIdentity,
@@ -735,14 +735,9 @@ function copyPayloadIntoHeldStaging(
     }
     entered = true;
     for (const name of INSTALL_PAYLOAD_MEMBERS) {
-      cpSync(join(externalStagingRoot, name), name, {
-        recursive: true,
-        force: false,
-        errorOnExist: true,
-        preserveTimestamps: true,
-        dereference: false,
-        verbatimSymlinks: true,
-      });
+      // A byte copy, never an in-kernel clone of the payload tar just extracted (#3323). The relative
+      // destination resolves against the kernel cwd, the held stage.
+      copyTreeBytes(join(externalStagingRoot, name), name);
       afterPayloadMemberCopied?.(name);
     }
     const binaryFd = openSync('genie', constants.O_RDONLY | constants.O_NOFOLLOW);

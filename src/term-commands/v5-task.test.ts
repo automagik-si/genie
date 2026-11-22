@@ -1909,13 +1909,13 @@ describe('checkout reassignment briefing + status timeline', () => {
   test('task status renders a Timeline section with authored events', async () => {
     const db = openDb({ cwd: repo });
     const task = createTask(db, { title: 'timelined' });
-    appendTaskEvent(db, task.id, { kind: 'comment', note: 'a note', author: 'felipe', authorKind: 'human' });
+    appendTaskEvent(db, task.id, { kind: 'comment', note: 'a note', author: 'morgan', authorKind: 'human' });
     db.close();
 
     const r = await cli(repo, 'status', task.id);
     expect(r.code).toBe(0);
     expect(r.stdout).toContain('Timeline:');
-    expect(r.stdout).toContain('comment by felipe');
+    expect(r.stdout).toContain('comment by morgan');
     expect(r.stdout).toContain('a note');
   });
 });

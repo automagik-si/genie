@@ -33,8 +33,13 @@ columns: event):
 `src/lib/v5/genie-db.ts` does, and opens its `.genie/genie.db` without the create flag. It refuses, with
 exit code 2 and nothing written: a missing file or one at `user_version = 0` (`run 'genie task list' once
 in this repository to initialize .genie/genie.db`), and `<GENIE_HOME>/genie.db`. Pragmas are
-`sqlite-open.ts`'s (`busy_timeout` 5000, WAL, `foreign_keys`) with `synchronous=FULL`, and a contended
-lock is retried on the same schedule.
+`sqlite-open.ts`'s (`busy_timeout` 5000, WAL, `foreign_keys`) with `synchronous=FULL`. A contended lock
+is retried as there too: jittered backoff (25 ms doubling to a 1 s cap, each pause in `[d/2, d]`) until 120 s
+have passed since the first attempt (`BUSY_DEADLINE`, the value of `sqlite-open.ts` `BUSY_DEADLINE_MS`; a
+test on each side reads the other file). Past it the command fails with exit code 1 and says that the task
+database stayed locked, and that another genie process may be stuck or the disk stalled. The deadline is
+checked between attempts, so the total can exceed it by up to one attempt (each lock-waiting statement in it
+can wait `busy_timeout`); review measured about 3 s.
 
 Rust writes only the `v7_` tables in `src/schema.sql`, created on first write. Schema 2 adds
 `v7_link_events` and its current-link projection `v7_links` transactionally to schema 1, without

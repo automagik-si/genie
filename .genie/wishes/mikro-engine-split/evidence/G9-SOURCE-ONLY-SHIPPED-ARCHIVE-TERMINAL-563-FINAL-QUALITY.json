@@ -10,7 +10,7 @@
   },
   "scope": "Whole current G1–G9 candidate assessed against all 22 original frozen quality criteria, including preceding implementations, receiving consumers, current dev integration, generated artifacts, retained experiments and current validation evidence. This is not a latest-patch-only or reduced-matrix review.",
   "sourceIdentity": {
-    "checkout": "/home/genie/.local/share/mikro-engine-split/experiments-g8/final-local-smokes/history-only-reword-6qjyzwas/tree",
+    "checkout": "<experiment workspace>/experiments-g8/final-local-smokes/history-only-reword-6qjyzwas/tree",
     "sourceCandidateSha256": "7241a0a39d2a270093e6ae0d1af905f9603b3092eff373795146f493ff8e29e9",
     "fileCount": 2480,
     "manifest": ".genie/wishes/mikro-engine-split/evidence/G9-SOURCE-ONLY-SHIPPED-ARCHIVE-TERMINAL-563-FINAL-CANDIDATE-MANIFEST.json",

@@ -10,7 +10,23 @@ const CHANNEL = 'dev';
 // These fixtures execute the real shell pipeline with 20/28 assets and many
 // verifier subprocesses. A dev run takes ~7s locally, beyond Bun's 5s default.
 // Bound each pipeline itself, then allow grouped scenarios their own budget.
-const PIPELINE_TIMEOUT_MS = 30_000;
+// Measured bound, one for every pipeline in this file (#3318): with the reflink clones gone (the `cp` shim
+// below), the slowest single pipeline took 15.4 s during a host I/O stall, 3.1 s quiet and 6.9 s under the
+// busy-CPU proof. 3x the slowest, rounded up to 5 s. It replaces the 90 s and 145 s bounds five tests got
+// in #3309, whose 30 to 47 s basis was time spent waiting on those clones.
+const PIPELINE_TIMEOUT_MS = 50_000;
+// Beside the fake gh, cosign and slsa-verifier, the fake-tools dir carries a `cp` shim, because the
+// pipeline `cp`s files the test has just written and GNU cp asks for a reflink clone by default: on a
+// copy-on-write filesystem a clone of freshly written blocks can wait for pending writes to reach disk
+// (53.1 s for one clone under host I/O load, which killed a 30 s pipeline; #3318). The shim execs the
+// real cp by the absolute path resolved here, before any fake dir is on PATH, so it cannot call itself,
+// and passes the script's arguments through unchanged after --reflink=never. It is written only for GNU
+// coreutils: macOS cp does not clone by default and has no such flag, so there no shim is written.
+const REAL_CP = Bun.which('cp');
+const CP_SHIM =
+  REAL_CP !== null && Bun.spawnSync([REAL_CP, '--version']).stdout.toString().includes('GNU coreutils')
+    ? `#!/bin/sh\nexec '${REAL_CP.replaceAll("'", `'\\''`)}' --reflink=never "$@"\n`
+    : undefined;
 const PLATFORMS = ['linux-x64-glibc', 'linux-x64-musl', 'linux-arm64', 'darwin-arm64'];
 function namesFor(channel: 'stable' | 'dev'): string[] {
   const channels = channel === 'stable' ? ['stable', 'dev'] : ['dev'];
@@ -299,7 +315,12 @@ console.log(JSON.stringify({
 save();
 `,
   );
-  for (const tool of ['gh', 'cosign', 'slsa-verifier']) chmodSync(join(root, tool), 0o755);
+  const tools = ['gh', 'cosign', 'slsa-verifier'];
+  if (CP_SHIM !== undefined) {
+    writeFileSync(join(root, 'cp'), CP_SHIM);
+    tools.push('cp');
+  }
+  for (const tool of tools) chmodSync(join(root, tool), 0o755);
 
   const result = Bun.spawnSync(['bash', SCRIPT], {
     cwd: root,
@@ -333,6 +354,16 @@ function uploadCalls(state: FakeState): Array<{ tool: string; args: string[] }> 
   return (state.calls ?? []).filter(
     (call) => call.tool === 'gh' && call.args.some((arg) => arg.includes('uploads.github.com')),
   );
+}
+
+// A pipeline killed at its bound reports exitCode null, and null passes a "not 0" check (#3322). Check first that
+// it exited on its own (no signal, no timeout), so a kill fails here by name, then check its exact exit code.
+function expectExitCode(result: ReturnType<typeof run>['result'], code: number) {
+  expect(
+    { signalCode: result.signalCode ?? null, exitedDueToTimeout: result.exitedDueToTimeout ?? false },
+    'the pipeline was killed before it exited on its own',
+  ).toEqual({ signalCode: null, exitedDueToTimeout: false });
+  expect(result.exitCode).toBe(code);
 }
 
 describe('exact GitHub release asset reconciliation', () => {
@@ -398,6 +429,9 @@ describe('exact GitHub release asset reconciliation', () => {
     expect(calls(symlink.state, 'gh')).toHaveLength(0);
   }, 60_000);
 
+  // Measured timeout (#3318): 2.7 s quiet; 7.4 s under the busy-CPU proof; 2.6-2.9 s during host I/O
+  // stalls, 7.2 s under strace in one. Back to its 60 s budget: above 3x the slowest run (25 s) and above
+  // its pipelines' bound. Its 55.3 s stall run (#3309) was a reflink clone in the pipeline's `cp`.
   test('resumes authenticated partial drafts and rejects a cryptographically inconsistent mix', () => {
     const local = localAssets();
     const matching = run({
@@ -412,6 +446,9 @@ describe('exact GitHub release asset reconciliation', () => {
     expect(uploadCalls(mismatch.state)).toHaveLength(0);
   }, 60_000);
 
+  // Measured timeout (#3318): 1.3 s quiet; 3.9 s under the busy-CPU proof; 1.2-1.3 s during host I/O
+  // stalls, 3.5 s under strace in one. Back to its 60 s budget: above 3x the slowest run (15 s) and above
+  // its pipeline's bound. Its 30.0 s kills (#3309) were a reflink clone in the pipeline's `cp`.
   test('a complete authenticated draft reuses prior nondeterministic bundle bytes', () => {
     const draft = run({ draft: true, assets: localAssets('older-run') });
     expect(draft.result.exitCode).toBe(0);
@@ -419,6 +456,9 @@ describe('exact GitHub release asset reconciliation', () => {
     expect(uploadCalls(draft.state)).toHaveLength(0);
   }, 60_000);
 
+  // Measured timeout (#3318): 0.9 s quiet; 2.9 s under the busy-CPU proof; 0.9-1.0 s during host I/O
+  // stalls, 2.5 s under strace in one. Back to its 60 s budget: above 3x the slowest run (15 s) and above
+  // its pipeline's bound. Its 30.1 and 47.1 s runs (#3309) were a reflink clone in the pipeline's `cp`.
   test('a retry rejects authenticated old descriptors bound to different candidate manifest bytes', () => {
     const stale = localAssets('older-run');
     for (const [name, value] of Object.entries(stale)) {
@@ -473,6 +513,9 @@ describe('exact GitHub release asset reconciliation', () => {
     }
   }, 60_000);
 
+  // Measured timeout (#3318): 1.4 s quiet; 3.9 s under the busy-CPU proof; 1.2-1.3 s during host I/O
+  // stalls, 3.2 s under strace in one. Back to its 60 s budget: above 3x the slowest run (15 s) and above
+  // its pipeline's bound. Its 30.0 s kill (#3309) was a reflink clone in the pipeline's `cp`.
   test('selects our release predicate when GitHub also attests the immutable release', () => {
     const publishedAssets = localAssets('published');
     const { result, state } = run({ draft: false, assets: publishedAssets });
@@ -552,6 +595,10 @@ describe('exact GitHub release asset reconciliation', () => {
     expect(uploadCalls(absent.state)).toHaveLength(0);
   }, 60_000);
 
+  // Measured timeout (#3318): 4.5 s quiet; 12.6 s under the busy-CPU proof; 4.2-5.2 s during host I/O
+  // stalls, 11.4 s under strace in one; its six pipelines 0.9 s at most quiet and 2.6 s busy. Back to its
+  // 120 s budget, above 3x the slowest run (40 s). Its 33.4 and 120.0 s runs (#3271, #3309) were reflink
+  // clones in the pipeline's `cp`.
   test('propagates upload and verification failures', () => {
     const upload = run({ draft: true, assets: {}, failOn: 'uploads.github.com' });
     expect(upload.result.exitCode).toBe(42);
@@ -571,12 +618,17 @@ describe('exact GitHub release asset reconciliation', () => {
     expect(mismatchedSecondPass.result.exitCode).toBe(3);
     expect(mismatchedSecondPass.result.stderr.toString()).toContain('control digest mismatch');
 
+    // release-generic-provenance.sh verify-reusable: a head_branch other than dev makes its `jq -e` expression
+    // false, which jq documents as exit 1, and `set -e` carries the 1 out of both scripts.
     const genericPolicy = run({ draft: false, assets: localAssets('published'), invalidGeneric: true });
-    expect(genericPolicy.result.exitCode).not.toBe(0);
+    expectExitCode(genericPolicy.result, 1);
     expect(uploadCalls(genericPolicy.state)).toHaveLength(0);
 
+    // release-native-predicate.sh reusable-control-sha: a source_sha that is not a sha leaves its `jq -e`
+    // `first(select(...))` with no result, which jq documents as exit 4, and `set -e` carries the 4 out of the
+    // reconcile script's `remote_control_sha=$(...)` assignment.
     const nativePolicy = run({ draft: false, assets: localAssets('published'), invalidNative: true });
-    expect(nativePolicy.result.exitCode).not.toBe(0);
+    expectExitCode(nativePolicy.result, 4);
     expect(uploadCalls(nativePolicy.state)).toHaveLength(0);
   }, 120_000);
 });

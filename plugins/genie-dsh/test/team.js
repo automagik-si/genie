@@ -48,7 +48,10 @@ export const gitIn = (cwd, ...args) => execFileSync('git', args, { cwd, encoding
  * before the grant saves sets its status there). `uiLanguage` is what the team reports as the
  * interface language until `browserAsks` reports another.
  */
-export function fakeTeam(dir, { bots = {}, readOnly, noModel = false, tasks, resumesDone, onTask, uiLanguage } = {}) {
+export function fakeTeam(
+  dir,
+  { bots = {}, readOnly, noModel = false, tasks, resumesDone, onTask, uiLanguage, waitsForApproval } = {},
+) {
   const model = noModel ? undefined : { provider: 'p', model: 'm' };
   const team = join(dir, 'team');
   mkdirSync(team, { recursive: true });
@@ -101,6 +104,7 @@ export function fakeTeam(dir, { bots = {}, readOnly, noModel = false, tasks, res
       },
     },
     warn: () => {},
+    waitsForApproval,
     ...(resumesDone === undefined ? {} : { resumesDone }),
     // The tests' own: a browser asks for the team and reports its locale, which the team takes
     // before answering with every live hook (bots-dsh channel.js, the `state` endpoint).
@@ -126,25 +130,31 @@ export function fakeTeam(dir, { bots = {}, readOnly, noModel = false, tasks, res
 }
 
 /** The plugin on `team`, with the DSH context it registers on. */
-export function compose(team) {
+export function compose(team, { agents = () => [] } = {}) {
   const tools = new Map();
   const listeners = [];
+  const disposers = [];
   const ctx = guarded(
     {
-      effect: (run) => run(),
+      agents: agents === null ? undefined : { list: agents },
+      effect: (run) => disposers.push(run()),
       on: (name, listener) => listeners.push([name, listener]),
       tools: { register: (tool) => tools.set(tool.name, tool) },
     },
     'ctx',
   );
   const rt = createRuntime(ctx, team);
-  // A Session's turn ends, as DSH reports it to every plugin.
-  const turnEnd = (sessionId, reason = { kind: 'completed' }) => {
+  const event = (sessionId, type, data) => {
     for (const [name, listener] of listeners) {
-      if (name === 'session/event') listener({ id: sessionId }, { type: 'turn/end', data: { reason } });
+      if (name === 'session/event') listener({ id: sessionId }, { type, data });
     }
   };
-  return { rt, tools, turnEnd };
+  const turnEnd = (sessionId, reason = { kind: 'completed' }) => event(sessionId, 'turn/end', { reason });
+  const dispose = () => {
+    listeners.length = 0;
+    for (const fn of disposers.splice(0).reverse()) fn?.();
+  };
+  return { rt, tools, turnEnd, event, dispose };
 }
 
 export const grant = (tools, botId, args) => tools.get('grant_wish').execute(args, { agent: { id: botId } });

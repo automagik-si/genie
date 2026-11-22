@@ -1,6 +1,6 @@
 # Genie Hermes Profile Seed
 
-This directory contains the portable, non-secret Genie persona/profile seed that Felipe uses as a Hermes-side lane for operating the Genie CLI and piloting Claude Code.
+This directory contains the portable, non-secret Genie persona/profile seed that the owner uses as a Hermes-side lane for operating the Genie CLI and piloting Claude Code.
 
 Use it when cloning `genie` onto a new VM and teaching another agent how to run the same ritual:
 
@@ -50,7 +50,7 @@ The house lane is **native Claude Code CLI through Genie**, not the Claude SDK p
 GENIE_TUI_DISABLE=1 GENIE_NO_V1_PROMPT=1   genie --no-interactive --no-tui spawn engineer     --provider claude     --team <purpose-or-wish-slug>     --role <focused-role>     --cwd <repo-or-workspace>     --prompt '<brief with acceptance criteria and evidence requirements>'
 ```
 
-`--provider claude-sdk` is noncanonical for this house coding lane unless Felipe explicitly reverses that rule.
+`--provider claude-sdk` is noncanonical for this house coding lane unless the owner explicitly reverses that rule.
 
 ## Evidence contract
 

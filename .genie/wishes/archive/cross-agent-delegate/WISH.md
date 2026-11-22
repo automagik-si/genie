@@ -51,7 +51,7 @@ Wave 1 of the SHIP-reviewed cross-agent-delegation design: declare on the board 
 
 - **Simplest complete design:** two nullable columns + one constant + one flag pair on `create` + one new verb + lane-path serializer additions + sync lockstep. No new tables, no config surface, no enforcement, no migration bump.
 - **Added machinery:** `--clear` (justified: correcting a wrong assignment must not require delete-and-recreate; follows the shipped `set-wish --clear` precedent); timeline notes on assign/clear (justified: design Decision 4 makes the card timeline the durable thread — routing changes are thread events).
-- **Deferred until measured:** checkout gating on assignment (trigger: the W2 bridge, which claims via `checkout --worker`); roster as configuration (trigger: first roster change that can't wait for a release); any stage-level routing defaults (trigger: Felipe reverses the board-only decision).
+- **Deferred until measured:** checkout gating on assignment (trigger: the W2 bridge, which claims via `checkout --worker`); roster as configuration (trigger: first roster change that can't wait for a release); any stage-level routing defaults (trigger: the owner reverses the board-only decision).
 - **Complexity removed:** no enforcement states, no config file, no WISH.md routing dialect, no laneless-shape change, no cross-repo work.
 
 ## Dependencies

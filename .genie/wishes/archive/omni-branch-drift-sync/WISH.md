@@ -10,7 +10,7 @@
 | **Appetite** | ~1–2 h, mostly waiting on CI + 2 human merge clicks |
 | **Branch** | n/a — ops task on `automagik-dev/omni` branches directly |
 | **Design** | _No brainstorm — direct ops wish, grounded in a completed live investigation_ |
-| **Repo** | `automagik-dev/omni` (local: `/Users/feliperosa/workspace/omni`) |
+| **Repo** | `automagik-dev/omni` (local: `<omni checkout>`) |
 
 > **Truth (2026-09-19):** A finished one-shot ops task in automagik-dev/omni (PRs #770/#773 merged 2026-07-04) with zero footprint in this repository; its loss-proof invariant still holds — `main` carries no unique commits.
 
@@ -109,7 +109,7 @@ echo "PASS: additive-only promotion, source-identical dev↔homolog"
 
 **Deliverables:**
 1. #770 unblocked (CodeRabbit cleared or re-triggered).
-2. #770 merged **by Felipe** (§19 human-only for main).
+2. #770 merged **by the owner** (§19 human-only for main).
 3. main-push CI + `Publish Image` workflow green.
 
 **Acceptance Criteria:**
@@ -125,8 +125,8 @@ gh pr view 770 -R $R --json state,mergeStateStatus,mergeable
 # 2. If CodeRabbit stuck "pending" >10min, re-trigger it (re-fire checks WITHOUT source change):
 #    Preferred: comment "@coderabbitai review" ; fallback: close+reopen the PR.
 gh pr comment 770 -R $R --body "@coderabbitai review"
-#    (do NOT push commits — keep #770 == homolog tip; do NOT admin-bypass unless Felipe says so)
-# 3. HUMAN (Felipe): merge #770 via GitHub UI (dev→homolog→main; agents blocked by §19).
+#    (do NOT push commits — keep #770 == homolog tip; do NOT admin-bypass unless the owner says so)
+# 3. HUMAN (the owner): merge #770 via GitHub UI (dev→homolog→main; agents blocked by §19).
 #    NOTE: the merge-safety hook blocks `gh pr merge` for base=main even for the agent.
 # 4. After merge, watch the main-push image-publish + CI:
 RID=$(gh run list -R $R --branch main --workflow image-publish.yml --limit 1 --json databaseId --jq '.[0].databaseId')
@@ -153,7 +153,7 @@ echo "PASS: main == dev (promoted)"
 
 **Steps:**
 ```bash
-R=automagik-dev/omni; O=/Users/feliperosa/workspace/omni
+R=automagik-dev/omni; O='<omni checkout>'
 # Only if `compare/homolog...dev --jq .ahead_by` > 0 AND conflicts exist.
 # LOCAL GIT IS UNRELIABLE HERE — force-fetch before any local branch op:
 git -C $O fetch origin '+refs/heads/dev:refs/remotes/origin/dev' '+refs/heads/homolog:refs/remotes/origin/homolog' --force
@@ -193,7 +193,7 @@ test "$NV" -eq 0 && echo "PASS: dev↔homolog source-identical"
 **Acceptance Criteria:**
 - [ ] `main`, `homolog`, `dev` pairwise non-version diff == 0.
 - [ ] Image published to GHCR for the main SHA.
-- [ ] Recurrence note recorded (and, optionally, Felipe sets branch protection: main's only source = homolog).
+- [ ] Recurrence note recorded (and, optionally, the owner sets branch protection: main's only source = homolog).
 
 **Validation:**
 ```bash
@@ -212,11 +212,11 @@ echo "PASS: dev = homolog = main (source-identical)"
 
 1. **Local git refs are stale/unreliable** (an rtk shim mis-updates them). Trust the **GitHub API** (`gh api`) for branch state; `git ... fetch origin '+refs/heads/X:refs/remotes/origin/X' --force` before any local branch op.
 2. **§19 merge-safety hook**: agents may merge only PRs with **base=dev**. `homolog`/`main` merges are **human-only via GitHub UI**. When merging a base=dev PR, pass the repo as a **literal** (`-R automagik-dev/omni`), NOT `-R "$VAR"` — the hook parses the raw command and a variable fails its base-verification lookup.
-3. **`--no-verify` is FORBIDDEN** by the git-safety hook. Pre-commit (biome+commitlint) and pre-push (`bun run check`) hooks need `node_modules` → in a fresh worktree, **symlink** the main repo's: `ln -sfn /Users/feliperosa/workspace/omni/node_modules $WT/node_modules`. For pushes where that's insufficient, `HUSKY=0 git push` is husky's official off-switch (not a bypass), but prefer the symlink.
+3. **`--no-verify` is FORBIDDEN** by the git-safety hook. Pre-commit (biome+commitlint) and pre-push (`bun run check`) hooks need `node_modules` → in a fresh worktree, **symlink** the main repo's: `ln -sfn '<omni checkout>'/node_modules $WT/node_modules`. For pushes where that's insufficient, `HUSKY=0 git push` is husky's official off-switch (not a bypass), but prefer the symlink.
 4. **Conflicts are only ever version/lock/manifest files** — resolve to the newer/superset side (dev). If a NON-version file ever conflicts, STOP and investigate (source should never diverge).
 5. **`grep` is mangled by rtk** — use `rg`, `git grep`, or the API+`jq`.
 6. **Never rebase/reset/force** a protected branch. Merges only.
-7. #770 is already open (homolog→main), MERGEABLE, blocked only on a hung CodeRabbit — the likely first action is re-triggering it, then Felipe's merge.
+7. #770 is already open (homolog→main), MERGEABLE, blocked only on a hung CodeRabbit — the likely first action is re-triggering it, then the owner's merge.
 8. The **image-publish workflow** (`.github/workflows/image-publish.yml`) triggers on push to `main`/`homolog` and is already proven green — the main merge re-fires it; watch it to confirm the GHCR publish.
 
 ## Rollback
@@ -231,7 +231,7 @@ Every step is a merge; nothing is force-pushed. If a merge is wrong, `git revert
 | Group | Result |
 |-------|--------|
 | G1 | PASS — main ahead=0 vs dev & homolog; dev↔homolog 0 non-version diffs |
-| G2 | #770 merged 21:29 UTC by Felipe; main CI ✅; Publish Image ✅ (GHCR, main SHA `df70e9cf`) |
+| G2 | #770 merged 21:29 UTC by the owner; main CI ✅; Publish Image ✅ (GHCR, main SHA `df70e9cf`) |
 | G3 | Executed as **back-merge main→dev** (PR #773, merge commit `9a2607cc`) — supersedes the version-file-only plan; restores main-ahead=0 invariant |
 | G4 | main↔homolog trees **byte-identical** (0 file diffs); dev ⊇ both (0 unique commits in main/homolog vs dev); dev ahead only with new work (#772, review doc) + newer version `2.260704.6` |
 
@@ -244,7 +244,7 @@ Every step is a merge; nothing is force-pushed. If a merge is wrong, `git revert
 - Never merge dev→main directly — promote dev→homolog→main only (PR #773's body records this).
 - After any promotion into main, immediately back-merge main→dev (`chore/reconcile-*`) so main keeps 0 unique commits.
 - A `[skip ci]` commit must never be the tip of a branch opened as a PR into a protected base — required checks will never report and the PR wedges. (The PR-770-REVIEW fix handoff's G-CICD group owns the CONTRIBUTING note for this, finding LOW-18.)
-- Optional hardening for Felipe: GitHub branch protection/ruleset on main restricting merge sources to homolog.
+- Optional hardening for the owner: GitHub branch protection/ruleset on main restricting merge sources to homolog.
 - Known race: concurrent merges to dev can starve the main-triggered Version run (@latest). If it fails with `cannot lock ref`, rerun it when dev is quiet.
 
 **Post-wish state:** `docs/_internal/PR-770-REVIEW.md` (on dev) carries a FIX-FIRST review of the promoted content — HIGH findings live on main (prod Helm overlay undeployable, remote-media batch broken). Separate fix orchestration required; its Step-0 reconcile prerequisite is already satisfied by PR #773.

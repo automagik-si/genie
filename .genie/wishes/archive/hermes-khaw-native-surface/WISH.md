@@ -8,7 +8,7 @@
 | **Author** | Felipe (via Hermes plan) |
 | **Appetite** | medium |
 | **Branch** | `wish/hermes-khaw-native-surface` (cut from `origin/main` — this planning checkout is a stale fix branch) |
-| **Repos touched** | `automagik-dev/genie`, KHAW (`/home/feliperosa/vm-home/prod/khaw`) |
+| **Repos touched** | `automagik-dev/genie`, KHAW (`<khaw checkout>`) |
 | **Design** | _No brainstorm — direct wish_ |
 
 > **Truth (2026-09-19):** PRs #2516/#2517 merged 2026-07-04, then both halves were retired: `plugins/hermes-genie/**` deleted in `d572f9e0b` and the `genie mcp` server it read over deleted by #2820.
@@ -17,7 +17,7 @@
 
 Ship a native Hermes plugin from the genie repo (`plugins/hermes-genie/`) that exposes read-only Genie state — doctor, board, wish/task queries, and `launch --dry-run` plans — as safe structured tools, slash commands, advisory hooks, and skills, so Hermes/KHAW can act as the expensive-model cockpit while Genie remains the zero-daemon execution system. Add a KHAW-side bridge (`plugins/khaw/genie_bridge.py` in the KHAW repo) that maps Brain/Purpose Sessions to Genie wishes and joins the KHAW work registry with Genie board state, without moving canonical ownership in either direction. MVP is strictly read-only: every tool returns `mutation: "none"` and wraps the `genie` CLI via argument arrays, never shell strings.
 
-Source plan: `/home/feliperosa/vm-home/.hermes/plans/2026-07-04_173507-genie-hermes-khaw-native-plugin-surface.md`. The tool contract below was re-grounded on 2026-07-04 against the installed genie v5 CLI (5.260703.5) and Hermes Agent v0.18.0 — see Decisions #2–3 for where it corrects the source plan.
+Source plan: `~/.hermes/plans/2026-07-04_173507-genie-hermes-khaw-native-plugin-surface.md`. The tool contract below was re-grounded on 2026-07-04 against the installed genie v5 CLI (5.260703.5) and Hermes Agent v0.18.0 — see Decisions #2–3 for where it corrects the source plan.
 
 ## Scope
 
@@ -121,7 +121,7 @@ _Backfilled 2026-09-19 when this wish was archived and its legacy terminal statu
 
 **Validation:**
 ```bash
-cd /home/feliperosa/vm-home/workspace/repos/genie \
+cd '<genie checkout>' \
   && uv run --with pytest --with pyyaml --no-project python -m pytest plugins/hermes-genie/tests/test_plugin_contract.py plugins/hermes-genie/tests/test_genie_bridge.py -q \
   && ! grep -rn 'shell=True' plugins/hermes-genie/
 ```
@@ -149,7 +149,7 @@ cd /home/feliperosa/vm-home/workspace/repos/genie \
 
 **Validation:**
 ```bash
-cd /home/feliperosa/vm-home/workspace/repos/genie \
+cd '<genie checkout>' \
   && uv run --with pytest --with pyyaml --no-project python -m pytest plugins/hermes-genie/tests -q \
   && python3 - <<'PY'
 from pathlib import Path
@@ -187,7 +187,7 @@ PY
 
 **Validation:**
 ```bash
-cd /home/feliperosa/vm-home/workspace/repos/genie \
+cd '<genie checkout>' \
   && bash -n plugins/hermes-genie/scripts/install-local.sh plugins/hermes-genie/scripts/smoke.sh \
   && test -x plugins/hermes-genie/scripts/install-local.sh \
   && HERMES_HOME="$(mktemp -d)" plugins/hermes-genie/scripts/install-local.sh \
@@ -202,7 +202,7 @@ cd /home/feliperosa/vm-home/workspace/repos/genie \
 
 ### Group 4: khaw-bridge
 
-**Goal:** KHAW exposes read-only Genie bridge tools that map Purpose Sessions to wishes and join both work registries, declared additively. Target repo: `/home/feliperosa/vm-home/prod/khaw` (separate commits, own review gate).
+**Goal:** KHAW exposes read-only Genie bridge tools that map Purpose Sessions to wishes and join both work registries, declared additively. Target repo: `<khaw checkout>` (separate commits, own review gate).
 
 **Deliverables:**
 1. `plugins/khaw/genie_bridge.py` — Python stdlib only, locates `genie` with `shutil.which`, optional read-only `genie --version` probe, accepts `project_root`/`cwd` defaulting to repo root; tools: `khaw_genie_status` (KHAW plugin status + Genie availability), `khaw_genie_work_registry` (joins `khaw_work_registry` output with `genie board --json` / `genie task list --json` for linked wishes), `khaw_genie_link_plan` (proposes Purpose Session to Genie wish mapping paths without writing files), `khaw_genie_brainstorm_prompt` (3-lens council-style prompt targeting creation/update of a Genie wish); all payloads mirror the Group 1 contract (`success`, `mutation: "none"`, evidence sources)
@@ -220,7 +220,7 @@ cd /home/feliperosa/vm-home/workspace/repos/genie \
 
 **Validation:**
 ```bash
-cd /home/feliperosa/vm-home/prod/khaw \
+cd '<khaw checkout>' \
   && uv run --with pytest --with pyyaml --no-project python -m pytest tests/contract/test_khaw_genie_bridge.py tests/contract/test_khaw_harness.py -q
 ```
 
@@ -247,10 +247,10 @@ cd /home/feliperosa/vm-home/prod/khaw \
 
 **Validation:**
 ```bash
-cd /home/feliperosa/vm-home/workspace/repos/genie \
+cd '<genie checkout>' \
   && uv run --with pytest --with pyyaml --no-project python -m pytest plugins/hermes-genie/tests -q \
   && HERMES_HOME="$(mktemp -d)" plugins/hermes-genie/scripts/install-local.sh \
-  && cd /home/feliperosa/vm-home/prod/khaw \
+  && cd '<khaw checkout>' \
   && uv run --with pytest --with pyyaml --no-project python -m pytest tests/contract/test_khaw_genie_bridge.py tests/contract/test_khaw_harness.py tests/contract/test_khaw_work_registry_contract.py tests/contract/test_khaw_purpose_sessions.py tests/contract/test_khaw_slash_wish.py tests/contract/test_khaw_slash_brainstorm.py -q \
   && ls docs/evidence/ | grep genie-hermes-khaw-native-surface-smoke
 ```
@@ -303,7 +303,7 @@ Shipped: genie stable ≥ 5.260704.3 (plugin synced to `~/.genie/plugins/hermes-
 ## Files to Create/Modify
 
 ```
-# genie repo (/home/feliperosa/vm-home/workspace/repos/genie)
+# genie repo (<genie checkout>)
 plugins/hermes-genie/plugin.yaml                          create  (G1)
 plugins/hermes-genie/__init__.py                          create  (G1, extended G2)
 plugins/hermes-genie/genie_bridge.py                      create  (G1)
@@ -326,7 +326,7 @@ README.md                                                 modify  (G3)
 plugins/genie/README.md                                   modify  (G3)
 profiles/hermes/genie/README.md                           modify  (G3)
 
-# KHAW repo (/home/feliperosa/vm-home/prod/khaw)
+# KHAW repo (<khaw checkout>)
 plugins/khaw/genie_bridge.py                              create  (G4)
 plugins/khaw/__init__.py                                  modify  (G4)
 plugins/khaw/plugin.yaml                                  modify  (G4)

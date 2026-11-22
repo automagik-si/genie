@@ -26,7 +26,7 @@ Delete the v4 harness from the `v5` branch — pgserve/Postgres, tmux orchestrat
 - Deletion of the v4 runtime from `v5`: db.ts/pgserve layer + all `src/db/migrations/`, agent/executor registries, provider executors, tmux orchestration + `scripts/tmux/`, mailbox/team-chat/runtime-events, OTel receiver + emit spine + audit events, scheduler-daemon, derived-signals detectors, session-capture/filewatch/backfill, transcript providers, team-manager/native-teams, omni v4 modules, TUI (`@opentui` hosts), `packages/genie-app`, `packages/genie-tokens`, `packages/watchdog`, brain integration, sec-scan suite, orphaned v4 task/board sources (`src/term-commands/task/`, `task.test.ts`, old board sources), and every CLI namespace whose backend dies (agent, team, exec, db, serve, qa, sec, wish, dir, session, recover-orphans, observability/perf, legacy-cleanup, migrate).
 - Dependency + config purge: remove `postgres`, `nats`, `react`, `react-dom`, `@opentui/*`, `@tauri-apps/api` (+ cli devDep), `@xterm/headless`, `@khal-os/brain` refs, `@anthropic-ai/claude-agent-sdk`, `systeminformation`, `chokidar` (if only session-filewatch used it), orphaned devDeps; update `knip.json`, `biome.json`, `tsconfig`, package.json `files`/`scripts`, postinstall scripts.
 - Gates green after each group: typecheck, lint, bun test, skills:lint, build, `V5_E2E_BUILD=1 bash tests/e2e/v5-lifecycle.sh`; final: full `bun run check`, top-level command count ≤ 10 (with lower-bound + task/board presence asserts), knip clean.
-- The v5→dev PR opened (agent opens; merging a deletion this size is Felipe's call).
+- The v5→dev PR opened (agent opens; merging a deletion this size is the owner's call).
 - README stale-claim sweep: all references to deleted subsystems (PostgreSQL/LISTEN-NOTIFY, terminal UI, knowledge brain, Postgres-backed, genie-tokens/desktop) replaced by an honest v5 section.
 
 ### OUT
@@ -240,7 +240,7 @@ V5_E2E_BUILD=1 bash tests/e2e/v5-lifecycle.sh
 **Deliverables:**
 1. `v4` branch cut from current `origin/dev` and pushed.
 2. README stale-claim sweep: v4 pitch of deleted subsystems replaced with an honest v5 section (covers ALL stale claims — PostgreSQL/LISTEN-NOTIFY table row, terminal UI, knowledge brain / Persistent memory, Postgres-backed, genie-tokens/design section).
-3. PR `v5` → `dev`: title `feat!: genie v5 — lightweight body (harness demolition)`, body links WISH + DESIGN, diffstat, survivor command list, omni-dark note naming the follow-up wish. Merge left to Felipe.
+3. PR `v5` → `dev`: title `feat!: genie v5 — lightweight body (harness demolition)`, body links WISH + DESIGN, diffstat, survivor command list, omni-dark note naming the follow-up wish. Merge left to the owner.
 
 **Acceptance Criteria:**
 - [x] `origin/v4` exists and matches pre-merge dev.

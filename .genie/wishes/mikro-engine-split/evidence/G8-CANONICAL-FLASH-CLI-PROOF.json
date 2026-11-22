@@ -12,16 +12,16 @@
       "completedAt": "2026-10-06T04:05:49.887Z",
       "command": [
         "/usr/local/bin/bun",
-        "/home/genie/orca/workspaces/genie/mikro-engine-split/dist/genie.js",
+        "<orca workspace>/dist/genie.js",
         "mikro",
         "call",
         "wish-context",
         "--engine",
         "rlm",
         "--agents-dir",
-        "/home/genie/.local/share/mikro-engine-split/experiments-g8/caller-trust/genie-existing-flash-control-rlm-patched/.mikro/agents",
+        "<experiment workspace>/experiments-g8/caller-trust/genie-existing-flash-control-rlm-patched/.mikro/agents",
         "--dir",
-        "/home/genie/.local/share/mikro-engine-split/experiments-g8/canonical-cli-smoke/repository",
+        "<experiment workspace>/experiments-g8/canonical-cli-smoke/repository",
         "--prompt",
         "Intent: verify the marker's syntax without executing it",
         "--timeout-ms",
@@ -42,7 +42,7 @@
         "agent": "wish-context",
         "runId": "e9e9c306-de60-4f5d-872c-efc8d2b858b0",
         "traceId": "e9e9c306-de60-4f5d-872c-efc8d2b858b0",
-        "dir": "/home/genie/.local/share/mikro-engine-split/experiments-g8/canonical-cli-smoke/repository",
+        "dir": "<experiment workspace>/experiments-g8/canonical-cli-smoke/repository",
         "answer": {
           "intent": "verify the marker's syntax without executing it",
           "facts": [
@@ -175,14 +175,14 @@
           }
         ]
       },
-      "stdoutPath": "/home/genie/.local/share/mikro-engine-split/experiments-g8/canonical-cli-smoke/rlm-stdout.json",
-      "stderrPath": "/home/genie/.local/share/mikro-engine-split/experiments-g8/canonical-cli-smoke/rlm-stderr.txt",
-      "sdkReceiptDirectory": "/home/genie/.local/share/mikro-engine-split/experiments-g8/engine-receipts/unscored/canonical-rlm",
-      "sourceProfilePath": "/home/genie/.local/share/mikro-engine-split/experiments-g8/engine-profiles/engine/genie-existing-flash-control-rlm-patched/profile.json",
+      "stdoutPath": "<experiment workspace>/experiments-g8/canonical-cli-smoke/rlm-stdout.json",
+      "stderrPath": "<experiment workspace>/experiments-g8/canonical-cli-smoke/rlm-stderr.txt",
+      "sdkReceiptDirectory": "<experiment workspace>/experiments-g8/engine-receipts/unscored/canonical-rlm",
+      "sourceProfilePath": "<experiment workspace>/experiments-g8/engine-profiles/engine/genie-existing-flash-control-rlm-patched/profile.json",
       "sourceProfileSha256": "3e6277460a764e02f62640302bdd9cd31520c9d325258d0dd19ce82e0ad20e3f",
       "sdkAttempts": [
         {
-          "path": "/home/genie/.local/share/mikro-engine-split/experiments-g8/engine-receipts/unscored/canonical-rlm/b18e10cd-d812-413b-9f73-ed1288aec2a7.result.json",
+          "path": "<experiment workspace>/experiments-g8/engine-receipts/unscored/canonical-rlm/b18e10cd-d812-413b-9f73-ed1288aec2a7.result.json",
           "sha256": "358bb58b0e49224d133f266fd10fe524c1935993782abe39ce0a3b374708443a",
           "value": {
             "version": 1,
@@ -192,8 +192,8 @@
             "finishedAt": "2026-10-06T04:05:49.823Z",
             "binding": {
               "profileSha256": "3e6277460a764e02f62640302bdd9cd31520c9d325258d0dd19ce82e0ad20e3f",
-              "artifactRoot": "/home/genie/orca/workspaces/genie/mikro-engine-split/mikro",
-              "node": "/home/genie/.hermes/node/bin/node",
+              "artifactRoot": "<orca workspace>/mikro",
+              "node": "~/.hermes/node/bin/node",
               "nodeVersion": "v26.7.0",
               "generation": "new",
               "engine": "rlm",
@@ -229,10 +229,10 @@
                 },
                 "rates": {
                   "kind": "sdk-nominal-estimate-not-invoice",
-                  "source": "/home/genie/orca/workspaces/genie/mikro-engine-split/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
+                  "source": "<orca workspace>/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
                   "evidence": [
                     {
-                      "path": "/home/genie/orca/workspaces/genie/mikro-engine-split/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
+                      "path": "<orca workspace>/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
                       "kind": "file",
                       "sha256": "10a296fb3e898f7715c80890c8af0af4f5fd58f22dbcd6612fdc5d762157ccdc"
                     }
@@ -302,7 +302,7 @@
           }
         },
         {
-          "path": "/home/genie/.local/share/mikro-engine-split/experiments-g8/engine-receipts/unscored/canonical-rlm/b594455d-eb5f-4efb-8cd1-174ed421aa3f.result.json",
+          "path": "<experiment workspace>/experiments-g8/engine-receipts/unscored/canonical-rlm/b594455d-eb5f-4efb-8cd1-174ed421aa3f.result.json",
           "sha256": "504827a4ffd61999db1db62f1e9506edc662d3f9df053d2823738fd2cf85a64f",
           "value": {
             "version": 1,
@@ -312,8 +312,8 @@
             "finishedAt": "2026-10-06T04:05:15.494Z",
             "binding": {
               "profileSha256": "3e6277460a764e02f62640302bdd9cd31520c9d325258d0dd19ce82e0ad20e3f",
-              "artifactRoot": "/home/genie/orca/workspaces/genie/mikro-engine-split/mikro",
-              "node": "/home/genie/.hermes/node/bin/node",
+              "artifactRoot": "<orca workspace>/mikro",
+              "node": "~/.hermes/node/bin/node",
               "nodeVersion": "v26.7.0",
               "generation": "new",
               "engine": "rlm",
@@ -349,10 +349,10 @@
                 },
                 "rates": {
                   "kind": "sdk-nominal-estimate-not-invoice",
-                  "source": "/home/genie/orca/workspaces/genie/mikro-engine-split/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
+                  "source": "<orca workspace>/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
                   "evidence": [
                     {
-                      "path": "/home/genie/orca/workspaces/genie/mikro-engine-split/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
+                      "path": "<orca workspace>/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
                       "kind": "file",
                       "sha256": "10a296fb3e898f7715c80890c8af0af4f5fd58f22dbcd6612fdc5d762157ccdc"
                     }
@@ -433,16 +433,16 @@
       "completedAt": "2026-10-06T04:06:22.026Z",
       "command": [
         "/usr/local/bin/bun",
-        "/home/genie/orca/workspaces/genie/mikro-engine-split/dist/genie.js",
+        "<orca workspace>/dist/genie.js",
         "mikro",
         "call",
         "wish-context",
         "--engine",
         "pi",
         "--agents-dir",
-        "/home/genie/.local/share/mikro-engine-split/experiments-g8/caller-trust/genie-existing-flash-control-pi/.mikro/agents",
+        "<experiment workspace>/experiments-g8/caller-trust/genie-existing-flash-control-pi/.mikro/agents",
         "--dir",
-        "/home/genie/.local/share/mikro-engine-split/experiments-g8/canonical-cli-smoke/repository",
+        "<experiment workspace>/experiments-g8/canonical-cli-smoke/repository",
         "--prompt",
         "Intent: verify the marker's syntax without executing it",
         "--timeout-ms",
@@ -463,7 +463,7 @@
         "agent": "wish-context",
         "runId": "5da879d6-f216-4d7c-aaa7-805695fb5e09",
         "traceId": "5da879d6-f216-4d7c-aaa7-805695fb5e09",
-        "dir": "/home/genie/.local/share/mikro-engine-split/experiments-g8/canonical-cli-smoke/repository",
+        "dir": "<experiment workspace>/experiments-g8/canonical-cli-smoke/repository",
         "answer": {
           "intent": "verify the marker's syntax without executing it",
           "facts": [
@@ -602,14 +602,14 @@
           }
         ]
       },
-      "stdoutPath": "/home/genie/.local/share/mikro-engine-split/experiments-g8/canonical-cli-smoke/pi-stdout.json",
-      "stderrPath": "/home/genie/.local/share/mikro-engine-split/experiments-g8/canonical-cli-smoke/pi-stderr.txt",
-      "sdkReceiptDirectory": "/home/genie/.local/share/mikro-engine-split/experiments-g8/engine-receipts/unscored/canonical-pi",
-      "sourceProfilePath": "/home/genie/.local/share/mikro-engine-split/experiments-g8/engine-profiles/engine/genie-existing-flash-control-pi/profile.json",
+      "stdoutPath": "<experiment workspace>/experiments-g8/canonical-cli-smoke/pi-stdout.json",
+      "stderrPath": "<experiment workspace>/experiments-g8/canonical-cli-smoke/pi-stderr.txt",
+      "sdkReceiptDirectory": "<experiment workspace>/experiments-g8/engine-receipts/unscored/canonical-pi",
+      "sourceProfilePath": "<experiment workspace>/experiments-g8/engine-profiles/engine/genie-existing-flash-control-pi/profile.json",
       "sourceProfileSha256": "303933d69268d050bfb193155c7055b3bb1fc05a64d85e8c7b0f5e44e9af2ef7",
       "sdkAttempts": [
         {
-          "path": "/home/genie/.local/share/mikro-engine-split/experiments-g8/engine-receipts/unscored/canonical-pi/090a13c9-bd9a-4c05-82a4-a1b82fa84c84.result.json",
+          "path": "<experiment workspace>/experiments-g8/engine-receipts/unscored/canonical-pi/090a13c9-bd9a-4c05-82a4-a1b82fa84c84.result.json",
           "sha256": "2be5a38b80210cc9773df54cf59b94107cccb49b1e461a8595f79f8ff77996cb",
           "value": {
             "version": 1,
@@ -619,8 +619,8 @@
             "finishedAt": "2026-10-06T04:06:07.433Z",
             "binding": {
               "profileSha256": "303933d69268d050bfb193155c7055b3bb1fc05a64d85e8c7b0f5e44e9af2ef7",
-              "artifactRoot": "/home/genie/orca/workspaces/genie/mikro-engine-split/mikro",
-              "node": "/home/genie/.hermes/node/bin/node",
+              "artifactRoot": "<orca workspace>/mikro",
+              "node": "~/.hermes/node/bin/node",
               "nodeVersion": "v26.7.0",
               "generation": "new",
               "engine": "pi",
@@ -656,10 +656,10 @@
                 },
                 "rates": {
                   "kind": "sdk-nominal-estimate-not-invoice",
-                  "source": "/home/genie/orca/workspaces/genie/mikro-engine-split/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
+                  "source": "<orca workspace>/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
                   "evidence": [
                     {
-                      "path": "/home/genie/orca/workspaces/genie/mikro-engine-split/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
+                      "path": "<orca workspace>/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
                       "kind": "file",
                       "sha256": "10a296fb3e898f7715c80890c8af0af4f5fd58f22dbcd6612fdc5d762157ccdc"
                     }
@@ -733,7 +733,7 @@
           }
         },
         {
-          "path": "/home/genie/.local/share/mikro-engine-split/experiments-g8/engine-receipts/unscored/canonical-pi/6ab3529b-63b5-4b2f-b492-b1126b9d4177.result.json",
+          "path": "<experiment workspace>/experiments-g8/engine-receipts/unscored/canonical-pi/6ab3529b-63b5-4b2f-b492-b1126b9d4177.result.json",
           "sha256": "1aaf46095815cf19ea83d88fc92816053f65bee6378e7a76fc676823f5ca5a4f",
           "value": {
             "version": 1,
@@ -743,8 +743,8 @@
             "finishedAt": "2026-10-06T04:06:21.975Z",
             "binding": {
               "profileSha256": "303933d69268d050bfb193155c7055b3bb1fc05a64d85e8c7b0f5e44e9af2ef7",
-              "artifactRoot": "/home/genie/orca/workspaces/genie/mikro-engine-split/mikro",
-              "node": "/home/genie/.hermes/node/bin/node",
+              "artifactRoot": "<orca workspace>/mikro",
+              "node": "~/.hermes/node/bin/node",
               "nodeVersion": "v26.7.0",
               "generation": "new",
               "engine": "pi",
@@ -780,10 +780,10 @@
                 },
                 "rates": {
                   "kind": "sdk-nominal-estimate-not-invoice",
-                  "source": "/home/genie/orca/workspaces/genie/mikro-engine-split/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
+                  "source": "<orca workspace>/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
                   "evidence": [
                     {
-                      "path": "/home/genie/orca/workspaces/genie/mikro-engine-split/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
+                      "path": "<orca workspace>/mikro/node_modules/@earendil-works/pi-ai/dist/providers/data/deepseek.json",
                       "kind": "file",
                       "sha256": "10a296fb3e898f7715c80890c8af0af4f5fd58f22dbcd6612fdc5d762157ccdc"
                     }

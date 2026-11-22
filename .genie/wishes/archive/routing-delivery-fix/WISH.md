@@ -53,7 +53,7 @@ all seven as bare-named agent types in fresh and reloaded sessions.
 
 | # | Decision | Rationale |
 |---|----------|-----------|
-| 1 | Deliver via agent-sync fan-out into `~/.claude/agents/`, plugin stays disabled | Felipe-ratified 2026-07-11; bare names match the acceptance test, dir is live-watched, no duplicate listings. Reuses the shipped managed-file CONTRACT (stamp/backup/orphan semantics) but requires **new per-FILE machinery** — the existing engine is directory-oriented (per-skill dirs, stamp inside each dir) and its whole-dir replace (`writeManagedDir`) is FORBIDDEN on `~/.claude/agents/`: applied there it would delete user-authored agent files (plan-review HIGH) |
+| 1 | Deliver via agent-sync fan-out into `~/.claude/agents/`, plugin stays disabled | owner-ratified 2026-07-11; bare names match the acceptance test, dir is live-watched, no duplicate listings. Reuses the shipped managed-file CONTRACT (stamp/backup/orphan semantics) but requires **new per-FILE machinery** — the existing engine is directory-oriented (per-skill dirs, stamp inside each dir) and its whole-dir replace (`writeManagedDir`) is FORBIDDEN on `~/.claude/agents/`: applied there it would delete user-authored agent files (plan-review HIGH) |
 | 2 | Acceptance discriminator = the managed stamp, not file presence | The 2026-07-11 hand-copy already makes "files present + agents surface" pass; only `genie update` writing the stamp (or a clean-host QA) proves the fan-out itself (plan-review MEDIUM) |
 | 3 | Doctor warns (not blocks) on enabled genie plugin | Duplicate `genie:*` + bare-name agents degrade UX but break nothing; warn + document the resolution (design Risk 7) |
 | 4 | Adopt-with-backup for pre-existing files, never overwrite silently | Same contract as skills; the hand-copy must be adopted under the stamp, and user-authored agents with colliding names must be backed up before replacement, never lost |
@@ -96,7 +96,7 @@ all seven as bare-named agent types in fresh and reloaded sessions.
 |-------|-------|------------|-------|-------------|
 | C | scout | 1 — bounded evidence collection with documented recipes | opus-low | day3-qa: stamped-surface check + LangWatch fingerprint pull, evidence to routing-matrix qa/ |
 
-> Group C cannot execute in the same /work run as A+B — it gates on a released build plus Felipe's
+> Group C cannot execute in the same /work run as A+B — it gates on a released build plus the owner's
 > live update ritual. /work must treat the wish's code scope as complete after A+B ship; C stays a
 > ready task until the release lands and must NOT mark the wish blocked.
 
@@ -149,7 +149,7 @@ all seven as bare-named agent types in fresh and reloaded sessions.
 
 **Validation:**
 ```bash
-cd /Users/feliperosa/workspace/genie && bun test src/lib/agent-sync.test.ts src/genie-commands/uninstall.test.ts && bun run check
+cd '<genie checkout>' && bun test src/lib/agent-sync.test.ts src/genie-commands/uninstall.test.ts && bun run check
 ```
 
 **depends-on:** none
@@ -192,7 +192,7 @@ cd /Users/feliperosa/workspace/genie && bun test src/lib/agent-sync.test.ts src/
 
 **Validation:**
 ```bash
-cd /Users/feliperosa/workspace/genie && bun test src/genie-commands/doctor.test.ts && bun run check
+cd '<genie checkout>' && bun test src/genie-commands/doctor.test.ts && bun run check
 ```
 
 **depends-on:** A
@@ -204,7 +204,7 @@ cd /Users/feliperosa/workspace/genie && bun test src/genie-commands/doctor.test.
 **Goal:** Prove the pins fire mechanically end-to-end on the released build, with evidence.
 
 **Deliverables:**
-1. Post-release, post-`genie update` (Felipe's live ritual): verify the stamp exists and the seven
+1. Post-release, post-`genie update` (the owner's live ritual): verify the stamp exists and the seven
    agents surface in a fresh session; record doctor output.
 2. LangWatch pull re-running the day-2 recipe set (`.genie/wishes/routing-matrix/qa/routing-pin-qa-20260711.md`
    methodology): primary = dispatched traces carry pinned `model×effort` fingerprints per role;
@@ -221,7 +221,7 @@ cd /Users/feliperosa/workspace/genie && bun test src/genie-commands/doctor.test.
 
 **Validation:**
 ```bash
-test -s "$(ls -t /Users/feliperosa/workspace/genie/.genie/wishes/routing-matrix/qa/routing-pin-qa-*.md | head -1)"
+test -s "$(ls -t .genie/wishes/routing-matrix/qa/routing-pin-qa-*.md | head -1)"
 ```
 
 **depends-on:** B (released build carrying A+B)
@@ -272,7 +272,7 @@ _What must be verified on dev after merge. The QA agent tests each criterion._
   command missing uninstall.test.ts). All anchors verified accurate; semantics were the issue.
 - **Loop 1:** **SHIP** — all 5 findings verified resolved against the amended file; per-file design
   confirmed sound (dotfile manifest can't surface as an agent; no collision with per-skill manifests).
-- **Post-SHIP amendment (Felipe-directed, 2026-07-11, after the SHIP verdict):** convergence with the
+- **Post-SHIP amendment (owner-directed, 2026-07-11, after the SHIP verdict):** convergence with the
   parallel `genie-execution-optimization-dashboard` brainstorm — Group B states explicitly ride the
   existing `genie doctor --json` with stable field names (the dashboard's pins-active integrity fact);
   Group C must record resolved model IDs, not aliases. Delta sent to the reviewer for a
@@ -313,7 +313,7 @@ not authorized or evidenced. Corrective route: human authorization for a fresh, 
 engineering cycle carrying those four exact invariants, followed by an independent execution review.
 Budget: `attempts=2/2`; `effort_escalations=0/2`; appeal: none.
 
-**Human-authorized repair extension — 2026-07-11T23:41:07-03:00:** Felipe approved one fresh
+**Human-authorized repair extension — 2026-07-11T23:41:07-03:00:** the owner approved one fresh
 engineering-and-review cycle for Group A. The inherited model and effort remain unchanged; the
 extension carries only the four terminal atomic-boundary invariants above. Extended budget:
 `attempts=3/3`; `effort_escalations=0/2`. A non-SHIP re-review stops the group again; it does not
@@ -346,7 +346,7 @@ complete uninstall, using a higher-effort fresh engineering session if the runti
 Budget: `attempts=3/3`; `effort_escalations=0/2`; appeal: none. Group A remains `in_progress` and
 Groups B/C remain undispatched.
 
-**Human-authorized escalated repair — 2026-07-12:** Felipe approved attempt 4 as an
+**Human-authorized escalated repair — 2026-07-12:** the owner approved attempt 4 as an
 architecture-first repair at **Fable-5 tier** (above the opus-xhigh pin used in attempts 1–3),
 consuming one effort escalation. Mandate: centralize the entire flat-agent transaction
 (`capture → validate → publish → manifest CAS → finalize/rollback`) and hold ONE lock across the

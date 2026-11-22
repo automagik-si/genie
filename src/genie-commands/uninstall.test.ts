@@ -2166,6 +2166,9 @@ describe('workflows channel removal inside the fresh uninstall plan', () => {
     expect(readFileSync(council, 'utf8')).toBe('// hand-edited\n');
   });
 
+  // Measured timeout (#3271): 0.015 s quiet; 0.056 s under the busy-CPU proof; 16.9 s on the loaded
+  // gate host. 3x the slowest run, rounded up to 5 s. The cost is I/O, not CPU: no subprocess at
+  // all, 22 fsyncs on the temp filesystem, which stalled there.
   test('removing the emptied workflows dir is never silent, even with no file left to delete', () => {
     const body = "export const meta = { name: 'council' }\n";
     seedRecord({ 'council.js': sha256(body) });
@@ -2178,7 +2181,7 @@ describe('workflows channel removal inside the fresh uninstall plan', () => {
     expect(existsSync(workflowsDir)).toBe(false);
     expect(output.some((line) => line.includes('workflows channel: removed the now-empty workflows dir'))).toBe(true);
     expect(output.some((line) => line.includes('workflows channel: removed 0 recorded workflow file(s)'))).toBe(true);
-  });
+  }, 55_000);
 
   test('a clean sweep of both channels removes the files and then the record', () => {
     const body = "export const meta = { name: 'council' }\n";

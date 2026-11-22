@@ -18,7 +18,7 @@ Run the handoff's immediate unpatched wish-context baseline using the existing G
 - No shared agent EVIDENCE.md write. The harness writes only its normal `.mikro/runs` records and the baseline transcript is copied into this brainstorm's evidence after completion.
 
 ```bash
-bun scripts/mikro/bench.ts wish-context --dir /home/genie/workspace/repos/genie --reps 3 --concurrency 1 --tag round=baseline-2026-10-04 --tag engine=rlm-unpatched --no-phoenix
+bun scripts/mikro/bench.ts wish-context --dir '<genie checkout>' --reps 3 --concurrency 1 --tag round=baseline-2026-10-04 --tag engine=rlm-unpatched --no-phoenix
 ```
 
 ## Report and selection rule

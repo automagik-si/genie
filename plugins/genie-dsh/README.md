@@ -27,12 +27,28 @@ can have many Genies, one per repository, each in its own color.
   refs/heads/<base>`), and takes the commit from that fetch's `FETCH_HEAD`, never from a
   remote-tracking ref. A failed fetch refuses the wish with git's error and its fix; it never
   falls back to your local HEAD. A repository with no remote runs from local HEAD (`local` mode).
-  Then it makes a local clone in `<team workspace>/wishes/<project>/<name>`, on a new branch
+  Then it creates a Git copy in `<team workspace>/wishes/<project>/<name>`, on a new branch
   `wish/<name>` from that commit, and hands the wish to a Tasks session there (the Bot team's
   `startTask`). The thread plans, makes the change, runs the project's own checks, commits on its
-  branch and ends with a short report. A plain wish's copy has no push route: its `origin` (your
+  branch and ends with a short report. It reports a step refused for a permission at once, and
+  again in that report. A plain wish's copy has no push route: its `origin` (your
   checkout) has a push URL that goes nowhere and its credential helper is empty, and there is no
   `publish` remote. The real boundary against a URL an agent spells by hand is DSH's sandbox.
+- **When the wish does not start**: a clone or branch set-up that fails removes its own partial
+  clone, as it always did. After a failed `startTask` the clone is removed only for one failure:
+  the team's refusal of a start whose permission level did not hold (an error whose own
+  `levelNotSet` is exactly `true`), which the team throws before the first turn. After any other
+  failed start the clone is kept, since a turn may have run there, and Genie's answer says so.
+  The flag is taken on trust: nothing checks who set it. A removal is tried only on the folder
+  the grant made, recognised by the device, inode and real path it had when it was made; a file
+  system with no usable inode gets no removal at all. That narrows the chance of removing
+  something else and does not exclude it: another local process writing in the wishes folder at
+  the wrong instant (between the folder's creation and its first look, or after the last check)
+  or a reused inode can still mislead it, and only an OS-level handle on the folder would close
+  that, which Node does not offer here.
+  A start refused with `The wish did not start: …` (for example, a permission level the team
+  could not set) is also drawn as a line in Genie's chat, through the Bot team's tool-card
+  registry, not only in Genie's reply.
 - **A follow-up wish, scoped to branches**: a wish that must repair or publish branches an
   earlier wish made passes their names in `grant_wish`'s optional `branches` list. Those existing
   branches are created as local branches in the wish's copy, and the project's real remote becomes
@@ -48,7 +64,10 @@ can have many Genies, one per repository, each in its own color.
   commit it was given on), fetches the given branches back on every end, and the wish branch
   whenever it is ahead. The outcome is one of **Local branch** (`local-only`: a branch moved; it
   is in your repository as a local branch, not published), **No change** (no branch moved),
-  **Stopped**, **Failed** or **Lost** (the team no longer has the task's record). Nothing is
+  **Stopped**, **Failed** or **Lost** (the team no longer has the task's record). If the Bot team
+  saw a step of the wish stop on a permission (its permission stops, kept in memory for up to
+  six hours), the row keeps its outcome and its tooltip adds *a step stopped on a permission*.
+  A stop does not say why the wish ended. Nothing is
   called done or delivered. A wish that ended while DSH was closed is settled at the next start,
   from the team's task record, once the team's resume pass is over.
 - **In the sidebar**: a running wish shows as a thread under Genie (the team's task threads); the
@@ -56,8 +75,54 @@ can have many Genies, one per repository, each in its own color.
 - **No git**: on a Mac without the Command Line Tools, Genie says so with the one-line fix
   (`xcode-select --install`) instead of starting git, which would open Apple's install dialog.
 
-Why a clone and not a `git worktree`: DSH's `workspace-write` sandbox lets a session write only
-under its folder, and a worktree's commits land in the project's own `.git`, outside it.
+### Wish copies and disk use
+
+Each wish has its own `.git`, index, refs and new objects, so DSH can confine writes to that
+folder. Existing objects are borrowed read-only from a bare store at
+`<team home>/genie-objects/<project hash>.git`. The host refreshes the store from the project
+before each grant, including the exact base commit when it exists only in `FETCH_HEAD`.
+Branches and tags mirror the project's current refs, and normal Git GC retains objects from
+earlier grants. The store is independent of the project, so rewriting or deleting the project
+leaves its borrowers readable. Keep the store while copies borrow from it, and avoid manual
+`git prune` or `git repack -a -d` there.
+
+Genie refuses a grant if the real store path is in `/tmp`, the system temp directory, or the
+wishes root or copy. DSH can mask temp paths or allow writes under the wish folder. Additional
+writable roots in DSH policy are outside Genie's visibility. Keep the team home out of those
+roots so sessions can read the store without changing it.
+
+Genie checks its recorded copies after settling a wish, at startup, before a grant, and at the
+next idle deadline. It removes a copy only when:
+
+- The copy is an owned, standalone checkout in the wishes root, and the local Git config
+  passes a key and value allowlist. Linked worktrees, submodules and an operation stopped
+  half way (a rebase, `am`, merge, cherry-pick, revert or bisect) keep the copy.
+- No running session works in the copy or a folder inside it, no approval is pending, there
+  are no Git locks, and the whole tree,
+  including ignored output and `.git`, has been quiet for at least 30 minutes.
+- Git reports a clean tree with no untracked files or hidden index entries. The host uses an
+  isolated Git environment, so a global excludes file can cause extra files to be reported.
+- The project's local branches or tags retain every local tip and its objects. An unchanged
+  wish base also qualifies, including when the base came from `FETCH_HEAD`. Stash entries
+  keep the copy. Remote-tracking refs alone cannot retain wish work. A tag the copy borrowed
+  from the project at the grant does not count as wish work, even after the project drops it.
+
+Not covered: a file hidden by the copy's own `.git/info/exclude` counts as ignored output,
+and commits reachable only from the copy's reflog are not wish work. A wish whose task could
+not be started after its record was written keeps its copy (and a slot) until it is deleted
+by hand, because the task may have run. Grants and the cleanup need git 2.31 or later.
+
+`genie-copies-kept.json` lists the current copies and their reasons for staying. The matching
+intent and outcome lines in `genie-copies-removed.jsonl` record attempts and the copy's summed
+file sizes. An interrupted or partial removal that leaves a folder requires inspection. It stays
+excluded from automatic removal while the same folder remains on disk. A turn submitted
+after a recorded copy has been removed finds its working folder missing.
+
+The wishes root admits up to eight recognized copies across projects. Legacy copies without
+a record in this home are reported as `no-record` and require manual cleanup. Unrelated
+folders are listed separately and do not use a slot. Multiple homes can resolve to the same
+root. Each home removes only its recorded copies, and concurrent grants from different homes
+can exceed eight because admission is serialized within each host.
 
 ## Install
 
@@ -65,8 +130,9 @@ under its folder, and a worktree's commits land in the project's own `.git`, out
 - In your own DSH, next to `@automagik/bots-dsh`: add it from a git source pinned to a commit,
   `git+https://github.com/automagik-si/genie.git#<commit>&path:/plugins/genie-dsh`.
 
-Its data is one file beside the team's, `genie.json` in the team home (`~/.omni/ui`): the wishes
-and whether Genie was made. A wish record (v2) keeps its binding (the remote only in the form
+The team home (`~/.omni/ui`) holds the wish history in `genie.json`, beside the object stores
+and copy reports. Genie keeps a wish record while its folder is present, plus up to 30 records
+whose folders are gone. The team view projects the newest 30 records. A wish record (v2) keeps its binding (the remote only in the form
 above: an `http(s)` URL without its user name or password), its base commit, its outcome, and
 the evidence: every git command the host ran for it as `{ step, argv, code, ms }` (the newest 40),
 with the base, head and ahead counts. Records written before v2 load and show as they did.
@@ -125,12 +191,15 @@ fake fails on any member that is not in this table, so a new use has to be added
 | `rt.startTask` | `src/host/agents.js` | the wish's Tasks session |
 | `rt.cutByRestart` | `src/host/resume.js` | a turn a restart cut is no end |
 | `rt.resumesDone` | `src/host/resume.js` | the startup pass waits for the team's resume pass |
+| `rt.waitsForApproval` | `src/host/approvals.js` | pending team approval for a session, when available |
 | `rt.warn` | `src/host/diagnostics.js` | warnings |
 | `rt.hooks.view` | `src/host/extend.js` | the wishes in the team view |
 | `rt.hooks.live` | `src/host/extend.js` | each browser state answer, the first moment the team knows the interface language |
 | `rt.hooks.endpoint` | `src/host/extend.js` | `genie-create` |
-| `ctx.on` | DSH (cordis `Context`) | `session/event`, for turn ends |
-| `ctx.effect` | DSH (cordis `Context`) | registrations that go with the plugin |
+| `ctx.agents` | DSH (`@deepseek-ai/dsh-agent`, optional at runtime) | live session activity for wish cleanup |
+| `ctx.agents.list` | DSH (`dsh-agent/lib/types/index.d.ts:371`, `AgentRegistry.list`) | live agent ID, status and `session.meta.cwd`. DSH's `archive-admission.ts:16` treats a running turn as active while awaiting approval |
+| `ctx.on` | DSH (cordis `Context`) | `session/event`, for `turn/start`, `turn/end`, `approval/asked` and `approval/decided` |
+| `ctx.effect` | DSH (cordis `Context`) | plugin-scoped registrations and timer disposal, following bots-dsh's `src/host/groups.js:947` |
 | `ctx.tools.register` | DSH (`@deepseek-ai/dsh-tools`, the `tools` service) | `grant_wish` |
 
 ## Develop

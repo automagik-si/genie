@@ -377,6 +377,16 @@ Vestigial (pending drop): the wish-group execution machinery is production-dead 
   write lock held waits up to 5s for it rather than immediately failing with
   `SQLITE_BUSY`. This turns lock contention into a clean serialized outcome —
   concurrent claimants surface as **claim conflicts**, not `SQLITE_BUSY` flake.
+- **Busy deadline** (`BUSY_DEADLINE_MS = 120_000`): an open that is still busy
+  after `busy_timeout` is retried with jittered backoff (25 ms doubling to a 1 s
+  cap, each pause in `[d/2, d]`) until 120 s have passed since the first
+  attempt, then fails with `BusyDbError`: the task database stayed locked, and
+  another genie process may be stuck or the disk stalled. The deadline is
+  checked between attempts, so the total can exceed it by up to one attempt
+  (each lock-waiting statement in it can wait `busy_timeout`); review measured
+  about 3 s. The Rust store
+  (`crates/genie-tasks/src/store.rs` `BUSY_DEADLINE`) holds the same value; a
+  test on each side reads the other file.
 - **Transaction per mutation**: every state-changing operation runs inside a
   single transaction. The atomic checkout claim uses `BEGIN IMMEDIATE` so the
   write lock is taken up front and the read-modify-write cannot interleave.

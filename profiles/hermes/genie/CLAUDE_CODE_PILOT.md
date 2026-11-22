@@ -28,7 +28,7 @@ A good brief includes:
 GENIE_TUI_DISABLE=1 GENIE_NO_V1_PROMPT=1   genie --no-interactive --no-tui spawn engineer     --provider claude     --team <purpose-or-wish-slug>     --role <focused-role>     --cwd <repo-or-workspace>     --prompt '<brief with acceptance criteria and evidence requirements>'
 ```
 
-The canonical provider for this lane is `claude`. Do not use `claude-sdk` unless Felipe explicitly changes the rule.
+The canonical provider for this lane is `claude`. Do not use `claude-sdk` unless the owner explicitly changes the rule.
 
 ## 4. Observe and steer
 

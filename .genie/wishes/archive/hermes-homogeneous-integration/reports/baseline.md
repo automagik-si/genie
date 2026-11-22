@@ -104,13 +104,13 @@ enabled      user     0.1.0    genie
 `genie doctor | rg -i hermes`:
 
 ```
-✔ agent sync: hermes — linked → /home/feliperosa/vm-home/.genie/plugins/hermes-genie
+✔ agent sync: hermes — linked → <GENIE_HOME>/plugins/hermes-genie
 ```
 
 `test -L "$HERMES_HOME/plugins/genie" && readlink -f ...` (HERMES_HOME unset → `~/.hermes`):
 
 ```
-/home/feliperosa/vm-home/.genie/plugins/hermes-genie
+<GENIE_HOME>/plugins/hermes-genie
 ```
 
 Baseline note: on this host the plugin is already installed and enabled at the user tier; the

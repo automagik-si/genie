@@ -2,16 +2,16 @@
 
 **Parent:** genie-token-efficiency-program (umbrella deleted in the 2026-09-19 triage) · **Status:** Simmering
 
-## RE-OPENED 2026-08-10 — orca-inspired teammate delegation (Felipe)
+## RE-OPENED 2026-08-10 — orca-inspired teammate delegation (the owner)
 
-Felipe now runs genie in **five runtimes**: Claude Code, Codex, pi, Hermes, agent-prime. New framing on top of the 2026-07 decisions:
+The owner now runs genie in **five runtimes**: Claude Code, Codex, pi, Hermes, agent-prime. New framing on top of the 2026-07 decisions:
 
 1. **Stage routing policy** — decide *who does what at which lifecycle stage and why* (brainstorm/wish/work/review/etc.), as an explicit, inspectable policy — not "whatever runtime I happen to be sitting in."
 2. **Teammate channel** — a clear back-and-forth channel between agents ("coding agents are teammates"), beyond one-shot JSON hand-back.
 
 **Orca reference (github.com/stablyai/orca, fetched 2026-08-10):** desktop/mobile ADE, "AI Orchestrator for 100x builders." Key mechanics: (a) harness for ANY CLI-based agent — no custom protocol, wraps terminal execution; (b) parallel git worktrees — fan one prompt across multiple agents, compare diffs, merge the winner; (c) no explicit handoff protocol — orchestration happens through version control + UI review; (d) annotate-diffs feedback loop (comments on generated code flow back into agent prompts); (e) SSH worktrees for remote agents. Genie already has the worktree-per-group substrate (`launch`/warp-launch) and a CLI-adapter posture (nous-skills evidence above) — the orca deltas are the *fan-out-and-compare* pattern and the *feedback-annotation* channel.
 
-### DECIDED 2026-08-10 (Felipe picker)
+### DECIDED 2026-08-10 (owner picker)
 
 - **D-A Routing policy home = the board card.** Default agent for a task = the current coding agent (whoever is orchestrating); at task creation there is an option to declare which coding agent works it (with the "why"). Board-driven override, not global config, not WISH.md pins.
 - **D-B Substrate = remotty, not a new channel.** Remotty already ships the orca-harness half: shpool terminal server, `spawn [--worktree] <host> <agent> <dir>` / `resume <host> <agent> <dir> <convo_id>` / `revive` plumbing, per-session git worktrees under `<project>/.worktrees/`, fleet state, and two GUI clients that render the genie board (read-only, by contract — see `wishes/remotty-board-asks/HANDOFF-from-remotty.md`). The user *sees* spawning agents in the remotty client, orca-style. Back-and-forth rides resumable sessions + genie card timeline (`task comment`/`report` verbs) as the durable thread.
@@ -19,20 +19,20 @@ Felipe now runs genie in **five runtimes**: Claude Code, Codex, pi, Hermes, agen
 - **D-D Roster wave 1 = all five.** claude, codex, pi, hermes, prime — all already in remotty's built-in agent roster (`config/agents.example`; `prime` runs `prime-agent`, kimi also present). Adapter-specific facts: pi has `-p` one-shot + `--mode json|rpc` + `--session-id`; codex `resume --last`; hermes' resume flag varies by version (config-file override is the mechanism); `prime-agent`/`kimi` continue-forms in roster. Agents-as-data: adding an agent = a roster line, not code.
 
 - **D-E Spawn driver = genie.** The orchestrating agent calls remotty's spawn plumbing when a routed card starts; the user watches the session appear in the remotty client. No approval friction; the board is the authority.
-- **D-F Merge policy = review ranks, Felipe ratifies.** The review stage compares fan-out candidate diffs against the group's acceptance criteria and ranks with rationale; Felipe confirms the winner before merge. Loser worktrees pruned via remotty `worktree prune` (branches survive by remotty's own rule).
+- **D-F Merge policy = review ranks, the owner ratifies.** The review stage compares fan-out candidate diffs against the group's acceptance criteria and ranks with rationale; the owner confirms the winner before merge. Loser worktrees pruned via remotty `worktree prune` (branches survive by remotty's own rule).
 - **D-G Same-server delegation only.** A delegated/fanned agent always runs on the server the task already runs on (local or remote); cross-server spawning is OUT.
 
 ### SUBSTRATE FACTS (verified in-repo 2026-08-10)
 
 - `tasks` already has `claimed_by` + `agent_kind` + `heartbeat_at` — but those are **observed** identity (set at claim/heartbeat, boards-first-class runtime liveness ▶/⏸/☠). Declared routing needs its own additive columns; never conflate assignment with observation.
-- `hire_roster` (wish, agent_adapter_id, profile, worktree, hired_at, state) exists (genie-ui-dash G5), machine-local, excluded from roadmap.json sync — per-wish hires, not the per-task declaration Felipe asked for; left as-is.
+- `hire_roster` (wish, agent_adapter_id, profile, worktree, hired_at, state) exists (genie-ui-dash G5), machine-local, excluded from roadmap.json sync — per-wish hires, not the per-task declaration the owner asked for; left as-is.
 - `task comment` / `report` verbs + `task_events` timeline exist — the durable thread substrate is already shipped.
 - warp-launch panes carry arbitrary shell commands — a remotty launch backend is a sibling emitter, not a rework.
 - remotty plumbing contract (from `--help`): `spawn [--worktree] <host> <agent> <dir>` · `resume <host> <agent> <dir> <convo_id>` · `revive` · `worktree prune` (refuses dirty trees, only wt/* branches, branch survives). Built-in roster: claude/codex/prime/pi/kimi/hermes.
 
 ### APPROACH (chosen 2026-08-10) — board-as-contract, thin spawn bridge
 
-Genie wish: (1) additive `tasks.assigned_agent` + `assigned_reason` columns, `task create --agent/--why` + a `task assign` verb, exposed in `board --json` (remotty handoff ask-pattern: serialize or the client can't render); (2) a delegate bridge — when a routed card starts, genie invokes `remotty spawn --worktree <same-host> <agent> <dir>` with a curated brief, persists the session/convo ref on the card timeline, hand-backs land as `task comment`/`report` events, follow-ups resume the same session; (3) fan-out `task fan <id> --agents a,b,c` reuses the same spawn path N times, candidates tracked as timeline events + `wt/<task>-<agent>` worktree convention (no new table), review ranks against group acceptance criteria, Felipe ratifies, winner merges, losers pruned via `remotty worktree prune`. Remotty-side (separate, tiny, its own repo): render `assigned_agent` on cards — noted as a cross-repo dependency, not built here.
+Genie wish: (1) additive `tasks.assigned_agent` + `assigned_reason` columns, `task create --agent/--why` + a `task assign` verb, exposed in `board --json` (remotty handoff ask-pattern: serialize or the client can't render); (2) a delegate bridge — when a routed card starts, genie invokes `remotty spawn --worktree <same-host> <agent> <dir>` with a curated brief, persists the session/convo ref on the card timeline, hand-backs land as `task comment`/`report` events, follow-ups resume the same session; (3) fan-out `task fan <id> --agents a,b,c` reuses the same spawn path N times, candidates tracked as timeline events + `wt/<task>-<agent>` worktree convention (no new table), review ranks against group acceptance criteria, the owner ratifies, winner merges, losers pruned via `remotty worktree prune`. Remotty-side (separate, tiny, its own repo): render `assigned_agent` on cards — noted as a cross-repo dependency, not built here.
 
 Alternatives rejected: hire_roster-centric routing (per-wish + machine-local, contradicts per-task-in-git declaration); remotty-driven orchestration (violates remotty's never-write contract and D-E).
 
@@ -59,7 +59,7 @@ Reviewer (design-review-cross-agent-delegate) verified the seam against remotty'
 
 ### FIX LOOP 2 (re-review FIX-FIRST narrow, 2026-08-11T00:06:33Z, digest `f2be7349…`)
 
-12/14 loop-1 findings verified closed; reviewer also confirmed `worktree prepare`/`open` accept caller-supplied names in-contract today (recovering most of the naming problem without remotty changes). Residuals repaired in DESIGN.md: cross-repo verb respecified as a **headless `worktree open` variant** (name input on an existing tree, refuses self-created worktrees, returns the authoritative uniquified session name); **turn-per-launch** conversation model (no remotty verb drives a live session — every turn, brief or follow-up, is a launch through the same verb with per-turn argv; adapters must exit per turn); briefs moved **out of the worktree** to `$GENIE_HOME/briefs/…` (untracked in-tree files would make every fan-out loser un-prunable under non-forced prune); failed-delegation cleanup rule (prune, or log orphan path on refusal); adapter cards = genie-side data with explicit `{brief}` placeholder + autonomy/permission flags + non-empty-diff smoke requirement (remotty's verbatim agents file cannot carry interpolation and stays remotty's business); trust posture stated (brief text is Felipe-authored, prompt boundary accepted); **pour as two genie wishes** (W1 now; W2+W3 blocked on named remotty wish `headless-turn-open`) so the external stall is a board edge (new Decision 13); lane-path consumer consequence clause added.
+12/14 loop-1 findings verified closed; reviewer also confirmed `worktree prepare`/`open` accept caller-supplied names in-contract today (recovering most of the naming problem without remotty changes). Residuals repaired in DESIGN.md: cross-repo verb respecified as a **headless `worktree open` variant** (name input on an existing tree, refuses self-created worktrees, returns the authoritative uniquified session name); **turn-per-launch** conversation model (no remotty verb drives a live session — every turn, brief or follow-up, is a launch through the same verb with per-turn argv; adapters must exit per turn); briefs moved **out of the worktree** to `$GENIE_HOME/briefs/…` (untracked in-tree files would make every fan-out loser un-prunable under non-forced prune); failed-delegation cleanup rule (prune, or log orphan path on refusal); adapter cards = genie-side data with explicit `{brief}` placeholder + autonomy/permission flags + non-empty-diff smoke requirement (remotty's verbatim agents file cannot carry interpolation and stays remotty's business); trust posture stated (brief text is owner-authored, prompt boundary accepted); **pour as two genie wishes** (W1 now; W2+W3 blocked on named remotty wish `headless-turn-open`) so the external stall is a board edge (new Decision 13); lane-path consumer consequence clause added.
 
 ### SHIP (loop-2 re-review, 2026-08-11T00:14:02Z, digest `c15d6a9e…`, evidence stamped + verified)
 
@@ -81,7 +81,7 @@ Keep (reviewer): the id-free continue form is unambiguous **by cwd** — each ca
 - hermes-pairing skill already does the manual version (SSH + base64 + timeout + wish-<slug> sessions); its gotchas are proven (used live in this brainstorm, 2 rounds).
 - Cross-LLM = off-Anthropic-bill cost arbitrage + genuine dissent diversity.
 
-## DECIDED (umbrella D11, D12; Felipe 2026-07-09)
+## DECIDED (umbrella D11, D12; the owner 2026-07-09)
 - ONE `delegate` skill + per-agent adapter references (delegate/agents/codex.md, hermes.md). Launch scope Codex + Hermes; opencode = stub, OUT.
 - Wish-based companion sessions: one named session per (wish × agent), title `wish-<slug>`, session ref persisted on the wish row in genie.db; every /work turn reconnects.
 - Structured hand-back (JSON) + background+poll for long runs.

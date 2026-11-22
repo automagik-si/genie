@@ -17,7 +17,7 @@
       "base": "dev",
       "expectedParentSha": "a73db92d26ff99cb1cc91adbec1e0294c793bb2f",
       "evidence": {
-        "path": "/home/genie/orca/workspaces/genie/mikro-engine-split/.genie/wishes/mikro-engine-split/experiments/forge/genie-repository.json",
+        "path": "<orca workspace>/.genie/wishes/mikro-engine-split/experiments/forge/genie-repository.json",
         "sha256": "155fb0873f116478c3b00bc6b2be7b1e793a3984785ed60153dcb96d2d838cf1"
       }
     },
@@ -31,7 +31,7 @@
       "base": "dev",
       "expectedParentSha": "47e36743d643edc030a2a415155a683cb6692cae",
       "evidence": {
-        "path": "/home/genie/orca/workspaces/genie/mikro-engine-split/.genie/wishes/mikro-engine-split/experiments/forge/brain-repository.json",
+        "path": "<orca workspace>/.genie/wishes/mikro-engine-split/experiments/forge/brain-repository.json",
         "sha256": "60e25ef0339f0bc6bf870a2632d8f17b405ae06c5c32fa9bb09fb34819bb29b7"
       }
     }
@@ -50,7 +50,7 @@
       "objectiveId": "genie-existing",
       "repository": "automagik-genie/mikro-engine-split-genie-20261006",
       "privateCreated": true,
-      "seedRepo": "/home/genie/.local/share/mikro-engine-split/experiments-g8/forge-seed/genie-existing",
+      "seedRepo": "<experiment workspace>/experiments-g8/forge-seed/genie-existing",
       "onlyPushedRef": "refs/heads/dev",
       "actualRemoteParent": "a73db92d26ff99cb1cc91adbec1e0294c793bb2f",
       "matchesFrozenParent": true,
@@ -63,7 +63,7 @@
       "objectiveId": "brain-existing",
       "repository": "automagik-genie/mikro-engine-split-brain-20261006",
       "privateCreated": true,
-      "seedRepo": "/home/genie/.local/share/mikro-engine-split/experiments-g8/forge-seed/brain-existing",
+      "seedRepo": "<experiment workspace>/experiments-g8/forge-seed/brain-existing",
       "onlyPushedRef": "refs/heads/dev",
       "actualRemoteParent": "47e36743d643edc030a2a415155a683cb6692cae",
       "matchesFrozenParent": true,

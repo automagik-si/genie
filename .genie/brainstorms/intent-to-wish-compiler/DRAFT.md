@@ -10,13 +10,13 @@ Business stakeholders and FDEs need to turn a demand into correctly prioritized,
 
 The framework must make the **how invisible** while keeping every routing and sizing decision inspectable.
 
-## Felipe's framing
+## The owner's framing
 
 - The why is usually clear; the what is less clear; the how should be invisible.
 - The framework must cover the full path from stakeholder demand to roadmap to one unit of meaningful work (`wish`).
 - A wish is not a tiny task. Genie must distinguish a fix from a real bet automatically.
 - Wish size must constrain token/model spend; a small fix must not become a billion-token planning/execution session.
-- Felipe performs this shaping and sizing manually today; FDEs should receive it as an automatic framework capability.
+- The owner performs this shaping and sizing manually today; FDEs should receive it as an automatic framework capability.
 
 ## Framework comparison
 
@@ -145,7 +145,7 @@ Wish size is not story points, estimated files, or generated tokens. It is class
 
 Do not invent permanent dollar/token thresholds before measurement. Start with structural caps (groups, contexts, Fable gates, fix loops), then derive monetary/token appetites from observed distributions.
 
-### Circuit breaker — the full contract (RATIFIED by Felipe 2026-07-09, as recommended)
+### Circuit breaker — the full contract (RATIFIED by the owner 2026-07-09, as recommended)
 
 One-line principle: **when appetite exhausts, Genie cuts breadth and attempts, never proof — and only humans cut payout.**
 
@@ -241,7 +241,7 @@ The classification must be **invisible but explainable**: no story-point meeting
 
 ## Decisions (ratified)
 
-**Circuit-breaker contract — RATIFIED as recommended (Felipe, 2026-07-09):**
+**Circuit-breaker contract — RATIFIED as recommended (the owner, 2026-07-09):**
 1. **Flex-cut autonomy:** Genie cuts pre-tagged flex groups without asking (logged, returned to LATER with impact-map link).
 2. **Partial-payout shipping:** human-only, via omni approval queue with the control-plane-compiled breaker report attached.
 

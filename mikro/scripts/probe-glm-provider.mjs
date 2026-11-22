@@ -4,12 +4,13 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, rename, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
-const PRIME_ROOT = "/home/genie/.local/lib/node_modules/prime-agent";
+const PRIME_ROOT = join(homedir(), ".local/lib/node_modules/prime-agent");
 const PINNED_PRIME_VERSION = "0.8.1";
 const BWS_PROJECT_ID = "09229871-62e6-4331-9ede-b4a7012ec521";
 const PROVIDER = Object.freeze({ name: "GMICloud", slug: "gmicloud", tag: "gmicloud/fp8", quantization: "fp8" });
@@ -89,7 +90,7 @@ function bwsSecret(key) {
 }
 
 async function openRouterKey() {
-  const sdk = await import(`${PRIME_ROOT}/dist/index.js`);
+  const sdk = await import(pathToFileURL(join(PRIME_ROOT, "dist/index.js")).href);
   const auth = await sdk.AuthStorage.create();
   return await auth.getApiKey("openrouter") ?? bwsSecret("OPENROUTER_API_KEY");
 }
